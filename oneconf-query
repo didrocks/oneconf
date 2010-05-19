@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010 Canonical
+# Author: Didier Roche <didrocks@ubuntu.com>
+# This program is free software: you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License version 3, as published 
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranties of 
+# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR 
+# PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along 
+# with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import logging
+from optparse import OptionParser
+import sys
+from time import localtime, strftime
+
+import gettext
+from gettext import gettext as _
+
+from softwarecenter.version import *
+
+def printing(installed_app_codec, removed_app_codec):
+    print "Installed app:"
+    for pkg_name in installed_app_codec:
+        print ("%s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
+                            localtime(installed_app_codec[pkg_name]))))
+    print "Removed app:"
+    for pkg_name in removed_app_codec:
+        print ("%s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
+                            localtime(removed_app_codec[pkg_name]))))
+
+if __name__ == '__main__':
+    
+    usage = _("usage: oneconf-service [options]")
+    parser = OptionParser(prog='oneconf-service', version= "oneconf-service "
+                          + VERSION, usage=usage)
+    parser.add_option("-d", "--debug", dest="debug", action="store_true",
+                      help=_("enable debug mode"), default=False)
+    parser.add_option("-a", "--get-all", dest="getall", action="store_true",
+                      help=_("get all packages stored in couchdb"),
+                      default=False)
+    parser.add_option("-g", "--get-appscodec", dest="getappscodec",
+                      action="store_true",
+                      help=_("get automated apps not installed by default " \
+                             "stored in couchdb"), default=False)
+    parser.add_option("-u", "--update", dest="update", action="store_true",
+                      help=_("update the package list in couchdb"),
+                      default=False)
+    parser.add_option("--direct", dest="directaccess", action="store_true",
+                      help=_("don't use dbus for the request"),
+                      default=True)
+    (options, args) = parser.parse_args()
+
+    # set verbosity
+    if options.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    if options.directaccess:
+        logging.debug ("Direct call")
+        from oneconf.packagesethandler import PackageSetHandler
+        oneconf = PackageSetHandler()
+    else:
+        logging.debug ("Using dbus")
+        #oneconf = ...
+        pass
+
+    packages = None
+    if options.update:
+        packages = oneconf.update()
+    elif options.getappscodec:
+        (installed_app_codec, removed_app_codec) = oneconf.getappscodec()
+        printing(installed_app_codec, removed_app_codec)
+    else:
+        (installed_pkg, removed_pkg) = oneconf.getall()
+        printing(installed_pkg, removed_pkg)
+
+    # print packages if some available
+    if packages:
+        pass
+
+    sys.exit(0)
+
