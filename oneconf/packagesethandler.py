@@ -43,6 +43,9 @@ class PackageSetHandler(object):
         if not self.database.view_exists("get_all_pkg_by_hostid"):  
             viewfn = 'function(doc) { emit(doc.hostid, doc); }'
             self.database.add_view("get_all_pkg_by_hostid", viewfn, None, None)
+        if not self.database.view_exists("get_installed_pkg_by_hostid"):  
+            viewfn = 'function(doc) { if (doc.installed) { emit(doc.hostid, doc) }; }'
+            self.database.add_view("get_installed_pkg_by_hostid", viewfn, None, None)
         if not self.database.view_exists("get_manuallyinstalled_pkg_by_hostid"):  
             viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed) { emit(doc.hostid, doc) }; }'
             self.database.add_view("get_manuallyinstalled_pkg_by_hostid", viewfn, None, None)
@@ -90,8 +93,10 @@ class PackageSetHandler(object):
         installed_pkg_by_hosts = {}
         remove_pkg_by_hosts = {}
         for hostid in self._get_hostid_from_context(hostid, hostname):
-            installed_pkg_by_hosts[hostid] = self._get_packages_on_view_for_hostid("get_manuallyinstalled_pkg_by_hostid", hostid)
-            remove_pkg_by_hosts[hostid] = self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
+            installed_pkg_by_hosts[hostid] = \
+                self._get_packages_on_view_for_hostid("get_manuallyinstalled_pkg_by_hostid", hostid)
+            remove_pkg_by_hosts[hostid] = \
+                self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
         return(installed_pkg_by_hosts, remove_pkg_by_hosts)
 
 
@@ -104,8 +109,69 @@ class PackageSetHandler(object):
 
         apps_codec_by_hosts = {}
         for hostid in self._get_hostid_from_context(hostid, hostname):
-            apps_codec_by_hosts[hostid] = self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
+            apps_codec_by_hosts[hostid] = \
+                self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
         return apps_codec_by_hosts
+
+    def diff(self, hostid=None, hostname=None):
+        '''get aa diff from current state and packages from another host
+
+        Return: * a double dictionnary, first indexed by hostid and then
+                  by additionnal packages not present here, with
+                  (time_added_on_hostid)
+                * a double dictionnary, first indexed by hostid and then
+                  by missing packages present on hostid, with
+                  time_removed_on_hostid (=None if never present)
+                 
+        '''
+
+        logging.debug("Collecting every manually installed package on the system")
+        (this_computer_pkg, pkg_to_create, pkg_to_update) = \
+                            self._computepackagelist()
+        logging.debug("Taking only apps_codecs")
+        this_computer_app_codec_name = set()
+        for pkg_name in this_computer_pkg:
+            pkg = this_computer_pkg[pkg_name]
+            if pkg.app_codec:
+                this_computer_app_codec_name.add(pkg_name)
+        
+        logging.debug("Comparing to others hostid")
+        installed_pkg_by_hosts = {}     
+        app_codec_by_hosts = {}
+        removed_pkg_by_hosts = {}
+        additional_app_codec_by_hosts = {}
+        removed_app_codec_by_hosts = {}
+        for hostid in self._get_hostid_from_context(hostid, hostname):
+            installed_pkg_by_hosts[hostid] = \
+                self._get_packages_on_view_for_hostid("get_installed_pkg_by_hostid", hostid)
+            app_codec_by_hosts[hostid] = \
+                self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
+            removed_pkg_by_hosts[hostid] = \
+                self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
+            # additionally installed apps/codec on hostid not present locally
+            additional_app_codec_by_hosts[hostid] = {}
+            for pkg_name in app_codec_by_hosts[hostid]:
+                if not pkg_name in this_computer_app_codec_name:
+                    time_added_on_hostid = \
+                         app_codec_by_hosts[hostid][pkg_name].last_modification
+                    additional_app_codec_by_hosts[hostid][pkg_name] = \
+                                                            time_added_on_hostid
+            #  missing apps/codec on hostid present locally
+            removed_app_codec_by_hosts[hostid] = {}
+            for pkg_name in this_computer_app_codec_name:
+                # compare to installed_pkg_by_hosts because and not app_codec_by_hosts
+                # as some fanzy cases (like app coming in default will be shown as
+                # deleted otherwise, same for manually installed -> auto installed)
+                if not pkg_name in installed_pkg_by_hosts[hostid]:
+                    try:
+                        time_removed_on_hostid = \
+                         removed_pkg_by_hosts[hostid][pkg_name].last_modification
+                    except KeyError:
+                        time_removed_on_hostid = None
+                    removed_app_codec_by_hosts[hostid][pkg_name] = time_removed_on_hostid
+        logging.debug(additional_app_codec_by_hosts)
+        logging.debug(removed_app_codec_by_hosts)
+        return(additional_app_codec_by_hosts, removed_app_codec_by_hosts)
 
     def _get_packages_on_view_for_hostid(self, view_name, hostid):
         '''load records from CouchDB
@@ -235,9 +301,11 @@ class PackageSetHandler(object):
 
         # speedup first batch package insertion and
         # when computing list in read mode for diff between hostA and this host
-        updating = False
         if stored_pkg:
             updating = True
+        else:
+            stored_pkg = {}
+            updating = False            
 
         # get list of all apps installed
         installed_packages = {}

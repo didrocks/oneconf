@@ -58,9 +58,9 @@ class Hosts(object):
                 database.update_fields(rec.id, update)
                 self._hosts[self.hostid] = self.hostname
             else:
-                logging.debug("Adding new hosts")
                 self._hosts[rec.value['hostid']] = rec.value['hostname']
         if self.hostid not in self._hosts:
+            logging.debug("Adding new hosts")
             record = CouchRecord({"hostid": self.hostid,
                                   "hostname": self.hostname},
                                   ONECONF_HOSTS_RECORD_TYPE)

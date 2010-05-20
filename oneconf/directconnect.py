@@ -44,6 +44,16 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
+    def diff(self, hostid=None, hostname=None):
+        '''trigger diff handling'''
+
+        try:
+            return PackageSetHandler().diff(hostid, hostname)
+        except HostError, e:
+            print(e)
+            sys.exit(1)
+
     def update(self):
         '''trigger update handling'''
         PackageSetHandler().update()
+

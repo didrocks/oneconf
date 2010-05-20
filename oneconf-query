@@ -24,20 +24,49 @@ from gettext import gettext as _
 
 from oneconf.version import *
 
-def print_packages(installed_pkg_by_host, removed_pkg_host=None):
-    for hostid in installed_pkg_by_host:
-        print "Packages for %s:" % hostid
-        print " Installed app:"
-        for pkg_name in installed_pkg_by_host[hostid]:
-            pkg = installed_pkg_by_host[hostid][pkg_name]
-            print"  %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
-                              localtime(pkg.last_modification)))
-        if removed_pkg_host and hostid in removed_pkg_host:
-            print " Removed app:"
-            for pkg_name in removed_pkg_host[hostid]:
-                pkg = removed_pkg_host[hostid][pkg_name]
+def print_packages(installed_pkg_by_host, removed_pkg_by_host=None):
+    hostid_list = set(installed_pkg_by_host)
+    if removed_pkg_by_host:
+        hostid_list = hostid_list.union(set(removed_pkg_by_host))
+
+    for hostid in hostid_list:
+        if installed_pkg_by_host and hostid in installed_pkg_by_host:
+            print "Packages for %s:" % hostid
+            print " Installed app:"
+            for pkg_name in installed_pkg_by_host[hostid]:
+                pkg = installed_pkg_by_host[hostid][pkg_name]
                 print"  %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
                                   localtime(pkg.last_modification)))
+        if removed_pkg_by_host and hostid in removed_pkg_by_host:
+            print " Removed app:"
+            for pkg_name in removed_pkg_by_host[hostid]:
+                pkg = removed_pkg_by_host[hostid][pkg_name]
+                print"  %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
+                                  localtime(pkg.last_modification)))
+
+
+def print_packages_diff(additional_pkg_by_host, missing_pkg_by_host):
+
+    for hostid in additional_pkg_by_host:
+        print " Additional packages on %s: (package to install)" % hostid
+        for pkg_name in additional_pkg_by_host[hostid]:
+            time_added_on_hostid = additional_pkg_by_host[hostid][pkg_name]
+            message = "  %s: added on %s" % (pkg_name,
+                      strftime("%a, %d %b %Y %H:%M:%S",
+                      localtime(time_added_on_hostid)))
+            print message
+        print " Missing packages on %s: (package to remove)" % hostid
+        for pkg_name in missing_pkg_by_host[hostid]:
+            time_removed_on_hostid = missing_pkg_by_host[hostid][pkg_name]
+            message = "  %s: " % pkg_name
+            if time_removed_on_hostid:
+                message += "remotely removed on %s " % \
+                          strftime("%a, %d %b %Y %H:%M:%S",
+                          localtime(time_removed_on_hostid))
+            else:
+                message += "has never been present remotely"
+            print message
+
 
 def print_hosts(hosts):
     print "Hosts stored for OneConf:"
@@ -53,6 +82,10 @@ if __name__ == '__main__':
                       help=_("enable debug mode"), default=False)
     parser.add_option("-a", "--get-all", dest="getall", action="store_true",
                       help=_("get all relevant packages from storage"),
+                      default=False)
+    parser.add_option("--diff", dest="diff", action="store_true",
+                      help=_("Current diff between this machine and another " \
+                             "provided by hostname/hostid"),
                       default=False)
     parser.add_option("-g", "--get-appscodec", dest="getappscodec",
                       action="store_true",
@@ -71,7 +104,7 @@ if __name__ == '__main__':
                       help=_("update the package list in couchdb"),
                       default=False)
     parser.add_option("--direct", dest="directaccess", action="store_true",
-                      help=_("don't use dbus for the request"),
+                      help=_("don't use dbus for the request (default as in debugging phase)"),
                       default=True)
     (options, args) = parser.parse_args()
 
@@ -101,21 +134,28 @@ if __name__ == '__main__':
         print_hosts(Hosts().get_all_hosts())
     elif options.update:
         if options.hostid or options.hostname:
-            print _("You can't use hostid or hostname fonction when updating")
+            print _("You can't use hostid or hostname when updating")
             sys.exit(1)
         packages = oneconf.update()
     elif options.getappscodec:
         installed_app_codec = oneconf.get_appscodec(hostid=options.hostid,
                                                     hostname=options.hostname)
         print_packages(installed_app_codec)
-    else:
+    elif options.getall:
         (manually_installed_pkg, removed_pkg) = oneconf.get_all(
                 hostid=options.hostid, hostname=options.hostname)
         print_packages(manually_installed_pkg, removed_pkg)
-
-    # print packages if some available
-    if packages:
-        pass
+    elif options.diff:
+        if not options.hostid and not options.hostname:
+            print _("You have to provide either hostid or hostname for getting " \
+                    "a diff")
+            sys.exit(1)        
+        (additional_pkg, missing_pkg) = oneconf.diff(
+                hostid=options.hostid, hostname=options.hostname)
+        print_packages_diff(additional_pkg, missing_pkg)
+    else:
+        print _("Do nothing, really?")
+        sys.exit(1)
 
     sys.exit(0)
 
