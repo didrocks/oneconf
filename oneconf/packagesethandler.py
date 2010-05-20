@@ -37,21 +37,30 @@ class PackageSetHandler(object):
         self.hosts = Hosts()
         self.current_time = time.time()
 
-        if not self.database.view_exists("get_pkg_by_hostid"):  
+        # Be careful get_manuallyinstalled_pkg_by_hostid + get_removed_pkg_by_hostid != storage
+        # there are manually installed packages, which have been marked as automatic then
+        # listing them doesn't seem relevant as of today
+        if not self.database.view_exists("get_all_pkg_by_hostid"):  
             viewfn = 'function(doc) { emit(doc.hostid, doc); }'
-            self.database.add_view("get_pkg_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_app_codec_by_hostid"):  
-            viewfn = 'function(doc) { if (doc.app_codec) { emit(doc.hostid, doc) }; }'
-            self.database.add_view("get_app_codec_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_pkg_by_hostid_name"):  
+            self.database.add_view("get_all_pkg_by_hostid", viewfn, None, None)
+        if not self.database.view_exists("get_manuallyinstalled_pkg_by_hostid"):  
+            viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed) { emit(doc.hostid, doc) }; }'
+            self.database.add_view("get_manuallyinstalled_pkg_by_hostid", viewfn, None, None)
+        if not self.database.view_exists("get_app_codec_pkg_by_hostid"):  
+            viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed && doc.app_codec) { emit(doc.hostid, doc) }; }'
+            self.database.add_view("get_app_codec_pkg_by_hostid", viewfn, None, None)
+        if not self.database.view_exists("get_removed_pkg_by_hostid"):  
+            viewfn = 'function(doc) { if (!doc.installed) { emit(doc.hostid, doc) }; }'
+            self.database.add_view("get_removed_pkg_by_hostid", viewfn, None, None)
+        if not self.database.view_exists("get_all_pkg_by_hostid_and_name"):  
             viewfn = 'function(doc) { emit([doc.hostid,doc.name], doc); }'  
-            self.database.add_view("get_pkg_by_hostid_name", viewfn, None, None)
-
+            self.database.add_view("get_all_pkg_by_hostid_and_name", viewfn, None, None)
 
     def update(self):
         '''update the database'''
 
-        this_computer_stored_pkg = self._load_pkg_on_hostid(self.hosts.hostid)
+        this_computer_stored_pkg = self._get_packages_on_view_for_hostid(
+                                    "get_all_pkg_by_hostid", self.hosts.hostid)
         logging.debug("Initial set: %s" % this_computer_stored_pkg)
 
         # get the list of update to do
@@ -69,58 +78,73 @@ class PackageSetHandler(object):
         logging.debug("End of CouchDB update")
 
 
-    def getall(self, hostid=None):
-        '''get all auto installed packages in two lists
+    def get_all(self, hostid=None, hostname=None):
+        '''get all manually installed packages from the storage
 
-        Return: a dictionnary of installed packages, with last modification time
-                a dictionnary of removed packages, with last modification time
+        Return: * a double dictionnary, first indexed by hostid and then
+                  by installed package name, with Package
+                * a double dictionnary, first indexed by hostid and then
+                  by removed package name, with Package
         '''
-        return(self._get_packages_on_view("get_pkg_by_hostid", hostid))
 
-    def getappscodec(self, hostid=None):
-        '''get apps/codecs in two lists
+        installed_pkg_by_hosts = {}
+        remove_pkg_by_hosts = {}
+        for hostid in self._get_hostid_from_context(hostid, hostname):
+            installed_pkg_by_hosts[hostid] = self._get_packages_on_view_for_hostid("get_manuallyinstalled_pkg_by_hostid", hostid)
+            remove_pkg_by_hosts[hostid] = self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
+        return(installed_pkg_by_hosts, remove_pkg_by_hosts)
 
-        Return: a dictionnary of installed apps/codecs, with last modification time
-                a dictionnary of removed apps/codecs, with last modification time
+
+    def get_appscodec(self, hostid=None, hostname=None):
+        '''get all apps codecs installed packages from the storage
+
+        Return: * a double dictionnary, first indexed by hostid and then
+                  by installed package name, with Package
         '''
-        return(self._get_packages_on_view("get_app_codec_by_hostid", hostid))
-    
-    def _get_packages_on_view(self, view_name, hostid=None):
-        '''Internal function to be called by getall and getappscodec'''
-        if not hostid:
-            hostid = self.hosts.hostid
-        installed_pkg = {}
-        removed_pkg = {}
-        results = self.database.execute_view(view_name)
-        for rec in results[hostid]:
-            pkg_name = rec.value["name"]
-            if rec.value["manually_installed"]:
-                installed_pkg[pkg_name] = rec.value["last_modification"]
-            else:
-                removed_pkg[pkg_name] = rec.value["last_modification"]
-        return(installed_pkg, removed_pkg)
 
-    def _load_pkg_on_hostid(self, hostid):
+        apps_codec_by_hosts = {}
+        for hostid in self._get_hostid_from_context(hostid, hostname):
+            apps_codec_by_hosts[hostid] = self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
+        return apps_codec_by_hosts
+
+    def _get_packages_on_view_for_hostid(self, view_name, hostid):
         '''load records from CouchDB
 
-        Return: initial dictionnary of Package with:
-                {(hostid, pkg_name) : Package}
+        Return: get dictionnary of all Package in the DB respecting the view
+                with: {pkg_name : Package}
         '''
-        results = self.database.execute_view("get_pkg_by_hostid")
-        stored_pkg_for_hostid = {}
+        results = self.database.execute_view(view_name)
+        pkg_for_hostid = {}
         for rec in results[hostid]:
             pkg_name = rec.value["name"]
-            stored_pkg_for_hostid[pkg_name] = Package(hostid, pkg_name,
+            pkg_for_hostid[pkg_name] = Package(hostid, pkg_name,
                 rec.value["installed"], rec.value["auto_installed"],
                 rec.value["app_codec"], rec.value["last_modification"])
-        return stored_pkg_for_hostid
+        return pkg_for_hostid
+
+    def _get_hostid_from_context(self, hostid=None, hostname=None):
+        '''get and check hostids
+
+        if hostid and hostname are none, hostid is the current one
+        Return: tuple of hostids
+        '''
+
+        if not hostid and not hostname:
+            hostids = [self.hosts.hostid]
+        else:
+            if hostid:
+                self.hosts.gethostname_by_id(hostid)
+                hostids = [hostid]
+            else:
+                hostids = self.hosts.gethostid_by_name(hostname) 
+        return hostids
 
     def _update_record(self, pkg):
         '''Update an existing record matching (hostid, package)'''
 
         rec = None
         update = {}
-        results = self.database.execute_view("get_pkg_by_hostid_name")
+        results = self.database.execute_view("get_all_pkg_by_hostid_and_name")
         for rec in results[[pkg.hostid, pkg.name]]:
             update["installed"] = pkg.installed
             update["auto_installed"] = pkg.auto_installed
@@ -248,14 +272,14 @@ class PackageSetHandler(object):
                         pkg_to_update.add(stored_pkg[pkg.name])
                 except KeyError:
                     # new package, we are only interested in installed and not
-                    # autoinstalled for initial storage
+                    # auto_installed for initial storage
                     if installed and not auto_installed:
                         stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
                             True, False, app_codec, self.current_time)
                         pkg_to_create.add(stored_pkg[pkg.name])
             else:
                 # for making a diff, we are only interested in packages
-                # installed and not autoinstalled for this host
+                # installed and not auto_installed for this host
                 if installed and not auto_installed:
                     stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
                         True, False, app_codec, self.current_time)

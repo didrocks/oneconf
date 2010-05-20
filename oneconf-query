@@ -24,15 +24,20 @@ from gettext import gettext as _
 
 from softwarecenter.version import *
 
-def print_packages(installed_app_codec, removed_app_codec):
-    print "Installed app:"
-    for pkg_name in installed_app_codec:
-        print("%s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
-                          localtime(installed_app_codec[pkg_name]))))
-    print "Removed app:"
-    for pkg_name in removed_app_codec:
-        print("%s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
-                          localtime(removed_app_codec[pkg_name]))))
+def print_packages(installed_pkg_by_host, removed_pkg_host=None):
+    for hostid in installed_pkg_by_host:
+        print "Packages for %s:" % hostid
+        print " Installed app:"
+        for pkg_name in installed_pkg_by_host[hostid]:
+            pkg = installed_pkg_by_host[hostid][pkg_name]
+            print"  %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
+                              localtime(pkg.last_modification)))
+        if removed_pkg_host and hostid in removed_pkg_host:
+            print " Removed app:"
+            for pkg_name in removed_pkg_host[hostid]:
+                pkg = removed_pkg_host[hostid][pkg_name]
+                print"  %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
+                                  localtime(pkg.last_modification)))
 
 def print_hosts(hosts):
     print "Hosts stored for OneConf:"
@@ -47,21 +52,21 @@ if __name__ == '__main__':
     parser.add_option("-d", "--debug", dest="debug", action="store_true",
                       help=_("enable debug mode"), default=False)
     parser.add_option("-a", "--get-all", dest="getall", action="store_true",
-                      help=_("get all packages from couchdb"),
+                      help=_("get all relevant packages from storage"),
                       default=False)
     parser.add_option("-g", "--get-appscodec", dest="getappscodec",
                       action="store_true",
                       help=_("Print automated apps and codec not installed " \
-                             "by default, from couchdb"), default=False)
+                             "by default, from storage"), default=False)
     parser.add_option("--gethosts", dest="gethosts", action="store_true",
                       help=_("Print all available hosts to OneConf"),
                       default=False)
     parser.add_option("--hostname", dest="hostname", action="store",
                       help=_("specify target host"),
-                      default=False)
+                      default=None)
     parser.add_option("--hostid", dest="hostid", action="store",
                       help=_("specify target host"),
-                      default=False)
+                      default=None)
     parser.add_option("-u", "--update", dest="update", action="store_true",
                       help=_("update the package list in couchdb"),
                       default=False)
@@ -78,8 +83,8 @@ if __name__ == '__main__':
 
     if options.directaccess:
         logging.debug("Direct call")
-        from oneconf.packagesethandler import PackageSetHandler
-        oneconf = PackageSetHandler()
+        from oneconf.directconnect import DirectConnect
+        oneconf = DirectConnect()
     else:
         logging.debug("Using dbus")
         #oneconf = ...
@@ -87,17 +92,26 @@ if __name__ == '__main__':
 
     packages = None
 
+    if options.hostid and options.hostname:
+        print _("hostid and hostname can't be provided together")
+        sys.exit(1)
+
     if options.gethosts:
         from oneconf.hosts import Hosts
         print_hosts(Hosts().get_all_hosts())
     elif options.update:
+        if options.hostid or options.hostname:
+            print _("You can't use hostid or hostname fonction when updating")
+            sys.exit(1)
         packages = oneconf.update()
     elif options.getappscodec:
-        (installed_app_codec, removed_app_codec) = oneconf.getappscodec()
-        print_packages(installed_app_codec, removed_app_codec)
+        installed_app_codec = oneconf.get_appscodec(hostid=options.hostid,
+                                                    hostname=options.hostname)
+        print_packages(installed_app_codec)
     else:
-        (installed_pkg, removed_pkg) = oneconf.getall()
-        print_packages(installed_pkg, removed_pkg)
+        (manually_installed_pkg, removed_pkg) = oneconf.get_all(
+                hostid=options.hostid, hostname=options.hostname)
+        print_packages(manually_installed_pkg, removed_pkg)
 
     # print packages if some available
     if packages:

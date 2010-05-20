@@ -12,6 +12,7 @@
 # You should have received a copy of the GNU General Public License along 
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import platform
 import uuid
 
@@ -53,9 +54,11 @@ class Hosts(object):
                 rec.value['hostname'] != self.hostname):
                 update = {}
                 update['hostname'] = self.hostname
+                logging.debug("Update current hostname")
                 database.update_fields(rec.id, update)
                 self._hosts[self.hostid] = self.hostname
             else:
+                logging.debug("Adding new hosts")
                 self._hosts[rec.value['hostid']] = rec.value['hostname']
         if self.hostid not in self._hosts:
             record = CouchRecord({"hostid": self.hostid,
@@ -64,7 +67,7 @@ class Hosts(object):
             database.put_record(record)
             self._hosts[self.hostid] = self.hostname
 
-    def gethostname_by_id(hostid):
+    def gethostname_by_id(self, hostid):
         '''Get hostname by id
 
         Return: hostname
@@ -72,19 +75,19 @@ class Hosts(object):
         can trigger HostError excpetion if no hostname found for this id
         '''
         try:
-            return self._host[hostid]
+            return self._hosts[hostid]
         except KeyError:
             raise HostError(_("No hostname registered for this id"))
 
-    def gethostid_by_name(hostname):
+    def gethostid_by_name(self, hostname):
         '''Get hostid by hostname
 
-        Return: list of hostid
+        Return: tuple of hostid
 
         can trigger HostError exception unexisting hostname in the DB
         '''
 
-        result_hostid = ()
+        result_hostid = []
         for hostid in self._hosts:
             if hostname == self._hosts[hostid]:
                 result_hostid.append(hostid)
