@@ -1,0 +1,5 @@
+
+VERSION='0.0.1'
+CODENAME='unstable'
+DISTRO='Ubuntu'
+RELEASE='10.10'
