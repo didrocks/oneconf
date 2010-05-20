@@ -24,6 +24,7 @@ from desktopcouch.records.record import Record as CouchRecord
 ONECONF_PACKAGE_RECORD_TYPE = "http://wiki.ubuntu.com/OneConf/Record/Package"
 
 from oneconf.package import Package
+from oneconf.hosts import Hosts, HostError
 
 class PackageSetHandler(object):
     """
@@ -33,7 +34,7 @@ class PackageSetHandler(object):
     def __init__(self):
         # Connect to CouchDB and create the database  
         self.database = CouchDatabase("oneconf_pkg", create=True)
-        self.hostid = "AZERTYFTW"
+        self.hosts = Hosts()
         self.current_time = time.time()
 
         if not self.database.view_exists("get_pkg_by_hostid"):  
@@ -50,13 +51,14 @@ class PackageSetHandler(object):
     def update(self):
         '''update the database'''
 
-        this_computer_stored_pkg = self._load_pkg_on_hostid(self.hostid)
+        this_computer_stored_pkg = self._load_pkg_on_hostid(self.hosts.hostid)
         logging.debug("Initial set: %s" % this_computer_stored_pkg)
 
         # get the list of update to do
         logging.debug("computing list of update to do")
         (this_computer_stored_pkg, pkg_to_create, pkg_to_update) = \
                             self._computepackagelist(this_computer_stored_pkg)
+        logging.debug("After update, it will be: %s" % this_computer_stored_pkg)
 
         # update minimal set of records
         logging.debug("CouchDB update")
@@ -86,7 +88,7 @@ class PackageSetHandler(object):
     def _get_packages_on_view(self, view_name, hostid=None):
         '''Internal function to be called by getall and getappscodec'''
         if not hostid:
-            hostid = self.hostid
+            hostid = self.hosts.hostid
         installed_pkg = {}
         removed_pkg = {}
         results = self.database.execute_view(view_name)
@@ -248,18 +250,18 @@ class PackageSetHandler(object):
                     # new package, we are only interested in installed and not
                     # autoinstalled for initial storage
                     if installed and not auto_installed:
-                        stored_pkg[pkg.name] = Package(self.hostid, pkg.name,
+                        stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
                             True, False, app_codec, self.current_time)
                         pkg_to_create.add(stored_pkg[pkg.name])
             else:
                 # for making a diff, we are only interested in packages
                 # installed and not autoinstalled for this host
                 if installed and not auto_installed:
-                    stored_pkg[pkg.name] = Package(self.hostid, pkg.name,
+                    stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
                         True, False, app_codec, self.current_time)
                     # this is only for first load on an host in update mode:
-                    # don't lost time to get keyid. Otherwise, pkg_to_create
-                    # isn't relevant for read mode
+                    # don't lost time to get KeyError on stored_pkg[pkg.name].
+                    # pkg_to_create isn't relevant for read mode
                     pkg_to_create.add(stored_pkg[pkg.name])
 
         return stored_pkg, pkg_to_create, pkg_to_update

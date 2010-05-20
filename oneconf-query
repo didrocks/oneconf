@@ -24,7 +24,7 @@ from gettext import gettext as _
 
 from softwarecenter.version import *
 
-def printing(installed_app_codec, removed_app_codec):
+def print_packages(installed_app_codec, removed_app_codec):
     print "Installed app:"
     for pkg_name in installed_app_codec:
         print("%s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
@@ -34,6 +34,11 @@ def printing(installed_app_codec, removed_app_codec):
         print("%s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
                           localtime(removed_app_codec[pkg_name]))))
 
+def print_hosts(hosts):
+    print "Hosts stored for OneConf:"
+    for hostid in hosts:
+        print "%s with ID: %s" % (hosts[hostid], hostid)
+
 if __name__ == '__main__':
     
     usage = _("usage: oneconf-service [options]")
@@ -42,12 +47,21 @@ if __name__ == '__main__':
     parser.add_option("-d", "--debug", dest="debug", action="store_true",
                       help=_("enable debug mode"), default=False)
     parser.add_option("-a", "--get-all", dest="getall", action="store_true",
-                      help=_("get all packages stored in couchdb"),
+                      help=_("get all packages from couchdb"),
                       default=False)
     parser.add_option("-g", "--get-appscodec", dest="getappscodec",
                       action="store_true",
-                      help=_("get automated apps not installed by default " \
-                             "stored in couchdb"), default=False)
+                      help=_("Print automated apps and codec not installed " \
+                             "by default, from couchdb"), default=False)
+    parser.add_option("--gethosts", dest="gethosts", action="store_true",
+                      help=_("Print all available hosts to OneConf"),
+                      default=False)
+    parser.add_option("--hostname", dest="hostname", action="store",
+                      help=_("specify target host"),
+                      default=False)
+    parser.add_option("--hostid", dest="hostid", action="store",
+                      help=_("specify target host"),
+                      default=False)
     parser.add_option("-u", "--update", dest="update", action="store_true",
                       help=_("update the package list in couchdb"),
                       default=False)
@@ -72,14 +86,18 @@ if __name__ == '__main__':
         pass
 
     packages = None
-    if options.update:
+
+    if options.gethosts:
+        from oneconf.hosts import Hosts
+        print_hosts(Hosts().get_all_hosts())
+    elif options.update:
         packages = oneconf.update()
     elif options.getappscodec:
         (installed_app_codec, removed_app_codec) = oneconf.getappscodec()
-        printing(installed_app_codec, removed_app_codec)
+        print_packages(installed_app_codec, removed_app_codec)
     else:
         (installed_pkg, removed_pkg) = oneconf.getall()
-        printing(installed_pkg, removed_pkg)
+        print_packages(installed_pkg, removed_pkg)
 
     # print packages if some available
     if packages:
