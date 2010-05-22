@@ -73,12 +73,15 @@ class PackageSetHandler(object):
         logging.debug("After update, it will be: %s" % this_computer_stored_pkg)
 
         # update minimal set of records
-        logging.debug("CouchDB update")
+        logging.debug("creating new package objects")
+        new_records = []
         for pkg in pkg_to_create:
-            self._new_record(pkg)
+            new_records.append(self._new_record(pkg))
+        logging.debug("pushing new object to couchdb")
+        self.database.put_records_batch(new_records)
+        logging.debug("creating new update objects")
         for pkg in pkg_to_update:
             self._update_record(pkg)
-        logging.debug("End of CouchDB update")
 
 
     def get_all(self, hostid=None, hostname=None):
@@ -222,16 +225,18 @@ class PackageSetHandler(object):
                             pkg.hostid, pkg.name)
 
     def _new_record(self, pkg):
-        '''Insert a new record for a new package never stored in CouchDB'''
+        '''Create a new record for a new package never stored in CouchDB
 
-        record = CouchRecord({"hostid": pkg.hostid,
+        Return: new record ready to be pushed in CouchDB
+        '''
+
+        return CouchRecord({"hostid": pkg.hostid,
                               "name": pkg.name,
                               "installed": pkg.installed,
                               "auto_installed": pkg.auto_installed,
                               "app_codec": pkg.app_codec,
                               "last_modification": pkg.last_modification,
                                }, ONECONF_PACKAGE_RECORD_TYPE)
-        self.database.put_record(record)
         
 
     def _get_dep_rec_list(self, root_package, default_packages, apt_cache,
