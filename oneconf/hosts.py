@@ -45,25 +45,24 @@ class Hosts(object):
             viewfn = 'function(doc) { emit(null, doc); }'
             database.add_view("get_hosts", viewfn, None, None)
         self._hosts = {}
-        self.hostid = uuid.getnode()
+        self.hostid = str(uuid.getnode())
         self.hostname = platform.node()
 
         results = database.execute_view("get_hosts")
         for rec in results:
-            if (rec.value['hostid'] == self.hostid and
+            if (rec.id == self.hostid and
                 rec.value['hostname'] != self.hostname):
-                update = {}
-                update['hostname'] = self.hostname
+                update = {'hostname': self.hostname}
                 logging.debug("Update current hostname")
                 database.update_fields(rec.id, update)
                 self._hosts[self.hostid] = self.hostname
             else:
-                self._hosts[rec.value['hostid']] = rec.value['hostname']
+                self._hosts[rec.id] = rec.value['hostname']
         if self.hostid not in self._hosts:
             logging.debug("Adding new hosts")
-            record = CouchRecord({"hostid": self.hostid,
-                                  "hostname": self.hostname},
-                                  ONECONF_HOSTS_RECORD_TYPE)
+            record = CouchRecord({"hostname": self.hostname},
+                                 record_id=self.hostid,
+                                 record_type=ONECONF_HOSTS_RECORD_TYPE)
             database.put_record(record)
             self._hosts[self.hostid] = self.hostname
 
