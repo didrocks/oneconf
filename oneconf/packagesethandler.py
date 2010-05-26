@@ -196,7 +196,8 @@ class PackageSetHandler(object):
             pkg_name = rec.value["name"]
             pkg_for_hostid[pkg_name] = Package(hostid, pkg_name,
                 rec.value["installed"], rec.value["auto_installed"],
-                rec.value["app_codec"], rec.value["last_modification"])
+                rec.value["app_codec"], rec.value["last_modification"],
+                rec.value["distro_channel"])
         return pkg_for_hostid
 
     def _get_hostid_from_context(self, hostid=None, hostname=None):
@@ -227,6 +228,7 @@ class PackageSetHandler(object):
             update["auto_installed"] = pkg.auto_installed
             update["app_codec"] = pkg.app_codec
             update["last_modification"] = pkg.last_modification
+            update["distro_channel"] = pkg.distro_channel
             self.database.update_fields(rec.id, update)
         if not rec:
             logging.warning("Try to update a non existing record: %s, %s",
@@ -244,6 +246,7 @@ class PackageSetHandler(object):
                               "auto_installed": pkg.auto_installed,
                               "app_codec": pkg.app_codec,
                               "last_modification": pkg.last_modification,
+                              "distro_channel": pkg.distro_channel
                                }, ONECONF_PACKAGE_RECORD_TYPE)
         
 
@@ -346,21 +349,24 @@ class PackageSetHandler(object):
             if updating:
                 try:
                     if stored_pkg[pkg.name].update_needed(installed,
-                           auto_installed, app_codec, self.current_time):
+                           auto_installed, app_codec, self.current_time,
+                           self.distro.get_distro_channel_name()):
                         pkg_to_update.add(stored_pkg[pkg.name])
                 except KeyError:
                     # new package, we are only interested in installed and not
                     # auto_installed for initial storage
                     if installed and not auto_installed:
                         stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                            True, False, app_codec, self.current_time)
+                            True, False, app_codec, self.current_time,
+                            self.distro.get_distro_channel_name())
                         pkg_to_create.add(stored_pkg[pkg.name])
             else:
                 # for making a diff, we are only interested in packages
                 # installed and not auto_installed for this host
                 if installed and not auto_installed:
                     stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                        True, False, app_codec, self.current_time)
+                        True, False, app_codec, self.current_time,
+                        self.distro.get_distro_channel_name())
                     # this is only for first load on an host in update mode:
                     # don't lost time to get KeyError on stored_pkg[pkg.name].
                     # pkg_to_create isn't relevant for read mode

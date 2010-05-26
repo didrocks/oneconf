@@ -22,6 +22,10 @@ import re
 
 class Ubuntu(Distro):
 
+    def get_distro_channel_name(self):
+        """ The name in the Release file """
+        return "Ubuntu"
+
     def get_additional_packages(self, packagesethandler, apt_cache):
         additional_packages = set(['flashplugin-nonfree', 'gnash',
             'gstreamer0.10-fluendo-mpegdemux', 'swfdec-gnome', 'swfdec-mozilla',

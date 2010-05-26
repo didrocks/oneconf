@@ -30,6 +30,10 @@ class UnimplementedError(Exception):
 class Distro(object):
     """ abstract base class for a distribution """
 
+    def get_distro_channel_name(self):
+        """ The name of the main channel in the Release file (e.g. Ubuntu)"""
+        return "none"
+
     def get_additional_packages(self, packagesethandler, apt_cache):
         '''packages that we explicitely want to list and that aren't applications
 

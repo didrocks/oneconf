@@ -23,7 +23,7 @@ class Package(object):
     """
 
     def __init__(self, hostid, name, installed, auto_installed,
-                 app_codec, last_modification, repo="Ubuntu"):
+                 app_codec, last_modification, distro_channel):
         '''initalize Package values'''
 
         self.hostid = hostid
@@ -32,10 +32,10 @@ class Package(object):
         self.auto_installed = auto_installed
         self.app_codec = app_codec
         self.last_modification = last_modification
-        self.repo = repo
+        self.distro_channel = distro_channel
 
     def update_needed(self, installed, auto_installed, app_codec, current_time,
-                      repo="Ubuntu"):
+                      distro_channel):
         '''Compare new values to old and return if update is needed
 
         Return: bool meaning if an update is needed or not
@@ -51,8 +51,11 @@ class Package(object):
         if self.app_codec != app_codec:
             self.app_codec = app_codec
             need_update = True
-        if self.repo != repo:
-            self.repo = repo
+        if self.distro_channel != distro_channel:
+            self.distro_channel = distro_channel
+            need_update = True
+        if self.distro_channel != distro_channel:
+            self.distro_channel = distro_channel
             need_update = True
         if need_update:
             self.last_modification = current_time
