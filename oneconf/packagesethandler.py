@@ -1,16 +1,22 @@
 # Copyright (C) 2010 Canonical
-# Author: Didier Roche <didrocks@ubuntu.com>
-# This program is free software: you can redistribute it and/or modify it 
-# under the terms of the GNU General Public License version 3, as published 
-# by the Free Software Foundation.
 #
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranties of 
-# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR 
-# PURPOSE.  See the GNU General Public License for more details.
+# Authors:
+#  Didier Roche <didrocks@ubuntu.com>
 #
-# You should have received a copy of the GNU General Public License along 
-# with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; version 3.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+
 import apt
 import logging
 import time
@@ -25,6 +31,7 @@ ONECONF_PACKAGE_RECORD_TYPE = "http://wiki.ubuntu.com/OneConf/Record/Package"
 
 from oneconf.package import Package
 from oneconf.hosts import Hosts, HostError
+from oneconf.distributor import get_distro
 
 class PackageSetHandler(object):
     """
@@ -35,6 +42,7 @@ class PackageSetHandler(object):
         # Connect to CouchDB and create the database  
         self.database = CouchDatabase("oneconf_pkg", create=True)
         self.hosts = Hosts()
+        self.distro = get_distro()
         self.current_time = time.time()
 
         # Be careful get_manuallyinstalled_pkg_by_hostid + get_removed_pkg_by_hostid != storage
@@ -243,8 +251,13 @@ class PackageSetHandler(object):
                           recursive=True):
             '''Get list of dep of package_root, add them to default_packages'''
 
-            for relations in (root_package.candidate.dependencies,
-                              root_package.candidate.recommends):
+            if self.distro.is_recommends_as_dep():
+                relations_list = (root_package.candidate.dependencies,
+                                  root_package.candidate.recommends)
+            else:
+                relations_list = (root_package.candidate.dependencies)
+
+            for relations in relations_list:
                 for dep in relations:
                     for or_dep in dep.or_dependencies:
                         # don't introspect same package twice (or more)
@@ -257,7 +270,7 @@ class PackageSetHandler(object):
                             except KeyError:
                                 pass
 
-    def _get_default_package_list(self, meta_package, apt_cache):
+    def _get_default_package_list(self, apt_cache):
         '''Get default package installed in the distribution
 
         Return: set of default packages from the meta_package
@@ -266,17 +279,16 @@ class PackageSetHandler(object):
         default_packages = set()
         # these are false default package as alternatives deps are taken
         # into account by the algorithm like file-roller depends zip | p7zip-full
-        # -> p7zip-full won't be listed as it will be in "default"
-        false_defaults = set(['p7zip-full', 'vim-gnome', 'vim'])
-        self._get_dep_rec_list(apt_cache[meta_package], default_packages,
-                               apt_cache)
-        self._get_dep_rec_list(apt_cache['ubuntu-minimal'], default_packages,
-                               apt_cache)
-        self._get_dep_rec_list(apt_cache['ubuntu-standard'], default_packages,
-                               apt_cache)
+        # -> p7zip-full won't be listed as it will be in "default" on ubuntu
+        false_defaults = self.distro.get_false_defaults()
+        meta_package_list = self.distro.get_distribution_meta_packages()
+
+        for meta_package in meta_package_list:
+            if apt_cache[meta_package].is_installed:
+                self._get_dep_rec_list(apt_cache[meta_package],
+                                       default_packages, apt_cache)
         default_packages -= false_defaults
         return default_packages
-
 
     def _computepackagelist(self, stored_pkg=None):
         '''Introspect what's installed on this hostid
@@ -288,21 +300,14 @@ class PackageSetHandler(object):
 
         apt_cache = apt.Cache()
 
-        # additional_packages, completed then by ubuntu-restricted-extras deps
-        additional_packages = set(['flashplugin-nonfree', 'gnash',
-                             'gstreamer0.10-fluendo-mpegdemux', 'swfdec-gnome',
-                             'swfdec-mozilla', 'ubuntu-restricted-extras'])
-        self._get_dep_rec_list(apt_cache['ubuntu-restricted-extras'],
-                               additional_packages, apt_cache, recursive=False)
+        # additional_packages to take by default
+        additional_packages = self.distro.get_additional_packages(self, apt_cache)
+        default_packages = self._get_default_package_list(apt_cache)
 
         # determine wether an app is an app_codec package or not
-        blacklist_pkg_regexp = re.compile('.*-dev')
+        blacklist_pkg_regexp = self.distro.get_blacklist_regexp()
         desktop_pkg_file_pattern = re.compile('/usr/share/applications/.*\.desktop')
         executable_file_pattern = re.compile('^(/usr)?/s?bin/.*')
-
-        # TODO: detect all meta_package installed on that hostid (ubuntu-netbook)
-        default_packages = self._get_default_package_list('ubuntu-desktop',
-                                                          apt_cache)
 
         # speedup first batch package insertion and
         # when computing list in read mode for diff between hostA and this host
