@@ -21,12 +21,15 @@ from oneconf.hosts import Hosts, HostError
 
 import sys
 
-
 class DirectConnect(object):
 
     """
     Dummy backend handling exit and exception directly
     """
+
+    def get_hosts(self):
+        '''get a list of all available hosts'''
+        return Hosts().get_all_hosts()
 
     def get_all(self, hostid=None, hostname=None):
         '''trigger getall handling'''
@@ -46,11 +49,19 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
-    def diff(self, hostid=None, hostname=None):
-        '''trigger diff handling'''
+    def diff_all(self, hostid=None, hostname=None):
+        '''trigger diff_all handling'''
+        try:
+            return PackageSetHandler().diff(False, hostid, hostname)
+        except HostError, e:
+            print(e)
+            sys.exit(1)
+
+    def diff_appscodec(self, hostid=None, hostname=None):
+        '''trigger diff_appscodec handling'''
 
         try:
-            return PackageSetHandler().diff(hostid, hostname)
+            return PackageSetHandler().diff(True, hostid, hostname)
         except HostError, e:
             print(e)
             sys.exit(1)

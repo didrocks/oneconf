@@ -52,6 +52,9 @@ class Hosts(object):
         self._hosts = {}
         self.hostid = str(uuid.getnode())
         self.hostname = platform.node()
+        # faking this id for testing purpose
+        #self.hostid = 'AAAAA'
+        #selfhostname = "foomachine"
 
         results = database.execute_view("get_hosts")
         for rec in results:
