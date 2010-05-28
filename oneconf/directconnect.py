@@ -31,7 +31,7 @@ class DirectConnect(object):
         '''get a list of all available hosts'''
         return Hosts().get_all_hosts()
 
-    def get_all(self, hostid=None, hostname=None):
+    def get_all(self, hostid, hostname):
         '''trigger getall handling'''
 
         try:
@@ -40,7 +40,7 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
-    def get_appscodec(self, hostid=None, hostname=None):
+    def get_appscodec(self, hostid, hostname):
         '''trigger appscodec handling'''
 
         try:
@@ -49,7 +49,7 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
-    def diff_all(self, hostid=None, hostname=None):
+    def diff_all(self, hostid, hostname):
         '''trigger diff_all handling'''
         try:
             return PackageSetHandler().diff(False, hostid, hostname)
@@ -57,7 +57,7 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
-    def diff_appscodec(self, hostid=None, hostname=None):
+    def diff_appscodec(self, hostid, hostname):
         '''trigger diff_appscodec handling'''
 
         try:
