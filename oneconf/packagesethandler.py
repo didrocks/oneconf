@@ -102,13 +102,13 @@ class PackageSetHandler(object):
                   by removed package name, with Package
         '''
 
-        installed_pkg_by_hosts = {}
-        remove_pkg_by_hosts = {}
-        for hostid in self._get_hostid_from_context(hostid, hostname):
-            installed_pkg_by_hosts[hostid] = \
-                self._get_packages_on_view_for_hostid("get_manuallyinstalled_pkg_by_hostid", hostid)
-            remove_pkg_by_hosts[hostid] = \
-                self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
+        installed_pkg_by_hosts = ''
+        remove_pkg_by_hosts = ''
+        hostid = self._get_hostid_from_context(hostid, hostname)
+        installed_pkg_by_hosts = \
+            self._get_packages_on_view_for_hostid("get_manuallyinstalled_pkg_by_hostid", hostid)
+        remove_pkg_by_hosts = \
+            self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
         return(installed_pkg_by_hosts, remove_pkg_by_hosts)
 
     def get_appscodec(self, hostid=None, hostname=None):
@@ -118,10 +118,10 @@ class PackageSetHandler(object):
                   by installed package name, with Package
         '''
 
-        apps_codec_by_hosts = {}
-        for hostid in self._get_hostid_from_context(hostid, hostname):
-            apps_codec_by_hosts[hostid] = \
-                self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
+        apps_codec_by_hosts = ''
+        hostid = self._get_hostid_from_context(hostid, hostname)
+        apps_codec_by_hosts = \
+            self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
         return apps_codec_by_hosts
 
     def diff(self, only_appscodec=True, hostid=None, hostname=None):
@@ -152,46 +152,51 @@ class PackageSetHandler(object):
                 this_computer_target_pkg_name.add(pkg_name)
         
         logging.debug("Comparing to others hostid")
-        installed_pkg_by_hosts = {}     
+        installed_pkg_by_hosts = {}
         app_codec_by_hosts = {}
         removed_pkg_by_hosts = {}
         additional_target_pkg_by_hosts = {}
         removed_target_pkg_by_hosts = {}
-        for hostid in self._get_hostid_from_context(hostid, hostname):
-            logging.debug("Comparing to %s", hostid)
-            installed_pkg_by_hosts[hostid] = \
-                self._get_packages_on_view_for_hostid("get_installed_pkg_by_hostid", hostid)
-            removed_pkg_by_hosts[hostid] = \
-                self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
-            if only_appscodec:
-                app_codec_by_hosts[hostid] = \
-                    self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
-            # additionally installed apps/codec on hostid not present locally
-            additional_target_pkg_by_hosts[hostid] = {}
-            if only_appscodec:
-                target_reference_list = app_codec_by_hosts[hostid]
-            else:
-                target_reference_list = installed_pkg_by_hosts[hostid]
-            for pkg_name in target_reference_list:
-                if not pkg_name in this_computer_target_pkg_name:
-                    time_added_on_hostid = \
-                         target_reference_list[pkg_name].last_modification
-                    additional_target_pkg_by_hosts[hostid][pkg_name] = \
-                                                            time_added_on_hostid
-            #  missing apps/codec on hostid present locally
-            removed_target_pkg_by_hosts[hostid] = {}
-            for pkg_name in this_computer_target_pkg_name:
-                # comparing to installed_pkg_by_hosts because and not app_codec_by_hosts
-                # in any case to avoid some fanzy cases (like app coming in
-                # default will be shown as deleted otherwise, same for
-                # manually installed -> auto installed)
-                if not pkg_name in installed_pkg_by_hosts[hostid]:
-                    try:
-                        time_removed_on_hostid = \
-                         removed_pkg_by_hosts[hostid][pkg_name].last_modification
-                    except KeyError:
-                        time_removed_on_hostid = None
-                    removed_target_pkg_by_hosts[hostid][pkg_name] = time_removed_on_hostid
+        hostid = self._get_hostid_from_context(hostid, hostname)
+        logging.debug("Comparing to %s", hostid)
+        installed_pkg_by_hosts = \
+            self._get_packages_on_view_for_hostid("get_installed_pkg_by_hostid", hostid)
+        removed_pkg_by_hosts = \
+            self._get_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
+        if only_appscodec:
+            app_codec_by_hosts = \
+                self._get_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
+        # additionally installed apps/codec on hostid not present locally
+        additional_target_pkg_by_hosts = {}
+        if only_appscodec:
+            target_reference_list = app_codec_by_hosts
+        else:
+            target_reference_list = installed_pkg_by_hosts
+        for pkg_name in target_reference_list:
+            if not pkg_name in this_computer_target_pkg_name:
+                time_added_on_hostid = \
+                     target_reference_list[pkg_name].last_modification
+                additional_target_pkg_by_hosts[pkg_name] = \
+                                                        time_added_on_hostid
+        #  missing apps/codec on hostid present locally
+        removed_target_pkg_by_hosts = {}
+        for pkg_name in this_computer_target_pkg_name:
+            # comparing to installed_pkg_by_hosts because and not app_codec_by_hosts
+            # in any case to avoid some fanzy cases (like app coming in
+            # default will be shown as deleted otherwise, same for
+            # manually installed -> auto installed)
+            if not pkg_name in installed_pkg_by_hosts:
+                try:
+                    time_removed_on_hostid = \
+                     removed_pkg_by_hosts[pkg_name].last_modification
+                except KeyError:
+                    time_removed_on_hostid = None
+                removed_target_pkg_by_hosts[pkg_name] = time_removed_on_hostid
+        # convert for dbus empty dict to ''
+        if not additional_target_pkg_by_hosts:
+            additional_target_pkg_by_hosts = ''
+        if not removed_target_pkg_by_hosts:
+            removed_target_pkg_by_hosts = ''
         logging.debug(additional_target_pkg_by_hosts)
         logging.debug(removed_target_pkg_by_hosts)
         return(additional_target_pkg_by_hosts, removed_target_pkg_by_hosts)
@@ -213,21 +218,22 @@ class PackageSetHandler(object):
         return pkg_for_hostid
 
     def _get_hostid_from_context(self, hostid=None, hostname=None):
-        '''get and check hostids
+        '''get and check hostid
 
         if hostid and hostname are none, hostid is the current one
-        Return: tuple of hostids
+        Return: the corresponding hostid, raise an error if multiple hostid
+                for an hostname
         '''
 
         if not hostid and not hostname:
-            hostids = [self.hosts.hostid]
+            hostid = self.hosts.hostid
+        if hostid:
+            # just checking it exists
+            self.hosts.gethostname_by_id(hostid)
+            hostid = hostid
         else:
-            if hostid:
-                self.hosts.gethostname_by_id(hostid)
-                hostids = [hostid]
-            else:
-                hostids = self.hosts.gethostid_by_name(hostname) 
-        return hostids
+            hostid = self.hosts.gethostid_by_name(hostname) 
+        return hostid
 
     def _update_record(self, pkg):
         '''Update an existing record matching (hostid, package)'''

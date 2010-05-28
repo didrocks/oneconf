@@ -89,16 +89,21 @@ class Hosts(object):
     def gethostid_by_name(self, hostname):
         '''Get hostid by hostname
 
-        Return: tuple of hostid
+        Return: hostid
 
         can trigger HostError exception unexisting hostname in the DB
+        or multiple hostid for this hostname
         '''
 
-        result_hostid = []
+        result_hostid = None
         for hostid in self._hosts:
             if hostname == self._hosts[hostid]:
-                result_hostid.append(hostid)
-
+                if not result_hostid:
+                    result_hostid = hostid
+                else:
+                    raise HostError(_("Multiple hostid registered for this "\
+                        "hostname. Use --list --host to get the hostid and "\
+                        "use the --hostid option."))
         if not result_hostid:
             raise HostError(_("No hostid registered for this hostname"))
         return result_hostid

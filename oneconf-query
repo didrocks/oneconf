@@ -56,25 +56,24 @@ def print_packages(installed_pkg_by_host, removed_pkg_by_host=None):
 
 def print_packages_diff(additional_pkg_by_host, missing_pkg_by_host):
 
-    for hostid in additional_pkg_by_host:
-        print " Additional packages on %s: (package to install)" % hostid
-        for pkg_name in additional_pkg_by_host[hostid]:
-            time_added_on_hostid = additional_pkg_by_host[hostid][pkg_name]
-            message = "  %s: added on %s" % (pkg_name,
+    print " Additional packages: (package to install)"
+    for pkg_name in additional_pkg_by_host:
+        time_added_on_hostid = additional_pkg_by_host[pkg_name]
+        message = "  %s: added on %s" % (pkg_name,
+                  strftime("%a, %d %b %Y %H:%M:%S",
+                  localtime(time_added_on_hostid)))
+        print message
+    print " Missing packages on: (package to remove)"
+    for pkg_name in missing_pkg_by_host:
+        time_removed_on_hostid = missing_pkg_by_host[pkg_name]
+        message = "  %s: " % pkg_name
+        if time_removed_on_hostid:
+            message += "remotely removed on %s " % \
                       strftime("%a, %d %b %Y %H:%M:%S",
-                      localtime(time_added_on_hostid)))
-            print message
-        print " Missing packages on %s: (package to remove)" % hostid
-        for pkg_name in missing_pkg_by_host[hostid]:
-            time_removed_on_hostid = missing_pkg_by_host[hostid][pkg_name]
-            message = "  %s: " % pkg_name
-            if time_removed_on_hostid:
-                message += "remotely removed on %s " % \
-                          strftime("%a, %d %b %Y %H:%M:%S",
-                          localtime(time_removed_on_hostid))
-            else:
-                message += "has never been present remotely"
-            print message
+                      localtime(time_removed_on_hostid))
+        else:
+            message += "has never been present remotely"
+        print message
 
 
 def print_hosts(hosts):
