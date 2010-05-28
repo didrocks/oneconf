@@ -42,8 +42,12 @@ class DbusHostsService(dbus.service.Object):
         self.PackageSetHandler = PackageSetHandler(self.hosts)
 
     @dbus.service.method(HOSTS_INTERFACE)
-    def get_all_hosts(self):
+    def get_all_hosts(self, hostid, hostname):
         return self.hosts.get_all_hosts()
+
+    @dbus.service.method(PACKAGE_SET_INTERFACE)
+    def get_appscodec(self, hostid, hostname):
+        return self.PackageSetHandler.get_appscodec(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_all(self, hostid, hostname):
@@ -51,7 +55,11 @@ class DbusHostsService(dbus.service.Object):
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def diff(self, only_appscodec, hostid, hostname):
-        return self.PackageSetHandler.diff(False, hostid, hostname)
+        return self.PackageSetHandler.diff(only_appscodec, hostid, hostname)
+
+    @dbus.service.method(PACKAGE_SET_INTERFACE)
+    def update(self):
+        self.PackageSetHandler.update()
 
 class DbusConnect(object):
 
