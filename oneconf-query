@@ -34,36 +34,31 @@ ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE = range(4)
 
 
 def print_packages(installed_pkg_by_host, removed_pkg_by_host=None):
-    hostid_list = set(installed_pkg_by_host)
-    if removed_pkg_by_host:
-        hostid_list = hostid_list.union(set(removed_pkg_by_host))
 
-    for hostid in hostid_list:
-        if installed_pkg_by_host and hostid in installed_pkg_by_host:
-            print "Packages for %s:" % hostid
-            print " Installed app:"
-            for pkg_name in installed_pkg_by_host[hostid]:
-                pkg = installed_pkg_by_host[hostid][pkg_name]
-                print"  %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
-                                  localtime(pkg.last_modification)))
-        if removed_pkg_by_host and hostid in removed_pkg_by_host:
-            print " Removed app:"
-            for pkg_name in removed_pkg_by_host[hostid]:
-                pkg = removed_pkg_by_host[hostid][pkg_name]
-                print"  %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
-                                  localtime(pkg.last_modification)))
+    if installed_pkg_by_host:
+        print "Installed app:"
+        for pkg_name in installed_pkg_by_host:
+            last_modification = installed_pkg_by_host[pkg_name]
+            print" %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
+                              localtime(last_modification)))
+    if removed_pkg_by_host:
+        print "Removed app:"
+        for pkg_name in removed_pkg_by_host:
+            last_modification = removed_pkg_by_host[pkg_name]
+            print" %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
+                              localtime(last_modification)))
 
 
 def print_packages_diff(additional_pkg_by_host, missing_pkg_by_host):
 
-    print " Additional packages: (package to install)"
+    print "Additional packages: (package to install)"
     for pkg_name in additional_pkg_by_host:
         time_added_on_hostid = additional_pkg_by_host[pkg_name]
         message = "  %s: added on %s" % (pkg_name,
                   strftime("%a, %d %b %Y %H:%M:%S",
                   localtime(time_added_on_hostid)))
         print message
-    print " Missing packages on: (package to remove)"
+    print "Missing packages on: (package to remove)"
     for pkg_name in missing_pkg_by_host:
         time_removed_on_hostid = missing_pkg_by_host[pkg_name]
         message = "  %s: " % pkg_name
