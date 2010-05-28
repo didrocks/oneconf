@@ -38,10 +38,12 @@ class PackageSetHandler(object):
     Direct access to database for getting and updating the list
     """
 
-    def __init__(self):
+    def __init__(self, hosts=None):
         # Connect to CouchDB and create the database  
         self.database = CouchDatabase("oneconf_pkg", create=True)
-        self.hosts = Hosts()
+        self.hosts = hosts
+        if not hosts:
+            self.hosts = Hosts()
         self.distro = get_distro()
         self.current_time = time.time()
 
