@@ -18,21 +18,44 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import gobject
-from dbus.mainloop.glib import DBusGMainLoop
 
-from oneconf.dbusconnect import DbusHostsService
+import logging
+from optparse import OptionParser
+
+import gettext
+from gettext import gettext as _
+
+from oneconf.version import *
 
 MIN_TIME_WITHOUT_ACTIVITY = 30
 
 def quit(loop, myservice):
     '''quit if no activity at least in 30s'''
     if myservice.activity:
+        logging.debug('Some recent activity, still alive for %ss'
+                      % MIN_TIME_WITHOUT_ACTIVITY)
         myservice.activity = False
         return True
+    logging.debug('No more activity, go to sleep')
     loop.quit()
 
 if __name__ == '__main__':
+    usage = _("usage: %prog [options]")
+    parser = OptionParser(version= "%prog " + VERSION, usage=usage)
+    parser.add_option("--debug", action="store_true", dest="debug",
+                      help=_("enable debug mode"))
+    (options, args) = parser.parse_args()
+    # set verbosity
+    if options.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    # do import only now (otherwise, the import of dbus change level of debug)
+    import gobject
+    from dbus.mainloop.glib import DBusGMainLoop
+    from oneconf.dbusconnect import DbusHostsService
+
     DBusGMainLoop(set_as_default=True)
     loop = gobject.MainLoop()
     myservice = DbusHostsService()

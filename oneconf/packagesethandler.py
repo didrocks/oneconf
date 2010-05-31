@@ -151,11 +151,11 @@ class PackageSetHandler(object):
         try:
             if use_cache:
                 this_computer_target_pkg_name = self.cache_this_computer_target_pkg_name[only_appscodec]
-                print "USE CACHE!"
+                logging.debug("Use local cache for only_appscodec to %s" % only_appscodec)
         except KeyError:
             use_cache = False
         if not use_cache:
-            print "RECALCUL"
+            logging.debug("Compute the list of local file for only_appscodec to %s" % only_appscodec)
             (this_computer_pkg, pkg_to_create, pkg_to_update) = \
                                 self._computepackagelist()
             if only_appscodec:
@@ -205,7 +205,7 @@ class PackageSetHandler(object):
                 try:
                     time_removed_on_hostid = removed_pkg_for_host[pkg_name]
                 except KeyError:
-                    time_removed_on_hostid = None
+                    time_removed_on_hostid = ''
                 removed_target_pkg_for_host[pkg_name] = time_removed_on_hostid
         # convert for dbus empty dict to ''
         if not additional_target_pkg_for_host:

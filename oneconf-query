@@ -140,7 +140,6 @@ if __name__ == '__main__':
         logging.debug("Using dbus")
         from oneconf.dbusconnect import DbusConnect
         oneconf = DbusConnect()
-        pass
 
 
     # store_const doesn't handle conflicts, so use manual triage
