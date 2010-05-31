@@ -20,6 +20,7 @@ import dbus
 import dbus.service
 from oneconf.hosts import Hosts, HostError
 from oneconf.packagesethandler import PackageSetHandler
+import sys
 
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 HOSTS_OBJECT_NAME = "/com/ubuntu/oneconf/HostsHandler"
@@ -33,6 +34,10 @@ def none_to_null(var):
     return var
 
 class DbusHostsService(dbus.service.Object):
+
+    """
+    Dbus service, daemon side
+    """
 
     def __init__(self):
         '''registration over dbus'''
@@ -69,6 +74,10 @@ class DbusHostsService(dbus.service.Object):
 
 class DbusConnect(object):
 
+    """
+    Dbus request sender, daemon connection
+    """
+
     def __init__(self):
         '''connect to the bus and get packagesethandler object'''
         self.bus = dbus.SessionBus()
@@ -91,7 +100,7 @@ class DbusConnect(object):
 
         try:
             return self._get_package_handler_dbusobject().get_all(hostid, hostname)
-        except HostError, e:
+        except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
@@ -99,8 +108,9 @@ class DbusConnect(object):
         '''trigger appscodec handling'''
 
         try:
+            print 'prout'
             return self._get_package_handler_dbusobject().get_appscodec(hostid, hostname)
-        except HostError, e:
+        except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
@@ -108,7 +118,7 @@ class DbusConnect(object):
         '''trigger diff_all handling'''
         try:
             return self._get_package_handler_dbusobject().diff(False, hostid, hostname)
-        except HostError, e:
+        except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
@@ -117,7 +127,7 @@ class DbusConnect(object):
 
         try:
             return self._get_package_handler_dbusobject().diff(True, hostid, hostname)
-        except HostError, e:
+        except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
