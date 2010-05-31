@@ -84,6 +84,10 @@ def err_action():
     print _("you can't define --list, --diff or --update together.")
     sys.exit(1)
 
+def option_not_compatible(options, action):
+    print _("%s isn't compatible with %s" % (options, action))
+    sys.exit(1)
+
 if __name__ == '__main__':
     
     usage = _("usage: %prog [options]")
@@ -102,6 +106,8 @@ if __name__ == '__main__':
                       help=_("enable debug mode (use --direct)"))
     parser.add_option("--direct", action="store_true", dest="directaccess",
                       help=_("don't use dbus for the request"))
+    parser.add_option("--nocache", action="store_true", dest="nocache",
+                      help=_("ignore cache (for diff command)"))
     scope_group = OptionGroup(parser, "Scope of actions:", "This define the " \
                         "scope to consider for list and diff command.")
     scope_group.add_option("-s", "--selection", action="store_true",
@@ -175,6 +181,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if action == ACTION_UPDATE:
+        if options.nocache:
+            option_not_compatible("--nocache", "--update")
         if options.hostid or options.hostname:
             print _("You can't use hostid or hostname when updating")
             sys.exit(1)
@@ -185,6 +193,8 @@ if __name__ == '__main__':
         oneconf.update()
 
     elif action == ACTION_LIST:
+        if options.nocache:
+            option_not_compatible("--nocache", "--list")
         if scope == SCOPE_NONE:
             scope = SCOPE_SELECTION
         if scope == SCOPE_HOSTS:
@@ -206,14 +216,15 @@ if __name__ == '__main__':
         if scope == SCOPE_NONE:
             scope = SCOPE_SELECTION
         if scope == SCOPE_HOSTS:
-            print _("You can't use --hosts with --diff")
-            sys.exit(1)  
+            option_not_compatible("--hosts", "--diff")
         elif scope == SCOPE_SELECTION:
             (additional_pkg, missing_pkg) = oneconf.diff_appscodec(
-                    hostid=options.hostid, hostname=options.hostname)
+                    hostid=options.hostid, hostname=options.hostname,
+                    use_cache=(not options.nocache))
         elif scope == SCOPE_ALL:
             (additional_pkg, missing_pkg) = oneconf.diff_all(
-                    hostid=options.hostid, hostname=options.hostname)
+                    hostid=options.hostid, hostname=options.hostname,
+                    use_cache=(not options.nocache))
         print_packages_diff(additional_pkg, missing_pkg)
 
     sys.exit(0)

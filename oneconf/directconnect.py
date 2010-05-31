@@ -49,19 +49,19 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
-    def diff_all(self, hostid, hostname):
+    def diff_all(self, hostid, hostname, use_cache):
         '''trigger diff_all handling'''
         try:
-            return PackageSetHandler().diff(False, hostid, hostname)
+            return PackageSetHandler().diff(False, hostid, hostname, use_cache)
         except HostError, e:
             print(e)
             sys.exit(1)
 
-    def diff_appscodec(self, hostid, hostname):
+    def diff_appscodec(self, hostid, hostname, use_cache):
         '''trigger diff_appscodec handling'''
 
         try:
-            return PackageSetHandler().diff(True, hostid, hostname)
+            return PackageSetHandler().diff(True, hostid, hostname, use_cache)
         except HostError, e:
             print(e)
             sys.exit(1)

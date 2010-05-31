@@ -64,9 +64,9 @@ class DbusHostsService(dbus.service.Object):
         return self.PackageSetHandler.get_all(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def diff(self, only_appscodec, hostid, hostname):
+    def diff(self, only_appscodec, hostid, hostname, use_cache):
         self.activity = True
-        return self.PackageSetHandler.diff(only_appscodec, hostid, hostname)
+        return self.PackageSetHandler.diff(only_appscodec, hostid, hostname, use_cache)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def update(self):
@@ -115,19 +115,19 @@ class DbusConnect(object):
             print(e)
             sys.exit(1)
 
-    def diff_all(self, hostid, hostname):
+    def diff_all(self, hostid, hostname, use_cache):
         '''trigger diff_all handling'''
         try:
-            return self._get_package_handler_dbusobject().diff(False, hostid, hostname)
+            return self._get_package_handler_dbusobject().diff(False, hostid, hostname, use_cache)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
-    def diff_appscodec(self, hostid, hostname):
+    def diff_appscodec(self, hostid, hostname, use_cache):
         '''trigger diff_appscodec handling'''
 
         try:
-            return self._get_package_handler_dbusobject().diff(True, hostid, hostname)
+            return self._get_package_handler_dbusobject().diff(True, hostid, hostname, use_cache)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
