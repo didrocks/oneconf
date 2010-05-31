@@ -18,9 +18,10 @@
 
 import dbus
 import dbus.service
+import sys
+
 from oneconf.hosts import Hosts, HostError
 from oneconf.packagesethandler import PackageSetHandler
-import sys
 
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 HOSTS_OBJECT_NAME = "/com/ubuntu/oneconf/HostsHandler"

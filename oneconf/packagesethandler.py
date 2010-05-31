@@ -47,6 +47,9 @@ class PackageSetHandler(object):
         self.distro = get_distro()
         self.current_time = time.time()
 
+        # create cache for local package list (two keys: True/False, see diff())
+        self.cache_this_computer_target_pkg_name = {}
+
         # Be careful get_manuallyinstalled_pkg_for_hostid + get_removed_pkg_for_hostid
         # != storage for hostid. There are manually installed packages, which
         # have been marked as automatic then
@@ -106,14 +109,14 @@ class PackageSetHandler(object):
         hostid = self._get_hostid_from_context(hostid, hostname)
         installed_pkg_for_host = \
             self._get_simplified_packages_on_view_for_hostid("get_manuallyinstalled_pkg_by_hostid", hostid)
-        remove_pkg_for_host = \
+        removed_pkg_for_host = \
             self._get_simplified_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
         # convert for dbus empty dict to ''
         if not installed_pkg_for_host:
             installed_pkg_for_host = ''
-        if not remove_pkg_for_host:
-            remove_pkg_for_host = ''
-        return(installed_pkg_for_host, remove_pkg_for_host)
+        if not removed_pkg_for_host:
+            removed_pkg_for_host = ''
+        return(installed_pkg_for_host, removed_pkg_for_host)
 
     def get_appscodec(self, hostid=None, hostname=None):
         '''get all apps codecs installed packages from the storage
@@ -130,7 +133,7 @@ class PackageSetHandler(object):
             apps_codec_for_host = ''
         return apps_codec_for_host
 
-    def diff(self, only_appscodec=True, hostid=None, hostname=None):
+    def diff(self, only_appscodec=True, hostid=None, hostname=None, use_cache=True):
         '''get a diff from current package state from another host
 
         This function can be use to make a diff for only apps_codec or for
@@ -145,24 +148,32 @@ class PackageSetHandler(object):
         '''
 
         logging.debug("Collecting every manually installed package on the system")
-        (this_computer_pkg, pkg_to_create, pkg_to_update) = \
-                            self._computepackagelist()
-        if only_appscodec:
-            logging.debug("Taking only apps_codecs")
-        else:
-            logging.debug("Taking all apps")
-        this_computer_target_pkg_name = set()
-        for pkg_name in this_computer_pkg:
-            pkg = this_computer_pkg[pkg_name]
-            if (only_appscodec and pkg.app_codec) or not (only_appscodec or pkg.auto_installed):
-                this_computer_target_pkg_name.add(pkg_name)
+        try:
+            if use_cache:
+                this_computer_target_pkg_name = self.cache_this_computer_target_pkg_name[only_appscodec]
+                print "USE CACHE!"
+        except KeyError:
+            use_cache = False
+        if not use_cache:
+            print "RECALCUL"
+            (this_computer_pkg, pkg_to_create, pkg_to_update) = \
+                                self._computepackagelist()
+            if only_appscodec:
+                logging.debug("Taking only apps_codecs")
+            else:
+                logging.debug("Taking all apps")
+            this_computer_target_pkg_name = set()
+            for pkg_name in this_computer_pkg:
+                pkg = this_computer_pkg[pkg_name]
+                if (only_appscodec and pkg.app_codec) or not (only_appscodec or pkg.auto_installed):
+                    this_computer_target_pkg_name.add(pkg_name)
+            # cache the result
+            self.cache_this_computer_target_pkg_name[only_appscodec] = this_computer_target_pkg_name
         
         logging.debug("Comparing to others hostid")
         installed_pkg_for_host = {}
-        app_codec_for_host = {}
+        apps_codec_for_host = {}
         removed_pkg_for_host = {}
-        additional_target_pkg_for_host = {}
-        removed_target_pkg_for_host = {}
         hostid = self._get_hostid_from_context(hostid, hostname)
         logging.debug("Comparing to %s", hostid)
         installed_pkg_for_host = \
@@ -170,12 +181,12 @@ class PackageSetHandler(object):
         removed_pkg_for_host = \
             self._get_simplified_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
         if only_appscodec:
-            app_codec_for_host = \
+            apps_codec_for_host = \
                 self._get_simplified_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
         # additionally installed apps/codec on hostid not present locally
         additional_target_pkg_for_host = {}
         if only_appscodec:
-            target_reference_list = app_codec_for_host
+            target_reference_list = apps_codec_for_host
         else:
             target_reference_list = installed_pkg_for_host
         for pkg_name in target_reference_list:
@@ -186,7 +197,7 @@ class PackageSetHandler(object):
         #  missing apps/codec on hostid present locally
         removed_target_pkg_for_host = {}
         for pkg_name in this_computer_target_pkg_name:
-            # comparing to installed_pkg_for_host because and not app_codec_for_host
+            # comparing to installed_pkg_for_host because and not apps_codec_for_host
             # in any case to avoid some fanzy cases (like app coming in
             # default will be shown as deleted otherwise, same for
             # manually installed -> auto installed)
