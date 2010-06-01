@@ -27,8 +27,12 @@ class DirectConnect(object):
     Dummy backend handling exit and exception directly
     """
 
-    def get_hosts(self):
-        '''get a list of all available hosts'''
+    def get_current_host(self):
+        '''get a dictionnary of the current host'''
+        return Hosts().get_current_host()
+
+    def get_all_hosts(self):
+        '''get a dict of all available hosts'''
         return Hosts().get_all_hosts()
 
     def get_all(self, hostid, hostname):

@@ -113,3 +113,7 @@ class Hosts(object):
 
         return self._hosts
 
+    def get_current_host(self):
+        '''Return a dictionnary of one elem: {hostid: hostname}'''
+
+        return {self.hostid: self.hostname}

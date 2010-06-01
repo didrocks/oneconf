@@ -29,7 +29,7 @@ from gettext import gettext as _
 
 from oneconf.version import *
 
-SCOPE_NONE, SCOPE_SELECTION, SCOPE_ALL, SCOPE_HOSTS = range(4)
+SCOPE_NONE, SCOPE_SELECTION, SCOPE_ALL, SCOPE_HOSTS, SCOPE_HOST = range(5)
 ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE = range(4)
 
 
@@ -58,7 +58,7 @@ def print_packages_diff(additional_pkg_by_host, missing_pkg_by_host):
                   strftime("%a, %d %b %Y %H:%M:%S",
                   localtime(time_added_on_hostid)))
         print message
-    print "Missing packages on: (package to remove)"
+    print "Missing packages: (package to remove)"
     for pkg_name in missing_pkg_by_host:
         time_removed_on_hostid = missing_pkg_by_host[pkg_name]
         message = "  %s: " % pkg_name
@@ -72,7 +72,10 @@ def print_packages_diff(additional_pkg_by_host, missing_pkg_by_host):
 
 
 def print_hosts(hosts):
-    print "Hosts stored for OneConf:"
+    if len(hosts) > 1:
+        print "Hosts stored for OneConf:"
+    else:
+        print "Listing this host stored in OneConf:"
     for hostid in hosts:
         print "%s with ID: %s" % (hosts[hostid], hostid)
 
@@ -120,6 +123,9 @@ if __name__ == '__main__':
     scope_group.add_option("--hosts", action="store_true",
                       dest="scope_hosts",
                       help=_("all available hosts from storage (only with list)"))
+    scope_group.add_option("--host", action="store_true",
+                      dest="scope_host",
+                      help=_("This host (only with list)"))
     scope_hosts = OptionGroup(parser, "Host management:", "Thoses options " \
                       "can't be used together and only concerns diff and " \
                       "list actions. List hosts to get registered strings.")
@@ -160,6 +166,10 @@ if __name__ == '__main__':
         if scope != SCOPE_NONE:
             err_scope()
         scope = SCOPE_HOSTS
+    if options.scope_host:
+        if scope != SCOPE_NONE:
+            err_scope()
+        scope = SCOPE_HOST
 
     # store_const doesn't handle conflicts, so use manual triage
     action = ACTION_NONE
@@ -187,8 +197,8 @@ if __name__ == '__main__':
             print _("You can't use hostid or hostname when updating")
             sys.exit(1)
         if scope != SCOPE_NONE:
-            print _("You can't define --selection, --all or --hosts when " \
-                    "updating")
+            print _("You can't define --selection, --all, --host or --hosts " \
+                    "when updating")
             sys.exit(1)
         oneconf.update()
 
@@ -198,7 +208,9 @@ if __name__ == '__main__':
         if scope == SCOPE_NONE:
             scope = SCOPE_SELECTION
         if scope == SCOPE_HOSTS:
-            print_hosts(oneconf.get_hosts())
+            print_hosts(oneconf.get_all_hosts())
+        if scope == SCOPE_HOST:
+            print_hosts(oneconf.get_current_host())
         elif scope == SCOPE_SELECTION:
             installed_app_codec = oneconf.get_appscodec(hostid=options.hostid,
                                                      hostname=options.hostname)
@@ -217,6 +229,8 @@ if __name__ == '__main__':
             scope = SCOPE_SELECTION
         if scope == SCOPE_HOSTS:
             option_not_compatible("--hosts", "--diff")
+        if scope == SCOPE_HOST:
+            option_not_compatible("--host", "--diff")
         elif scope == SCOPE_SELECTION:
             (additional_pkg, missing_pkg) = oneconf.diff_appscodec(
                     hostid=options.hostid, hostname=options.hostname,
