@@ -1,3 +1,3 @@
 [D-BUS Service]
 Name=com.ubuntu.OneConf
-Exec=/home/didrocks/work/oneconf/oneconf-service/oneconf-service
+Exec=/home/didrocks/work/oneconf/oneconf-trunk/oneconf-service
