@@ -49,7 +49,7 @@ class DbusHostsService(dbus.service.Object):
         self.activity = False
 
     @dbus.service.method(HOSTS_INTERFACE)
-    def get_all_hosts(self, hostid, hostname):
+    def get_all_hosts(self):
         self.activity = True
         return self.hosts.get_all_hosts()
 
