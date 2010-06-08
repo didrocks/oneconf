@@ -301,6 +301,10 @@ class PackageSetHandler(object):
                           recursive=True):
             '''Get list of dep of package_root, add them to default_packages'''
 
+            # if no candidate package available, give up
+            if not root_package.candidate:
+		return
+
             if self.distro.is_recommends_as_dep():
                 relations_list = (root_package.candidate.dependencies,
                                   root_package.candidate.recommends)
