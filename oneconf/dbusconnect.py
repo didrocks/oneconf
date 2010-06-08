@@ -118,7 +118,6 @@ class DbusConnect(object):
         '''trigger appscodec handling'''
 
         try:
-            print 'prout'
             return self._get_package_handler_dbusobject().get_appscodec(hostid, hostname)
         except dbus.exceptions.DBusException,e:
             print(e)
