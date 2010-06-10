@@ -378,6 +378,7 @@ class PackageSetHandler(object):
         for pkg in apt_cache:
             installed = False
             app_codec = False
+	    origin = pkg.candidate.origins[0]
             if pkg.is_installed:
                 installed = True
                 if not pkg.is_auto_installed:
@@ -401,7 +402,7 @@ class PackageSetHandler(object):
                 try:
                     if stored_pkg[pkg.name].update_needed(installed,
                            auto_installed, app_codec, self.current_time,
-                           self.distro.get_distro_channel_name()):
+                           str(origin)):
                         pkg_to_update.add(stored_pkg[pkg.name])
                 except KeyError:
                     # new package, we are only interested in installed and not
@@ -409,7 +410,7 @@ class PackageSetHandler(object):
                     if installed and not auto_installed:
                         stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
                             True, False, app_codec, self.current_time,
-                            self.distro.get_distro_channel_name())
+                            str(origin))
                         pkg_to_create.add(stored_pkg[pkg.name])
             else:
                 # for making a diff, we are only interested in packages
@@ -417,7 +418,7 @@ class PackageSetHandler(object):
                 if installed and not auto_installed:
                     stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
                         True, False, app_codec, self.current_time,
-                        self.distro.get_distro_channel_name())
+                        str(origin))
                     # this is only for first load on an host in update mode:
                     # don't lost time to get KeyError on stored_pkg[pkg.name].
                     # pkg_to_create isn't relevant for read mode
