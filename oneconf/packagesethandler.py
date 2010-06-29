@@ -204,9 +204,9 @@ class PackageSetHandler(object):
             target_reference_list = installed_pkg_for_host
         for pkg_name in target_reference_list:
             if not pkg_name in this_computer_target_pkg_name:
-                time_added_on_hostid = target_reference_list[pkg_name]
+                added_str_pkg_on_hostid = target_reference_list[pkg_name]
                 additional_target_pkg_for_host[pkg_name] = \
-                                                        time_added_on_hostid
+                                                        added_str_pkg_on_hostid
         #  missing selection on hostid present locally
         removed_target_pkg_for_host = {}
         for pkg_name in this_computer_target_pkg_name:
@@ -216,10 +216,10 @@ class PackageSetHandler(object):
             # manually installed -> auto installed)
             if not pkg_name in installed_pkg_for_host:
                 try:
-                    time_removed_on_hostid = removed_pkg_for_host[pkg_name]
+                    removed_str_pkg_on_hostid = removed_pkg_for_host[pkg_name]
                 except KeyError:
-                    time_removed_on_hostid = ''
-                removed_target_pkg_for_host[pkg_name] = time_removed_on_hostid
+                    removed_str_pkg_on_hostid = ('', '')
+                removed_target_pkg_for_host[pkg_name] = removed_str_pkg_on_hostid
         # convert for dbus empty dict to ''
         if not additional_target_pkg_for_host:
             additional_target_pkg_for_host = ''
@@ -251,12 +251,13 @@ class PackageSetHandler(object):
         Contrary to _get_packages_on_view_for_hostid, this function doesn't
         Build package object (to be compatible with dbus interface)
         Return: get dictionnary of all packages in the DB respecting the view
-                with: {pkg_name : last_modification}
+                with: {pkg_name : (last_modification, distro_channel)}
         '''
         results = self.database.execute_view(view_name)
         pkg_for_hostid = {}
         for rec in results[hostid]:
-            pkg_for_hostid[rec.value["name"]] = rec.value["last_modification"]
+            pkg_for_hostid[rec.value["name"]] = (rec.value["last_modification"],
+                                                 rec.value["distro_channel"])
         return pkg_for_hostid
 
     def _get_hostid_from_context(self, hostid=None, hostname=None):
