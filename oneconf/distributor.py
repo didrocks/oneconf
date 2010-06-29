@@ -34,21 +34,11 @@ class Distro(object):
         """ The name of the main channel in the Release file (e.g. Ubuntu)"""
         return "none"
 
-    def get_additional_packages(self, packagesethandler, apt_cache):
-        '''packages that we explicitely want to list and that aren't applications
-
-        return: set of additional packages string'''
-        raise UnimplementedError
-
     def is_recommends_as_dep(self):
         '''boolean if recommends considered as direct dependencies
 
         You should return true if recommends are installed by default
         Return: boolean'''
-        raise UnimplementedError
-
-    def get_blacklist_regexp(self):
-        '''return a compile python expression of blacklist name package'''
         raise UnimplementedError
 
     def get_false_defaults(self):

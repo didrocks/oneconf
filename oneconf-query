@@ -9,7 +9,7 @@
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; version 3.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT
+# This program is distributed in the hope that it will be useful, but WITHOUTa
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 # details.
@@ -36,13 +36,13 @@ ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE = range(4)
 def print_packages(installed_pkg_by_host, removed_pkg_by_host=None):
 
     if installed_pkg_by_host:
-        print "Installed app:"
+        print "Installed package:"
         for pkg_name in installed_pkg_by_host:
             last_modification = installed_pkg_by_host[pkg_name]
             print" %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
                               localtime(last_modification)))
     if removed_pkg_by_host:
-        print "Removed app:"
+        print "Removed package:"
         for pkg_name in removed_pkg_by_host:
             last_modification = removed_pkg_by_host[pkg_name]
             print" %s: %s" % (pkg_name, strftime("%a, %d %b %Y %H:%M:%S",
@@ -112,11 +112,11 @@ if __name__ == '__main__':
     parser.add_option("--nocache", action="store_true", dest="nocache",
                       help=_("ignore cache (for diff command)"))
     scope_group = OptionGroup(parser, "Scope of actions:", "This define the " \
-                        "scope to consider for list and diff command.")
+                       "scope to consider for list and diff command.")
     scope_group.add_option("-s", "--selection", action="store_true",
                       dest="scope_selection",
-                      help=_("apps and codec manually installed, not present " \
-                             "by default (default)"))
+                      help=_("manually installed packages, not present " \
+                                      "by default (default)"))
     scope_group.add_option("-a", "--all", action="store_true",
                       dest="scope_all",
                       help=_("get all relevant packages from storage"))
@@ -127,8 +127,8 @@ if __name__ == '__main__':
                       dest="scope_host",
                       help=_("This host (only with list)"))
     scope_hosts = OptionGroup(parser, "Host management:", "Thoses options " \
-                      "can't be used together and only concerns diff and " \
-                      "list actions. List hosts to get registered strings.")
+                       "can't be used together and only concerns diff and " \
+                       "list actions. List hosts to get registered strings.")
     # default is '' for dbus compatible format
     scope_hosts.add_option("--hostname", action="store", dest="hostname",
                       help=_("specify target host"), default='')
@@ -212,9 +212,9 @@ if __name__ == '__main__':
         if scope == SCOPE_HOST:
             print_hosts(oneconf.get_current_host())
         elif scope == SCOPE_SELECTION:
-            installed_app_codec = oneconf.get_appscodec(hostid=options.hostid,
-                                                     hostname=options.hostname)
-            print_packages(installed_app_codec)
+            package_selection = oneconf.get_selection(
+                               hostid=options.hostid, hostname=options.hostname)
+            print_packages(package_selection)
         elif scope == SCOPE_ALL:
             (manually_installed_pkg, removed_pkg) = oneconf.get_all(
                     hostid=options.hostid, hostname=options.hostname)
@@ -232,7 +232,7 @@ if __name__ == '__main__':
         if scope == SCOPE_HOST:
             option_not_compatible("--host", "--diff")
         elif scope == SCOPE_SELECTION:
-            (additional_pkg, missing_pkg) = oneconf.diff_appscodec(
+            (additional_pkg, missing_pkg) = oneconf.diff_selection(
                     hostid=options.hostid, hostname=options.hostname,
                     use_cache=(not options.nocache))
         elif scope == SCOPE_ALL:

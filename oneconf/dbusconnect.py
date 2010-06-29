@@ -42,7 +42,8 @@ class DbusHostsService(dbus.service.Object):
 
     def __init__(self):
         '''registration over dbus'''
-        bus_name = dbus.service.BusName(ONECONF_SERVICE_NAME, bus=dbus.SessionBus())
+        bus_name = dbus.service.BusName(ONECONF_SERVICE_NAME,
+                                        bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name, HOSTS_OBJECT_NAME)
         self.hosts = Hosts()
         self.PackageSetHandler = PackageSetHandler(self.hosts)
@@ -59,9 +60,9 @@ class DbusHostsService(dbus.service.Object):
         return self.hosts.get_all_hosts()
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def get_appscodec(self, hostid, hostname):
+    def get_selection(self, hostid, hostname):
         self.activity = True
-        return self.PackageSetHandler.get_appscodec(hostid, hostname)
+        return self.PackageSetHandler.get_selection(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_all(self, hostid, hostname):
@@ -69,9 +70,10 @@ class DbusHostsService(dbus.service.Object):
         return self.PackageSetHandler.get_all(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def diff(self, only_appscodec, hostid, hostname, use_cache):
+    def diff(self, selection, hostid, hostname, use_cache):
         self.activity = True
-        return self.PackageSetHandler.diff(only_appscodec, hostid, hostname, use_cache)
+        return self.PackageSetHandler.diff(selection, hostid, hostname,
+                                           use_cache)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def update(self):
@@ -87,7 +89,8 @@ class DbusConnect(object):
     def __init__(self):
         '''connect to the bus and get packagesethandler object'''
         self.bus = dbus.SessionBus()
-        self.hosts_dbus_object = self.bus.get_object(ONECONF_SERVICE_NAME, HOSTS_OBJECT_NAME) 
+        self.hosts_dbus_object = self.bus.get_object(ONECONF_SERVICE_NAME,
+                                                     HOSTS_OBJECT_NAME) 
 
     def _get_package_handler_dbusobject(self):
         '''get package handler dbus object'''
@@ -109,16 +112,18 @@ class DbusConnect(object):
         '''trigger getall handling'''
 
         try:
-            return self._get_package_handler_dbusobject().get_all(hostid, hostname)
+            return self._get_package_handler_dbusobject().get_all(hostid,
+                                                                  hostname)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
-    def get_appscodec(self, hostid, hostname):
-        '''trigger appscodec handling'''
+    def get_selection(self, hostid, hostname):
+        '''trigger selection handling'''
 
         try:
-            return self._get_package_handler_dbusobject().get_appscodec(hostid, hostname)
+            return self._get_package_handler_dbusobject().get_selection(hostid,
+                                                                       hostname)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
@@ -126,16 +131,18 @@ class DbusConnect(object):
     def diff_all(self, hostid, hostname, use_cache):
         '''trigger diff_all handling'''
         try:
-            return self._get_package_handler_dbusobject().diff(False, hostid, hostname, use_cache)
+            return self._get_package_handler_dbusobject().diff(False, hostid,
+                                                            hostname, use_cache)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
-    def diff_appscodec(self, hostid, hostname, use_cache):
-        '''trigger diff_appscodec handling'''
+    def diff_selection(self, hostid, hostname, use_cache):
+        '''trigger diff_selection handling'''
 
         try:
-            return self._get_package_handler_dbusobject().diff(True, hostid, hostname, use_cache)
+            return self._get_package_handler_dbusobject().diff(True, hostid,
+                                                            hostname, use_cache)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)

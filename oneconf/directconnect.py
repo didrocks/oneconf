@@ -44,11 +44,11 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
-    def get_appscodec(self, hostid, hostname):
-        '''trigger appscodec handling'''
+    def get_selection(self, hostid, hostname):
+        '''trigger selection handling'''
 
         try:
-            return PackageSetHandler().get_appscodec(hostid, hostname)
+            return PackageSetHandler().get_selection(hostid, hostname)
         except HostError, e:
             print(e)
             sys.exit(1)
@@ -61,8 +61,8 @@ class DirectConnect(object):
             print(e)
             sys.exit(1)
 
-    def diff_appscodec(self, hostid, hostname, use_cache):
-        '''trigger diff_appscodec handling'''
+    def diff_selection(self, hostid, hostname, use_cache):
+        '''trigger diff_selection handling'''
 
         try:
             return PackageSetHandler().diff(True, hostid, hostname, use_cache)

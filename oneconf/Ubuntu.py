@@ -26,20 +26,8 @@ class Ubuntu(Distro):
         """ The name in the Release file """
         return "Ubuntu"
 
-    def get_additional_packages(self, packagesethandler, apt_cache):
-        additional_packages = set(['flashplugin-nonfree', 'gnash',
-            'gstreamer0.10-fluendo-mpegdemux', 'swfdec-gnome', 'swfdec-mozilla',
-            'ubuntu-restricted-extras'])
-        # complete the default set by ubuntu-restricted-extras deps
-        packagesethandler._get_dep_rec_list(apt_cache['ubuntu-restricted-extras'],
-                                   additional_packages, apt_cache, recursive=False)
-        return additional_packages
-
     def is_recommends_as_dep(self):
         return True
-
-    def get_blacklist_regexp(self):
-        return re.compile('.*-dev')
 
     def get_false_defaults(self):
         return set(['p7zip-full', 'vim-gnome', 'vim'])

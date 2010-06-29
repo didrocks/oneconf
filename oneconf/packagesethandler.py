@@ -63,9 +63,9 @@ class PackageSetHandler(object):
         if not self.database.view_exists("get_manuallyinstalled_pkg_by_hostid"):  
             viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed) { emit(doc.hostid, doc) }; }'
             self.database.add_view("get_manuallyinstalled_pkg_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_app_codec_pkg_by_hostid"):  
-            viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed && doc.app_codec) { emit(doc.hostid, doc) }; }'
-            self.database.add_view("get_app_codec_pkg_by_hostid", viewfn, None, None)
+        if not self.database.view_exists("get_selection_pkg_by_hostid"):  
+            viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed && doc.selection) { emit(doc.hostid, doc) }; }'
+            self.database.add_view("get_selection_pkg_by_hostid", viewfn, None, None)
         if not self.database.view_exists("get_removed_pkg_by_hostid"):  
             viewfn = 'function(doc) { if (!doc.installed) { emit(doc.name, doc) }; }'
             self.database.add_view("get_removed_pkg_by_hostid", viewfn, None, None)
@@ -108,9 +108,11 @@ class PackageSetHandler(object):
 
         hostid = self._get_hostid_from_context(hostid, hostname)
         installed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid("get_manuallyinstalled_pkg_by_hostid", hostid)
+            self._get_simplified_packages_on_view_for_hostid \
+                                 ("get_manuallyinstalled_pkg_by_hostid", hostid)
         removed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
+            self._get_simplified_packages_on_view_for_hostid \
+                                 ("get_removed_pkg_by_hostid", hostid)
         # convert for dbus empty dict to ''
         if not installed_pkg_for_host:
             installed_pkg_for_host = ''
@@ -118,25 +120,27 @@ class PackageSetHandler(object):
             removed_pkg_for_host = ''
         return(installed_pkg_for_host, removed_pkg_for_host)
 
-    def get_appscodec(self, hostid=None, hostname=None):
-        '''get all apps codecs installed packages from the storage
+    def get_selection(self, hostid=None, hostname=None):
+        '''get the package selection from the storage
+
+        Selection is manually installed packages not part of default
 
         Return: * a double dictionnary, first indexed by hostid and then
                   by installed package name, with Package
         '''
 
         hostid = self._get_hostid_from_context(hostid, hostname)
-        apps_codec_for_host = \
-            self._get_simplified_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
+        selection_for_host = self._get_simplified_packages_on_view_for_hostid \
+                                        ("get_selection_pkg_by_hostid", hostid)
         # convert for dbus empty dict to ''
-        if not apps_codec_for_host:
-            apps_codec_for_host = ''
-        return apps_codec_for_host
+        if not selection_for_host:
+            selection_for_host = ''
+        return selection_for_host
 
-    def diff(self, only_appscodec=True, hostid=None, hostname=None, use_cache=True):
+    def diff(self, selection=True, hostid=None, hostname=None, use_cache=True):
         '''get a diff from current package state from another host
 
-        This function can be use to make a diff for only apps_codec or for
+        This function can be use to make a diff for selection or for
         all packages.
 
         Return: * a double dictionnary, first indexed by hostid and then
@@ -150,43 +154,50 @@ class PackageSetHandler(object):
         logging.debug("Collecting every manually installed package on the system")
         try:
             if use_cache:
-                this_computer_target_pkg_name = self.cache_this_computer_target_pkg_name[only_appscodec]
-                logging.debug("Use local cache for only_appscodec to %s" % only_appscodec)
+                this_computer_target_pkg_name = \
+                            self.cache_this_computer_target_pkg_name[selection]
+                logging.debug("Use local cache for selection to %s" % selection)
         except KeyError:
             use_cache = False
         if not use_cache:
-            logging.debug("Compute the list of local file for only_appscodec to %s" % only_appscodec)
+            logging.debug("Compute the list of local file for selection to %s"
+                          % selection)
             (this_computer_pkg, pkg_to_create, pkg_to_update) = \
                                 self._computepackagelist()
-            if only_appscodec:
-                logging.debug("Taking only apps_codecs")
+            if selection:
+                logging.debug("Taking only selection")
             else:
                 logging.debug("Taking all apps")
             this_computer_target_pkg_name = set()
             for pkg_name in this_computer_pkg:
                 pkg = this_computer_pkg[pkg_name]
-                if (only_appscodec and pkg.app_codec) or not (only_appscodec or pkg.auto_installed):
+                if ((selection and pkg.selection) or
+                    not (selection or pkg.auto_installed)):
                     this_computer_target_pkg_name.add(pkg_name)
             # cache the result
-            self.cache_this_computer_target_pkg_name[only_appscodec] = this_computer_target_pkg_name
+            self.cache_this_computer_target_pkg_name[selection] = \
+                                                   this_computer_target_pkg_name
         
         logging.debug("Comparing to others hostid")
         installed_pkg_for_host = {}
-        apps_codec_for_host = {}
+        selection_for_host = {}
         removed_pkg_for_host = {}
         hostid = self._get_hostid_from_context(hostid, hostname)
         logging.debug("Comparing to %s", hostid)
         installed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid("get_installed_pkg_by_hostid", hostid)
+            self._get_simplified_packages_on_view_for_hostid \
+                                    ("get_installed_pkg_by_hostid", hostid)
         removed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid("get_removed_pkg_by_hostid", hostid)
-        if only_appscodec:
-            apps_codec_for_host = \
-                self._get_simplified_packages_on_view_for_hostid("get_app_codec_pkg_by_hostid", hostid)
-        # additionally installed apps/codec on hostid not present locally
+            self._get_simplified_packages_on_view_for_hostid \
+                                    ("get_removed_pkg_by_hostid", hostid)
+        if selection:
+            selection_for_host = \
+                self._get_simplified_packages_on_view_for_hostid \
+                                    ("get_selection_pkg_by_hostid", hostid)
+        # additionally installed selection on hostid not present locally
         additional_target_pkg_for_host = {}
-        if only_appscodec:
-            target_reference_list = apps_codec_for_host
+        if selection:
+            target_reference_list = selection_for_host
         else:
             target_reference_list = installed_pkg_for_host
         for pkg_name in target_reference_list:
@@ -194,11 +205,11 @@ class PackageSetHandler(object):
                 time_added_on_hostid = target_reference_list[pkg_name]
                 additional_target_pkg_for_host[pkg_name] = \
                                                         time_added_on_hostid
-        #  missing apps/codec on hostid present locally
+        #  missing selection on hostid present locally
         removed_target_pkg_for_host = {}
         for pkg_name in this_computer_target_pkg_name:
-            # comparing to installed_pkg_for_host because and not apps_codec_for_host
-            # in any case to avoid some fanzy cases (like app coming in
+            # comparing to installed_pkg_for_host and not to selection_for_host
+            # to avoid some fanzy cases (like app coming in
             # default will be shown as deleted otherwise, same for
             # manually installed -> auto installed)
             if not pkg_name in installed_pkg_for_host:
@@ -228,7 +239,7 @@ class PackageSetHandler(object):
             pkg_name = rec.value["name"]
             pkg_for_hostid[pkg_name] = Package(hostid, pkg_name,
                 rec.value["installed"], rec.value["auto_installed"],
-                rec.value["app_codec"], rec.value["last_modification"],
+                rec.value["selection"], rec.value["last_modification"],
                 rec.value["distro_channel"])
         return pkg_for_hostid
 
@@ -273,7 +284,7 @@ class PackageSetHandler(object):
         for rec in results[[pkg.hostid, pkg.name]]:
             update["installed"] = pkg.installed
             update["auto_installed"] = pkg.auto_installed
-            update["app_codec"] = pkg.app_codec
+            update["selection"] = pkg.selection
             update["last_modification"] = pkg.last_modification
             update["distro_channel"] = pkg.distro_channel
             self.database.update_fields(rec.id, update)
@@ -291,7 +302,7 @@ class PackageSetHandler(object):
                               "name": pkg.name,
                               "installed": pkg.installed,
                               "auto_installed": pkg.auto_installed,
-                              "app_codec": pkg.app_codec,
+                              "selection": pkg.selection,
                               "last_modification": pkg.last_modification,
                               "distro_channel": pkg.distro_channel
                                }, ONECONF_PACKAGE_RECORD_TYPE)
@@ -319,8 +330,9 @@ class PackageSetHandler(object):
                             default_packages.add(or_dep.name)
                             try:
                                 if recursive:
-                                    self._get_dep_rec_list(apt_cache[or_dep.name],
-                                                           default_packages, apt_cache)
+                                    self._get_dep_rec_list \
+                                        (apt_cache[or_dep.name],
+                                         default_packages, apt_cache)
                             except KeyError:
                                 pass
 
@@ -354,14 +366,8 @@ class PackageSetHandler(object):
 
         apt_cache = apt.Cache()
 
-        # additional_packages to take by default
-        additional_packages = self.distro.get_additional_packages(self, apt_cache)
-        default_packages = self._get_default_package_list(apt_cache)
 
-        # determine wether an app is an app_codec package or not
-        blacklist_pkg_regexp = self.distro.get_blacklist_regexp()
-        desktop_pkg_file_pattern = re.compile('/usr/share/applications/.*\.desktop')
-        executable_file_pattern = re.compile('^(/usr)?/s?bin/.*')
+        default_packages = self._get_default_package_list(apt_cache)
 
         # speedup first batch package insertion and
         # when computing list in read mode for diff between hostA and this host
@@ -377,31 +383,21 @@ class PackageSetHandler(object):
         pkg_to_create = set()
         for pkg in apt_cache:
             installed = False
-            app_codec = False
-	    origin = pkg.candidate.origins[0]
+            auto_installed = False
+            selection = False
+            origin = pkg.candidate.origins[0]
             if pkg.is_installed:
                 installed = True
                 if not pkg.is_auto_installed:
                     auto_installed = False
                     if not pkg.priority in ('required', 'important'):
-                        if pkg.name in additional_packages:
-                            app_codec = True
-                        elif (pkg.name in default_packages or
-                              blacklist_pkg_regexp.match(pkg.name)):
-                            pass
-                        else:
-                            for pkg_file in pkg.installed_files:
-                                if (desktop_pkg_file_pattern.match(pkg_file) or
-                                    executable_file_pattern.match(pkg_file)):
-                                    app_codec = True
-                                    break
-                else:
-                    auto_installed = True
-            # discover if update/creation is needed for that package
+                        if not pkg.name in default_packages:
+                            selection = True
+            # check if update/creation is needed for that package
             if updating:
                 try:
                     if stored_pkg[pkg.name].update_needed(installed,
-                           auto_installed, app_codec, self.current_time,
+                           auto_installed, selection, self.current_time,
                            str(origin)):
                         pkg_to_update.add(stored_pkg[pkg.name])
                 except KeyError:
@@ -409,7 +405,7 @@ class PackageSetHandler(object):
                     # auto_installed for initial storage
                     if installed and not auto_installed:
                         stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                            True, False, app_codec, self.current_time,
+                            True, False, selection, self.current_time,
                             str(origin))
                         pkg_to_create.add(stored_pkg[pkg.name])
             else:
@@ -417,7 +413,7 @@ class PackageSetHandler(object):
                 # installed and not auto_installed for this host
                 if installed and not auto_installed:
                     stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                        True, False, app_codec, self.current_time,
+                        True, False, selection, self.current_time,
                         str(origin))
                     # this is only for first load on an host in update mode:
                     # don't lost time to get KeyError on stored_pkg[pkg.name].
