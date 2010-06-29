@@ -18,6 +18,7 @@
 
 import dbus
 import dbus.service
+import glib
 import sys
 
 from oneconf.hosts import Hosts, HostError
@@ -79,6 +80,11 @@ class DbusHostsService(dbus.service.Object):
     def update(self):
         self.activity = True
         self.PackageSetHandler.update()
+
+    @dbus.service.method(PACKAGE_SET_INTERFACE)
+    def async_update(self):
+        self.activity = True
+        glib.timeout_add_seconds(1,self.PackageSetHandler.update)
 
 class DbusConnect(object):
 
