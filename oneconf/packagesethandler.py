@@ -84,6 +84,8 @@ class PackageSetHandler(object):
         logging.debug("computing list of update to do")
         (this_computer_stored_pkg, pkg_to_create, pkg_to_update) = \
                             self._computepackagelist(this_computer_stored_pkg)
+        # invalidate cache for others queries on the daemon
+        self.cache_this_computer_target_pkg_name = {}
         logging.debug("After update, it will be: %s" % this_computer_stored_pkg)
 
         # update minimal set of records
@@ -160,8 +162,8 @@ class PackageSetHandler(object):
         except KeyError:
             use_cache = False
         if not use_cache:
-            logging.debug("Compute the list of local file for selection to %s"
-                          % selection)
+            logging.debug("Compute the list of local cache for selection to %s"
+                           % selection)
             (this_computer_pkg, pkg_to_create, pkg_to_update) = \
                                 self._computepackagelist()
             if selection:
@@ -365,7 +367,6 @@ class PackageSetHandler(object):
         '''
 
         apt_cache = apt.Cache()
-
 
         default_packages = self._get_default_package_list(apt_cache)
 
