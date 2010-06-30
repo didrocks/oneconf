@@ -387,7 +387,9 @@ class PackageSetHandler(object):
             installed = False
             auto_installed = False
             selection = False
-            origin = pkg.candidate.origins[0]
+            origin = ''
+            if pkg.candidate:
+                origin = pkg.candidate.origins[0]
             if pkg.is_installed:
                 installed = True
                 if not pkg.is_auto_installed:
