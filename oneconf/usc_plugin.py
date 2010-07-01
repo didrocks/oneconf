@@ -29,6 +29,7 @@ import imp
 imp.load_package('uscplugin', os.path.dirname(os.path.realpath(__file__)) + '/uscplugin')
 from uscplugin import *
 
+
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 
 class OneConfPlugin(softwarecenter.plugin.Plugin):
