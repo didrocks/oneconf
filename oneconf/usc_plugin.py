@@ -21,15 +21,16 @@ import gtk
 import logging
 import os
 import softwarecenter.plugin
+import sys
 
 import gettext
 from gettext import gettext as _
 
-import imp
-imp.load_package('uscplugin', os.path.dirname(os.path.realpath(__file__)) + '/uscplugin')
-from uscplugin import *
 
+# append directory to take oneconf module
+sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 from oneconf.dbusconnect import DbusConnect
+from oneconf.uscplugin import u1inventorydialog, u1loginhandler
 
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 

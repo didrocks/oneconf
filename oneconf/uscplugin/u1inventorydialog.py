@@ -99,6 +99,10 @@ class U1InventoryDialog(object):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
+    # import oneconf dir
+    import sys
+    sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))))
+
     # oneconf handler
     from oneconf.dbusconnect import DbusConnect
     oneconf = DbusConnect()
