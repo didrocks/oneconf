@@ -32,7 +32,7 @@ NEW_ACCOUNT_URL = "https://one.ubuntu.com/plans/"
 class U1InventoryDialog(object):
     """Dialog to manage OneConf U1 inventory"""
 
-    def __init__(self, datadir, parent=None):
+    def __init__(self, datadir, u1loginhandler, parent=None):
 
         logging.debug("creating inventory manager dialog")
         # ui
@@ -45,9 +45,8 @@ class U1InventoryDialog(object):
                 setattr(self, name, o)
             else:
                 print >> sys.stderr, "WARNING: can not get name for '%s'" % o
-        # logger
-        self.logger = u1loginhandler.LoginHandler(self)
-
+        # bind login handler to window
+        u1loginhandler.set_new_u1inventorydialog(self)
         # parent
         if parent:
             self.dialog_u1login.set_transient_for(parent)
@@ -68,6 +67,16 @@ class U1InventoryDialog(object):
             self.check_show_inventories.set_sensitive(True)
             self.button_manage_u1.set_label(_("Ubuntu One Settings…"))
             self.button_manage_u1.connect("clicked", self.setting)
+            self.label_sync_u1_date.set_label(logger.last_sync)
+            self.label_sync_u1_date.show()
+            nb_hosts = len(logger.u1hosts)
+            if nb_hosts:
+                msg = _("%s registered") % nb_hosts
+            else:
+                msg = _("None registered")
+            self.label_nb_host.set_label(msg)
+            self.label_nb_host.show()
+
         else:
             self.button_sign_in.show()
             self.label_u1_status.set_text(_("You are not signed in."))
@@ -75,6 +84,8 @@ class U1InventoryDialog(object):
             self.check_show_inventories.set_sensitive(False)
             self.button_manage_u1.set_label(_("Join Ubuntu one…"))
             self.button_manage_u1.connect("clicked", self.register)
+            self.label_sync_u1_date.hide()
+
 
     def sign_in(self, widget):
         subprocess.Popen(['ubuntuone-preferences'])
@@ -88,8 +99,13 @@ class U1InventoryDialog(object):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
+    # oneconf handler
+    from oneconf.dbusconnect import DbusConnect
+    oneconf = DbusConnect()
+    u1loginhandler = u1loginhandler.LoginHandler(oneconf)
+
     # gui
-    u1logindialog = U1InventoryDialog('../../data', parent=None)
+    u1logindialog = U1InventoryDialog('../../data', u1loginhandler, parent=None)
     u1logindialog.show()
 
     gtk.main()

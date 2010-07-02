@@ -157,3 +157,8 @@ class DbusConnect(object):
         '''trigger update handling'''
         self._get_package_handler_dbusobject().update()
 
+    def async_update(self):
+        '''trigger update handling'''
+        self._get_package_handler_dbusobject().async_update()
+    
+

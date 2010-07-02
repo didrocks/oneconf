@@ -29,6 +29,7 @@ import imp
 imp.load_package('uscplugin', os.path.dirname(os.path.realpath(__file__)) + '/uscplugin')
 from uscplugin import *
 
+from oneconf.dbusconnect import DbusConnect
 
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 
@@ -59,12 +60,13 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
                 self.app.menu1.insert(gtk.SeparatorMenuItem(), pos+2)
                 break
             pos += 1
+        # initialize dbus binding
+        self.oneconf = DbusConnect()
+        self.u1loginhandler = u1loginhandler.LoginHandler(self.oneconf)
 
     def show_manageui1inventory(self, menuitem):
         """build and show the u1 login window"""
 
-        if not self.u1logindialog:
-            self.u1logindialog = u1inventorydialog.U1InventoryDialog(self.datadir, parent=self.app.window_main)
-        self.u1logindialog.show()
-
+        u1logindialog = u1inventorydialog.U1InventoryDialog(self.datadir, self.u1loginhandler, parent=self.app.window_main)
+        u1logindialog.show()
 
