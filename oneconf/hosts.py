@@ -19,7 +19,6 @@
 
 import logging
 import platform
-import uuid
 
 from desktopcouch.records.server import CouchDatabase  
 from desktopcouch.records.record import Record as CouchRecord  
@@ -45,34 +44,27 @@ class Hosts(object):
         This will register/update this host if not already done.
         '''
 
-        database = CouchDatabase("oneconf_hosts", create=True)
-        if not database.view_exists("get_hosts"):
+        self.database = CouchDatabase("oneconf_hosts", create=True)
+        if not self.database.view_exists("get_hosts"):
             viewfn = 'function(doc) { emit(null, doc); }'
-            database.add_view("get_hosts", viewfn, None, None)
+            self.database.add_view("get_hosts", viewfn, None, None)
         self._hosts = {}
-        self.hostid = str(uuid.getnode())
+        self.hostid = open('/var/lib/dbus/machine-id').read()[:-1]
         self.hostname = platform.node()
         # faking this id for testing purpose
         #self.hostid = 'AAAAA'
         #self.hostname = "foomachine"
 
-        results = database.execute_view("get_hosts")
+        results = self.database.execute_view("get_hosts")
         for rec in results:
             if (rec.id == self.hostid and
                 rec.value['hostname'] != self.hostname):
                 update = {'hostname': self.hostname}
                 logging.debug("Update current hostname")
-                database.update_fields(rec.id, update)
+                self.database.update_fields(rec.id, update)
                 self._hosts[self.hostid] = self.hostname
             else:
                 self._hosts[rec.id] = rec.value['hostname']
-        if self.hostid not in self._hosts:
-            logging.debug("Adding new hosts")
-            record = CouchRecord({"hostname": self.hostname},
-                                 record_id=self.hostid,
-                                 record_type=ONECONF_HOSTS_RECORD_TYPE)
-            database.put_record(record)
-            self._hosts[self.hostid] = self.hostname
 
     def gethostname_by_id(self, hostid):
         '''Get hostname by id
@@ -84,7 +76,10 @@ class Hosts(object):
         try:
             return self._hosts[hostid]
         except KeyError:
-            raise HostError(_("No hostname registered for this id"))
+            if hostid == self.hostid:
+                raise HostError(_("This hostname isn't registered to OneConf, you should run --update first"))
+            else:
+                raise HostError(_("No hostname registered for this id"))
 
     def gethostid_by_name(self, hostname):
         '''Get hostid by hostname
@@ -117,3 +112,15 @@ class Hosts(object):
         '''Return a dictionnary of one elem: {hostid: hostname}'''
 
         return {self.hostid: self.hostname}
+
+    def register_host(self):
+        '''Register current host in desktopcouch if not already present'''
+
+        if self.hostid not in self._hosts:
+            logging.debug("Adding this host to storage")
+            record = CouchRecord({"hostname": self.hostname},
+                                 record_id=self.hostid,
+                                 record_type=ONECONF_HOSTS_RECORD_TYPE)
+            self.database.put_record(record)
+            self._hosts[self.hostid] = self.hostname
+
