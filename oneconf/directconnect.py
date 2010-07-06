@@ -35,9 +35,9 @@ class DirectConnect(object):
         '''get a dict of all available hosts'''
         return Hosts().get_all_hosts()
 
-    def set_share_inventory(self, share_inventory):
-        '''update if current host have an inventory shared or not'''
-        Hosts().set_share_inventory(share_inventory)
+    def set_show_inventory(self, show_inventory, others=False):
+        '''update if current host show or can see inventory in GUI'''
+        Hosts().set_show_inventory(show_inventory, others)
 
     def get_all(self, hostid, hostname, use_cache):
         '''trigger getall handling'''

@@ -63,23 +63,23 @@ class Hosts(object):
                 logging.debug("Update current hostname")
                 self.database.update_fields(rec.id, update)
                 self._hosts[self.hostid] = {'hostname': self.hostname,
-                                            'share_inventory': rec.value['share_inventory'],
+                                            'show_inventory': rec.value['show_inventory'],
                                             'show_others': rec.value['show_others']}
             else:
                 self._hosts[rec.id] = {'hostname': rec.value['hostname'],
-                                       'share_inventory': rec.value['share_inventory'],
+                                       'show_inventory': rec.value['show_inventory'],
                                        'show_others': rec.value['show_others']}
 
         if self.hostid not in self._hosts:
             logging.debug("Adding this host to storage")
             record = CouchRecord({"hostname": self.hostname,
-                                  "share_inventory": False,
+                                  "show_inventory": False,
                                   "show_others": True},
                                  record_id=self.hostid,
                                  record_type=ONECONF_HOSTS_RECORD_TYPE)
             self.database.put_record(record)
             self._hosts[self.hostid] = {'hostname': self.hostname,
-                                        'share_inventory': False,
+                                        'show_inventory': False,
                                         'show_other': True}
 
     def gethostname_by_id(self, hostid):
@@ -133,12 +133,17 @@ class Hosts(object):
 
         return {self.hostid: self.hostname}
 
-    def set_share_inventory(self, share_inventory):
-        '''Change if share current inventory for current host'''
+    def set_show_inventory(self, show_inventory, others):
+        '''Change if show current inventory to other hosts or other inventory to this host'''
 
-        logging.debug("Update current share_inventory to %s" % share_inventory)
-        self._hosts[self.hostid]['share_inventory'] = share_inventory
-        update = {'share_inventory': share_inventory}
+        if others:
+            logging.debug("Update show_others to %s" % show_inventory)
+            self._hosts[self.hostid]['show_others'] = show_inventory
+            update = {'show_others': show_inventory}
+        else:
+            logging.debug("Update current show_inventory to %s" % show_inventory)
+            self._hosts[self.hostid]['show_inventory'] = show_inventory
+            update = {'show_inventory': show_inventory}
         self.database.update_fields(self.hostid, update)
 
 
