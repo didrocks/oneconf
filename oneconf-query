@@ -74,14 +74,16 @@ def print_packages_diff(additional_pkg_by_host, missing_pkg_by_host):
         print message
 
 
-def print_hosts(hosts):
-    if len(hosts) > 1:
-        print "Hosts stored for OneConf:"
-    else:
+def print_hosts(hosts, only_current=False):
+    if len(hosts) == 1 or only_current:
         print "Listing this host stored in OneConf:"
+    else:
+        print "Hosts stored for OneConf:"
+
     for hostid in hosts:
-        name, share_inventory, show_others = hosts[hostid]
-        print "ID: %s\n name: %s\n share_inventory: %s\n show_others: %s" % (hostid, name, share_inventory, show_others)
+        current, name, show_inventory, show_others = hosts[hostid]
+        if (only_current and current) or not only_current:
+            print "ID: %s\n name: %s\n share_inventory: %s\n show_others: %s" % (hostid, name, show_inventory, show_others)
 
 def err_scope():
     print _("you can't define --selection, --all or --hosts together.")
@@ -239,7 +241,7 @@ if __name__ == '__main__':
         if scope == SCOPE_HOSTS:
             print_hosts(oneconf.get_all_hosts())
         if scope == SCOPE_HOST:
-            print_hosts(oneconf.get_current_host())
+            print_hosts(oneconf.get_all_hosts(), True)
         elif scope == SCOPE_SELECTION:
             package_selection = oneconf.get_selection(
                                hostid=options.hostid, hostname=options.hostname,

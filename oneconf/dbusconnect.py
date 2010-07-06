@@ -52,11 +52,6 @@ class DbusHostsService(dbus.service.Object):
         self.activity = False
 
     @dbus.service.method(HOSTS_INTERFACE)
-    def get_current_host(self):
-        self.activity = True
-        return self.hosts.get_current_host()
-
-    @dbus.service.method(HOSTS_INTERFACE)
     def get_all_hosts(self):
         self.activity = True
         return self.hosts.get_all_hosts()
@@ -115,10 +110,6 @@ class DbusConnect(object):
     def _get_hosts_dbusobject(self):
         '''get hosts dbus object'''
         return dbus.Interface(self.hosts_dbus_object, HOSTS_INTERFACE)
-
-    def get_current_host(self):
-        '''get a dictionnary of the current host'''
-        return self._get_hosts_dbusobject().get_current_host()
 
     def get_all_hosts(self):
         '''get a dictionnary of all available hosts'''

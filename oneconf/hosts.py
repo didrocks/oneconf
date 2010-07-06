@@ -123,15 +123,12 @@ class Hosts(object):
 
         result = {}
         for hostid in self._hosts:
+            current = (hostid == self.hostid)
             curr_host = self._hosts[hostid]
-            result[hostid] = (curr_host['hostname'], curr_host['share_inventory'],
+            result[hostid] = (current, curr_host['hostname'],
+                              curr_host['show_inventory'],
                               curr_host['show_others'])
         return result
-
-    def get_current_host(self):
-        '''Return a dictionnary of one elem: {hostid: hostname}'''
-
-        return {self.hostid: self.hostname}
 
     def set_show_inventory(self, show_inventory, others):
         '''Change if show current inventory to other hosts or other inventory to this host'''
