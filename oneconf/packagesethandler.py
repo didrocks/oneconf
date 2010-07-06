@@ -47,8 +47,8 @@ class PackageSetHandler(object):
         self.distro = get_distro()
         self.current_time = time.time()
 
-        # create cache for local package list (two keys: True/False, see diff())
-        self.cache_this_computer_target_pkg_name = {}
+        # create cache for storage package list (two keys: view_name, hostid)
+        self.cache_pkg_storage = {}
 
         # Be careful get_manuallyinstalled_pkg_for_hostid + get_removed_pkg_for_hostid
         # != storage for hostid. There are manually installed packages, which
@@ -85,7 +85,7 @@ class PackageSetHandler(object):
         (this_computer_stored_pkg, pkg_to_create, pkg_to_update) = \
                             self._computepackagelist(this_computer_stored_pkg)
         # invalidate cache for others queries on the daemon
-        self.cache_this_computer_target_pkg_name = {}
+        self.cache_pkg_storage = {}
         logging.debug("After update, it will be: %s" % this_computer_stored_pkg)
 
         # update minimal set of records
@@ -99,7 +99,7 @@ class PackageSetHandler(object):
         for pkg in pkg_to_update:
             self._update_record(pkg)
 
-    def get_all(self, hostid=None, hostname=None):
+    def get_all(self, hostid=None, hostname=None, use_cache=True):
         '''get all manually installed packages from the storage
 
         Return: * a double dictionnary, first indexed by hostid and then
@@ -111,10 +111,10 @@ class PackageSetHandler(object):
         hostid = self._get_hostid_from_context(hostid, hostname)
         installed_pkg_for_host = \
             self._get_simplified_packages_on_view_for_hostid \
-                                 ("get_manuallyinstalled_pkg_by_hostid", hostid)
+                                 ("get_manuallyinstalled_pkg_by_hostid", hostid, use_cache)
         removed_pkg_for_host = \
             self._get_simplified_packages_on_view_for_hostid \
-                                 ("get_removed_pkg_by_hostid", hostid)
+                                 ("get_removed_pkg_by_hostid", hostid, use_cache)
         # convert for dbus empty dict to ''
         if not installed_pkg_for_host:
             installed_pkg_for_host = ''
@@ -122,7 +122,7 @@ class PackageSetHandler(object):
             removed_pkg_for_host = ''
         return(installed_pkg_for_host, removed_pkg_for_host)
 
-    def get_selection(self, hostid=None, hostname=None):
+    def get_selection(self, hostid=None, hostname=None, use_cache=True):
         '''get the package selection from the storage
 
         Selection is manually installed packages not part of default
@@ -133,7 +133,7 @@ class PackageSetHandler(object):
 
         hostid = self._get_hostid_from_context(hostid, hostname)
         selection_for_host = self._get_simplified_packages_on_view_for_hostid \
-                                        ("get_selection_pkg_by_hostid", hostid)
+                                        ("get_selection_pkg_by_hostid", hostid, use_cache)
         # convert for dbus empty dict to ''
         if not selection_for_host:
             selection_for_host = ''
@@ -144,7 +144,7 @@ class PackageSetHandler(object):
 
         This function can be use to make a diff for selection or for
         all packages.
-
+, use_cache
         Return: * a double dictionnary, first indexed by hostid and then
                   by additionnal packages not present here, with
                   (time_added_on_hostid)
@@ -153,32 +153,16 @@ class PackageSetHandler(object):
                   time_removed_on_hostid (=None if never present)
         '''
 
-        logging.debug("Collecting every manually installed package on the system")
-        try:
-            if use_cache:
-                this_computer_target_pkg_name = \
-                            self.cache_this_computer_target_pkg_name[selection]
-                logging.debug("Use local cache for selection to %s" % selection)
-        except KeyError:
-            use_cache = False
-        if not use_cache:
-            logging.debug("Compute the list of local cache for selection to %s"
-                           % selection)
-            (this_computer_pkg, pkg_to_create, pkg_to_update) = \
-                                self._computepackagelist()
-            if selection:
-                logging.debug("Taking only selection")
-            else:
-                logging.debug("Taking all apps")
-            this_computer_target_pkg_name = set()
-            for pkg_name in this_computer_pkg:
-                pkg = this_computer_pkg[pkg_name]
-                if ((selection and pkg.selection) or
-                    not (selection or pkg.auto_installed)):
-                    this_computer_target_pkg_name.add(pkg_name)
-            # cache the result
-            self.cache_this_computer_target_pkg_name[selection] = \
-                                                   this_computer_target_pkg_name
+        if selection:
+            logging.debug("Collecting installed selection on this system")
+            this_computer_target_pkg_name = \
+                self._get_simplified_packages_on_view_for_hostid \
+                                    ("get_selection_pkg_by_hostid", self.hosts.hostid, use_cache)
+        else:
+            logging.debug("Collecting all manually installed packages on this system")
+            this_computer_target_pkg_name = \
+                self._get_simplified_packages_on_view_for_hostid \
+                                    ("get_manuallyinstalled_pkg_by_hostid", self.hosts.hostid, use_cache)
         
         logging.debug("Comparing to others hostid")
         installed_pkg_for_host = {}
@@ -188,14 +172,14 @@ class PackageSetHandler(object):
         logging.debug("Comparing to %s", hostid)
         installed_pkg_for_host = \
             self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_installed_pkg_by_hostid", hostid)
+                                    ("get_installed_pkg_by_hostid", hostid, use_cache)
         removed_pkg_for_host = \
             self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_removed_pkg_by_hostid", hostid)
+                                    ("get_removed_pkg_by_hostid", hostid, use_cache)
         if selection:
             selection_for_host = \
                 self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_selection_pkg_by_hostid", hostid)
+                                    ("get_selection_pkg_by_hostid", hostid, use_cache)
         # additionally installed selection on hostid not present locally
         additional_target_pkg_for_host = {}
         if selection:
@@ -245,7 +229,7 @@ class PackageSetHandler(object):
                 rec.value["distro_channel"])
         return pkg_for_hostid
 
-    def _get_simplified_packages_on_view_for_hostid(self, view_name, hostid):
+    def _get_simplified_packages_on_view_for_hostid(self, view_name, hostid, use_cache):
         '''load records from CouchDB and return a simplified view
 
         Contrary to _get_packages_on_view_for_hostid, this function doesn't
@@ -253,11 +237,24 @@ class PackageSetHandler(object):
         Return: get dictionnary of all packages in the DB respecting the view
                 with: {pkg_name : (last_modification, distro_channel)}
         '''
-        results = self.database.execute_view(view_name)
-        pkg_for_hostid = {}
-        for rec in results[hostid]:
-            pkg_for_hostid[rec.value["name"]] = (rec.value["last_modification"],
-                                                 rec.value["distro_channel"])
+
+        try:
+            if use_cache:
+                pkg_for_hostid = \
+                            self.cache_pkg_storage[view_name][hostid]
+                logging.debug("Use local cache for %s view to %s hostid" % (view_name, hostid))
+        except KeyError:
+            use_cache = False
+        if not use_cache:
+            results = self.database.execute_view(view_name)
+            pkg_for_hostid = {}
+            for rec in results[hostid]:
+                pkg_for_hostid[rec.value["name"]] = (rec.value["last_modification"],
+                                                     rec.value["distro_channel"])
+        # cache the result
+        if not view_name in self.cache_pkg_storage:
+            self.cache_pkg_storage[view_name] = {}
+        self.cache_pkg_storage[view_name][hostid] = pkg_for_hostid
         return pkg_for_hostid
 
     def _get_hostid_from_context(self, hostid=None, hostname=None):

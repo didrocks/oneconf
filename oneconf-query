@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser.add_option("--direct", action="store_true", dest="directaccess",
                       help=_("don't use dbus for the request"))
     parser.add_option("--nocache", action="store_true", dest="nocache",
-                      help=_("ignore cache (for diff command)"))
+                      help=_("ignore cache (in daemon mode)"))
     scope_group = OptionGroup(parser, "Scope of actions:", "This define the " \
                        "scope to consider for list and diff command.")
     scope_group.add_option("-s", "--selection", action="store_true",
@@ -221,8 +221,6 @@ if __name__ == '__main__':
         oneconf.update()
 
     elif action == ACTION_LIST:
-        if options.nocache:
-            option_not_compatible("--nocache", "--list")
         if scope == SCOPE_NONE:
             scope = SCOPE_SELECTION
         if scope == SCOPE_HOSTS:
@@ -231,11 +229,13 @@ if __name__ == '__main__':
             print_hosts(oneconf.get_current_host())
         elif scope == SCOPE_SELECTION:
             package_selection = oneconf.get_selection(
-                               hostid=options.hostid, hostname=options.hostname)
+                               hostid=options.hostid, hostname=options.hostname,
+                               use_cache=(not options.nocache))
             print_packages(package_selection)
         elif scope == SCOPE_ALL:
             (manually_installed_pkg, removed_pkg) = oneconf.get_all(
-                    hostid=options.hostid, hostname=options.hostname)
+                    hostid=options.hostid, hostname=options.hostname,
+                    use_cache=(not options.nocache))
             print_packages(manually_installed_pkg, removed_pkg)
 
     elif action == ACTION_DIFF:
@@ -261,7 +261,7 @@ if __name__ == '__main__':
 
     elif action == ACTION_CHANGE_SHARE_INVENTORY:
         if options.nocache:
-            option_not_compatible("--nocache", "--update")
+            option_not_compatible("--nocache", "--enable/disable-share-inventory")
         if options.hostid or options.hostname:
             print _("You can't use hostid or hostname when changing share inventory status")
             sys.exit(1)

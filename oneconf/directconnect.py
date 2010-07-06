@@ -39,20 +39,20 @@ class DirectConnect(object):
         '''update if current host have an inventory shared or not'''
         Hosts().set_share_inventory(share_inventory)
 
-    def get_all(self, hostid, hostname):
+    def get_all(self, hostid, hostname, use_cache):
         '''trigger getall handling'''
 
         try:
-            return PackageSetHandler().get_all(hostid, hostname)
+            return PackageSetHandler().get_all(hostid, hostname, use_cache)
         except HostError, e:
             print(e)
             sys.exit(1)
 
-    def get_selection(self, hostid, hostname):
+    def get_selection(self, hostid, hostname, use_cache):
         '''trigger selection handling'''
 
         try:
-            return PackageSetHandler().get_selection(hostid, hostname)
+            return PackageSetHandler().get_selection(hostid, hostname, use_cache)
         except HostError, e:
             print(e)
             sys.exit(1)

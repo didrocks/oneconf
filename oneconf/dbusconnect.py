@@ -67,14 +67,14 @@ class DbusHostsService(dbus.service.Object):
         return self.hosts.set_share_inventory(share_inventory)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def get_selection(self, hostid, hostname):
+    def get_selection(self, hostid, hostname, use_cache):
         self.activity = True
-        return self.PackageSetHandler.get_selection(hostid, hostname)
+        return self.PackageSetHandler.get_selection(hostid, hostname, use_cache)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def get_all(self, hostid, hostname):
+    def get_all(self, hostid, hostname, use_cache):
         self.activity = True
-        return self.PackageSetHandler.get_all(hostid, hostname)
+        return self.PackageSetHandler.get_all(hostid, hostname, use_cache)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def diff(self, selection, hostid, hostname, use_cache):
@@ -124,22 +124,22 @@ class DbusConnect(object):
         '''update if current host have an inventory or not'''
         self._get_hosts_dbusobject().set_share_inventory(share_inventory)
 
-    def get_all(self, hostid, hostname):
+    def get_all(self, hostid, hostname, use_cache):
         '''trigger getall handling'''
 
         try:
             return self._get_package_handler_dbusobject().get_all(hostid,
-                                                                  hostname)
+                                                           hostname, use_cache)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
-    def get_selection(self, hostid, hostname):
+    def get_selection(self, hostid, hostname, use_cache):
         '''trigger selection handling'''
 
         try:
             return self._get_package_handler_dbusobject().get_selection(hostid,
-                                                                       hostname)
+                                                           hostname, use_cache)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
