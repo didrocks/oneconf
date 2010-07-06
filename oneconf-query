@@ -79,7 +79,8 @@ def print_hosts(hosts):
     else:
         print "Listing this host stored in OneConf:"
     for hostid in hosts:
-        print "%s with ID: %s" % (hosts[hostid], hostid)
+        name, share_inventory, show_others = hosts[hostid]
+        print "ID: %s\n name: %s\n share_inventory: %s\n show_others: %s" % (hostid, name, share_inventory, show_others)
 
 def err_scope():
     print _("you can't define --selection, --all or --hosts together.")
