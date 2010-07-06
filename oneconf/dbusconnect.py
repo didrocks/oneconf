@@ -28,6 +28,7 @@ ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 HOSTS_OBJECT_NAME = "/com/ubuntu/oneconf/HostsHandler"
 PACKAGE_SET_INTERFACE = "com.ubuntu.OneConf.HostsHandler.PackageSetHandler"
 HOSTS_INTERFACE = "com.ubuntu.OneConf.HostsHandler.Hosts"
+timeout=ONE_CONF_DBUS_TIMEOUT = 300
 
 def none_to_null(var):
     '''return var in dbus compatible format'''
@@ -59,6 +60,11 @@ class DbusHostsService(dbus.service.Object):
     def get_all_hosts(self):
         self.activity = True
         return self.hosts.get_all_hosts()
+
+    @dbus.service.method(HOSTS_INTERFACE)
+    def set_store_inventory(self, store_inventory):
+        self.activity = True
+        return self.hosts.set_store_inventory(store_inventory)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_selection(self, hostid, hostname):
@@ -114,6 +120,10 @@ class DbusConnect(object):
         '''get a dictionnary of all available hosts'''
         return self._get_hosts_dbusobject().get_all_hosts()
 
+    def set_store_inventory(self, store_inventory):
+        '''update if current host have an inventory or not'''
+        self._get_hosts_dbusobject().set_store_inventory(store_inventory)
+
     def get_all(self, hostid, hostname):
         '''trigger getall handling'''
 
@@ -138,7 +148,8 @@ class DbusConnect(object):
         '''trigger diff_all handling'''
         try:
             return self._get_package_handler_dbusobject().diff(False, hostid,
-                                                            hostname, use_cache)
+                                                            hostname, use_cache,
+                                                            timeout=ONE_CONF_DBUS_TIMEOUT)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
@@ -148,14 +159,15 @@ class DbusConnect(object):
 
         try:
             return self._get_package_handler_dbusobject().diff(True, hostid,
-                                                            hostname, use_cache)
+                                                            hostname, use_cache,
+                                                            timeout=ONE_CONF_DBUS_TIMEOUT)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
     def update(self):
         '''trigger update handling'''
-        self._get_package_handler_dbusobject().update()
+        self._get_package_handler_dbusobject().update(timeout=ONE_CONF_DBUS_TIMEOUT)
 
     def async_update(self):
         '''trigger update handling'''

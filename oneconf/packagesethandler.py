@@ -76,8 +76,10 @@ class PackageSetHandler(object):
     def update(self):
         '''update the database'''
 
-        # register host if needed and get existing package list
-        self.hosts.register_host()
+        # check that host enabling storing inventory
+        if not self.hosts.get_current_store_inventory_status():
+            raise HostError(_("Current host doesn't allow saving the inventory, use --allow-store-inventory first"))
+
         this_computer_stored_pkg = self._get_packages_on_view_for_hostid(
                                     "get_all_pkg_by_hostid", self.hosts.hostid)
         logging.debug("Initial set: %s" % this_computer_stored_pkg)

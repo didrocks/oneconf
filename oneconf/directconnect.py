@@ -35,6 +35,10 @@ class DirectConnect(object):
         '''get a dict of all available hosts'''
         return Hosts().get_all_hosts()
 
+    def set_store_inventory(self, store_inventory):
+        '''update if current host have an inventory stored or not'''
+        Hosts().set_store_inventory(store_inventory)
+
     def get_all(self, hostid, hostname):
         '''trigger getall handling'''
 
@@ -72,5 +76,8 @@ class DirectConnect(object):
 
     def update(self):
         '''trigger update handling'''
-        PackageSetHandler().update()
-
+        try:
+            PackageSetHandler().update()
+        except HostError, e:
+            print(e)
+            sys.exit(1)
