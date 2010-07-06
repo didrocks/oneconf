@@ -62,9 +62,9 @@ class DbusHostsService(dbus.service.Object):
         return self.hosts.get_all_hosts()
 
     @dbus.service.method(HOSTS_INTERFACE)
-    def set_store_inventory(self, store_inventory):
+    def set_share_inventory(self, share_inventory):
         self.activity = True
-        return self.hosts.set_store_inventory(store_inventory)
+        return self.hosts.set_share_inventory(share_inventory)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_selection(self, hostid, hostname):
@@ -120,9 +120,9 @@ class DbusConnect(object):
         '''get a dictionnary of all available hosts'''
         return self._get_hosts_dbusobject().get_all_hosts()
 
-    def set_store_inventory(self, store_inventory):
+    def set_share_inventory(self, share_inventory):
         '''update if current host have an inventory or not'''
-        self._get_hosts_dbusobject().set_store_inventory(store_inventory)
+        self._get_hosts_dbusobject().set_share_inventory(share_inventory)
 
     def get_all(self, hostid, hostname):
         '''trigger getall handling'''

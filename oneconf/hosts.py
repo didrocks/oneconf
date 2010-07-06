@@ -63,23 +63,23 @@ class Hosts(object):
                 logging.debug("Update current hostname")
                 self.database.update_fields(rec.id, update)
                 self._hosts[self.hostid] = {'hostname': self.hostname,
-                                            'store_inventory': rec.value['store_inventory'],
+                                            'share_inventory': rec.value['share_inventory'],
                                             'show_others': rec.value['show_others']}
             else:
                 self._hosts[rec.id] = {'hostname': rec.value['hostname'],
-                                       'store_inventory': rec.value['store_inventory'],
+                                       'share_inventory': rec.value['share_inventory'],
                                        'show_others': rec.value['show_others']}
 
         if self.hostid not in self._hosts:
             logging.debug("Adding this host to storage")
             record = CouchRecord({"hostname": self.hostname,
-                                  "store_inventory": False,
+                                  "share_inventory": False,
                                   "show_others": True},
                                  record_id=self.hostid,
                                  record_type=ONECONF_HOSTS_RECORD_TYPE)
             self.database.put_record(record)
             self._hosts[self.hostid] = {'hostname': self.hostname,
-                                        'store_inventory': False,
+                                        'share_inventory': False,
                                         'show_other': True}
 
     def gethostname_by_id(self, hostid):
@@ -124,7 +124,7 @@ class Hosts(object):
         result = {}
         for hostid in self._hosts:
             curr_host = self._hosts[hostid]
-            result[hostid] = (curr_host['hostname'], curr_host['store_inventory'],
+            result[hostid] = (curr_host['hostname'], curr_host['share_inventory'],
                               curr_host['show_others'])
         return result
 
@@ -133,17 +133,12 @@ class Hosts(object):
 
         return {self.hostid: self.hostname}
 
-    def get_current_store_inventory_status(self):
-        '''Return if current host enable storing inventory or not'''
+    def set_share_inventory(self, share_inventory):
+        '''Change if share current inventory for current host'''
 
-        return self._hosts[self.hostid]['store_inventory']
-
-    def set_store_inventory(self, store_inventory):
-        '''Change if store current inventory for current host'''
-
-        logging.debug("Update current store_inventory to %s" % store_inventory)
-        self._hosts[self.hostid]['store_inventory'] = store_inventory
-        update = {'store_inventory': store_inventory}
+        logging.debug("Update current share_inventory to %s" % share_inventory)
+        self._hosts[self.hostid]['share_inventory'] = share_inventory
+        update = {'share_inventory': share_inventory}
         self.database.update_fields(self.hostid, update)
-        # TODO: if None, remove inventory
+
 

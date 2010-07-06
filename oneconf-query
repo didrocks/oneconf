@@ -30,7 +30,7 @@ from gettext import gettext as _
 from oneconf.version import *
 
 SCOPE_NONE, SCOPE_SELECTION, SCOPE_ALL, SCOPE_HOSTS, SCOPE_HOST = range(5)
-ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_CHANGE_STORE_INVENTORY = range(5)
+ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_CHANGE_SHARE_INVENTORY = range(5)
 
 
 def print_packages(installed_pkg_by_host, removed_pkg_by_host=None):
@@ -86,7 +86,7 @@ def err_scope():
     sys.exit(1)
 
 def err_action():
-    print _("you can't define --list, --diff, --update, --allow/disable-store-inventory together.")
+    print _("you can't define --list, --diff, --update, --enable/disable-share-inventory together.")
     sys.exit(1)
 
 def option_not_compatible(options, action):
@@ -139,12 +139,12 @@ if __name__ == '__main__':
     scope_manage_host = OptionGroup(parser, "This host management:",
                         "Those option can't be used with anything else and are "
                         "present to manage the current host rights.")
-    scope_manage_host.add_option("--allow-store-inventory", action="store_true",
-                      dest="store_inventory",
+    scope_manage_host.add_option("--enable-share-inventory", action="store_true",
+                      dest="share_inventory",
                       help=_("enable sharing package list for this host"),
                       default=None)
-    scope_manage_host.add_option("--disable-store-inventory", action="store_false",
-                      dest="store_inventory",
+    scope_manage_host.add_option("--disable-share-inventory", action="store_false",
+                      dest="share_inventory",
                       help=_("disable sharing package list for this host"),
                       default=None)
     parser.add_option_group(scope_group)
@@ -196,10 +196,10 @@ if __name__ == '__main__':
         if action != ACTION_NONE:
             err_action()
         action = ACTION_UPDATE
-    if options.store_inventory is not None: # True and False both used
+    if options.share_inventory is not None: # True and False both used
         if action != ACTION_NONE:
             err_action()
-        action = ACTION_CHANGE_STORE_INVENTORY
+        action = ACTION_CHANGE_SHARE_INVENTORY
     if action == ACTION_NONE:
         action = ACTION_LIST
 
@@ -258,15 +258,15 @@ if __name__ == '__main__':
                     use_cache=(not options.nocache))
         print_packages_diff(additional_pkg, missing_pkg)
 
-    elif action == ACTION_CHANGE_STORE_INVENTORY:
+    elif action == ACTION_CHANGE_SHARE_INVENTORY:
         if options.nocache:
             option_not_compatible("--nocache", "--update")
         if options.hostid or options.hostname:
-            print _("You can't use hostid or hostname when changing update store inventory")
+            print _("You can't use hostid or hostname when changing share inventory status")
             sys.exit(1)
         if scope != SCOPE_NONE:
             print _("You can't define --selection, --all, --host or --hosts " \
-                    "when changing store inventory rights")
-        oneconf.set_store_inventory(options.store_inventory)
+                    "when changing share inventory status")
+        oneconf.set_share_inventory(options.share_inventory)
     sys.exit(0)
 
