@@ -25,7 +25,7 @@ import logging
 from oauth import oauth
 import os
 from threading import Thread
-from ubuntuone.api.restclient import RestClient
+#from ubuntuone.api.restclient import RestClientRestClient
 from urllib2 import URLError
 
 import gettext
@@ -97,7 +97,8 @@ class LoginHandler(object):
         """Helper that makes an oauth-wrapped REST request."""
         token = self.get_access_token(keyring)
 
-        rest_client = RestClient(url)
+        #rest_client = RestClient(url)
+        rest_client=None
         Thread(target=self.do_rest_request, args=(rest_client, url, method, token, callback)).start()
 
     def get_access_token(self, keyring):
@@ -117,7 +118,8 @@ class LoginHandler(object):
         """Helper that handles the REST response."""
         try:
             consumer = oauth.OAuthConsumer('ubuntuone', 'hammertime')
-            result = rest_client.call(url, method, consumer, token)
+            #result = rest_client.call(url, method, consumer, token)
+            result = {'email': 'didrocks@u.com'}
         except URLError, e:
             result = None
             # as the callback won't be called, update the host list here
