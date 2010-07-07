@@ -111,17 +111,18 @@
                 <property name="n_rows">2</property>
                 <property name="n_columns">2</property>
                 <child>
-                  <object class="GtkCheckButton" id="check_share_inventory">
+                  <object class="GtkCheckButton" id="check_show_inventory">
                     <property name="label" translatable="yes">Share this computer&#x2019;s inventory</property>
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
                     <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="show_inventory_toogle"/>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkCheckButton" id="check_show_inventories">
+                  <object class="GtkCheckButton" id="check_show_others">
                     <property name="label" translatable="yes">Show inventories from other computers</property>
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
@@ -129,6 +130,7 @@
                     <property name="receives_default">False</property>
                     <property name="active">True</property>
                     <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="show_others_toogle"/>
                   </object>
                   <packing>
                     <property name="top_attach">1</property>

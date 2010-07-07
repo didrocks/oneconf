@@ -47,6 +47,7 @@ class U1InventoryDialog(object):
                 print >> sys.stderr, "WARNING: can not get name for '%s'" % o
         # bind login handler to window
         u1loginhandler.set_new_u1inventorydialog(self)
+        self.u1loginhandler = u1loginhandler
         # parent
         if parent:
             self.dialog_u1login.set_transient_for(parent)
@@ -63,17 +64,24 @@ class U1InventoryDialog(object):
         if logger.login:
             self.button_sign_in.hide()
             self.label_u1_status.set_text(_("Signed in as %s") % logger.login)
-            self.check_share_inventory.set_sensitive(True)
-            self.check_show_inventories.set_sensitive(True)
             self.button_manage_u1.set_label(_("Ubuntu One Settings…"))
             self.button_manage_u1.connect("clicked", self.setting)
             self.label_sync_u1_date.set_label(logger.last_sync)
             self.label_sync_u1_date.show()
-            nb_hosts = len(logger.u1hosts)
+            nb_hosts = 0
+            for hostid in logger.u1hosts:
+                current, name, show_inventory, show_others = logger.u1hosts[hostid]
+                if current:
+                    self.check_show_inventory.set_active(show_inventory)
+                    self.check_show_others.set_active(show_others)
+                if show_inventory:
+                    nb_hosts = +1                    
             if nb_hosts:
                 msg = _("%s registered") % nb_hosts
             else:
                 msg = _("None registered")
+            self.check_show_inventory.set_sensitive(True)
+            self.check_show_others.set_sensitive(True)
             self.label_nb_host.set_label(msg)
             self.label_nb_host.show()
 
@@ -86,7 +94,6 @@ class U1InventoryDialog(object):
             self.button_manage_u1.connect("clicked", self.register)
             self.label_sync_u1_date.hide()
 
-
     def sign_in(self, widget):
         subprocess.Popen(['ubuntuone-preferences'])
 
@@ -95,6 +102,12 @@ class U1InventoryDialog(object):
 
     def setting(self, widget):
         subprocess.Popen(['ubuntuone-preferences'])
+
+    def show_others_toogle(self, widget):
+        self.u1loginhandler.oneconf.set_show_inventory(widget.get_active(), others=True)
+
+    def show_inventory_toogle(self, widget):
+        self.u1loginhandler.oneconf.set_show_inventory(widget.get_active(), others=False)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
