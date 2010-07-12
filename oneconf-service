@@ -27,7 +27,7 @@ from gettext import gettext as _
 
 from oneconf.version import *
 
-MIN_TIME_WITHOUT_ACTIVITY = 30
+MIN_TIME_WITHOUT_ACTIVITY = 180
 
 def quit(loop, myservice):
     '''quit if no activity at least in 30s'''

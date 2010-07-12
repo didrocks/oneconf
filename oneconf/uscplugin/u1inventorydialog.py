@@ -46,8 +46,8 @@ class U1InventoryDialog(object):
             else:
                 print >> sys.stderr, "WARNING: can not get name for '%s'" % o
         # bind login handler to window
-        u1loginhandler.set_new_u1inventorydialog(self)
         self.u1loginhandler = u1loginhandler
+        u1loginhandler.set_new_u1inventorydialog(self)
         # parent
         if parent:
             self.dialog_u1login.set_transient_for(parent)
@@ -88,8 +88,8 @@ class U1InventoryDialog(object):
         else:
             self.button_sign_in.show()
             self.label_u1_status.set_text(_("You are not signed in."))
-            self.check_share_inventory.set_sensitive(False)
-            self.check_show_inventories.set_sensitive(False)
+            self.check_show_inventory.set_sensitive(False)
+            self.check_show_others.set_sensitive(False)
             self.button_manage_u1.set_label(_("Join Ubuntu one…"))
             self.button_manage_u1.connect("clicked", self.register)
             self.label_sync_u1_date.hide()
