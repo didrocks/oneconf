@@ -3,7 +3,7 @@
 # Copyright (C) 2010 Canonical
 #
 # Authors:
-#  Olivier Tilloy
+#  Didier Roche
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -34,17 +34,17 @@ from softwarecenter.view.appview import AppView, AppStore, AppViewFilter
 
 from softwarecenter.view.softwarepane import SoftwarePane, wait_for_apt_cache_ready
 
+# TODO:
+# - add hide/show apps
+# - add install all/remove all
+# - add correct refresh once an app is installed/removed (on this view or another)
+
 class OneConfPane(SoftwarePane):
 
     (ADDITIONAL_PKG, REMOVED_PKG) = range(2)
 
     (PAGE_APPLIST,
      PAGE_APP_DETAILS) = range(2)
-
-    # constant for use in action bar (see _update_action_bar)
-    _INSTALL_BTN_ID = 0
-
-    PADDING = 6
 
     def __init__(self, 
                  cache,
@@ -62,7 +62,7 @@ class OneConfPane(SoftwarePane):
         self.compared_with_hostid = compared_with_hostid
         self.current_appview_selection = None
         self.apps_filter = None
-        self.nonapps_visible = True
+        self.nonapps_visible = False
 
         # OneConf stuff there
         self.u1loginhandler = u1loginhandler
@@ -110,9 +110,15 @@ class OneConfPane(SoftwarePane):
         self.apps_filter = OneConfFilter(db, cache, set(additional_pkg), set(missing_pkg))
         self.refresh_apps()
 
-    def refresh_buttons(self):
-        self.additional_pkg_action.set_label(_('%s items that aren\'t on that computer') % self.apps_filter.additional_apps_pkg)
-        self.removed_pkg_action.set_label(_('%s items that are\'nt on the other computer') % self.apps_filter.removed_apps_pkg)
+    def refresh_selection_bar(self):
+        if self.nonapps_visible:
+            number_additional_pkg = len(self.apps_filter.additional_pkg)
+            number_removed_pkg = len(self.apps_filter.removed_pkg)
+        else:
+            number_additional_pkg = self.apps_filter.additional_apps_pkg
+            number_removed_pkg = self.apps_filter.removed_apps_pkg
+        self.additional_pkg_action.set_label(_('%s items that aren\'t on that computer') % number_additional_pkg)
+        self.removed_pkg_action.set_label(_('%s items that are\'nt on the other computer') % number_removed_pkg)
 
     def refresh_number_of_pkg(self):
         self.oneconf
@@ -167,7 +173,7 @@ class OneConfPane(SoftwarePane):
                              filter=self.apps_filter)
         self.app_view.set_model(new_model)
         self.emit("app-list-changed", len(new_model))
-        self.refresh_buttons()
+        self.refresh_selection_bar()
         return False
 
     def on_search_terms_changed(self, searchentry, terms):

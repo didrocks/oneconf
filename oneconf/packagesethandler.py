@@ -371,7 +371,10 @@ class PackageSetHandler(object):
 
         apt_cache = apt.Cache()
 
-        default_packages = self._get_default_package_list(apt_cache)
+        # remove for now: seems to not scale to user case. For instance:
+        # remove gbrainy (default) -> doesn't show as in default
+        #default_packages = self._get_default_package_list(apt_cache)
+        default_packages = set()
 
         # speedup first batch package insertion and
         # when computing list in read mode for diff between hostA and this host
