@@ -153,16 +153,17 @@ class PackageSetHandler(object):
                   time_removed_on_hostid (=None if never present)
         '''
 
+        logging.debug("Collecting all manually installed packages on this system")
+        all_this_computer_pkg_name = \
+            self._get_simplified_packages_on_view_for_hostid \
+                                ("get_manuallyinstalled_pkg_by_hostid", self.hosts.hostid, use_cache)
         if selection:
             logging.debug("Collecting installed selection on this system")
             this_computer_target_pkg_name = \
                 self._get_simplified_packages_on_view_for_hostid \
                                     ("get_selection_pkg_by_hostid", self.hosts.hostid, use_cache)
         else:
-            logging.debug("Collecting all manually installed packages on this system")
-            this_computer_target_pkg_name = \
-                self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_manuallyinstalled_pkg_by_hostid", self.hosts.hostid, use_cache)
+            this_computer_target_pkg_name = all_this_computer_pkg_name
         
         logging.debug("Comparing to others hostid")
         installed_pkg_for_host = {}
@@ -187,7 +188,11 @@ class PackageSetHandler(object):
         else:
             target_reference_list = installed_pkg_for_host
         for pkg_name in target_reference_list:
-            if not pkg_name in this_computer_target_pkg_name:
+            # comparing to all_this_computer_pkg_name and not to this_computer_target_pkg_name
+            # to avoid some fanzy cases (like app coming in
+            # default will be shown as deleted otherwise, same for
+            # manually installed -> auto installed)
+            if not pkg_name in all_this_computer_pkg_name:
                 added_str_pkg_on_hostid = target_reference_list[pkg_name]
                 additional_target_pkg_for_host[pkg_name] = \
                                                         added_str_pkg_on_hostid

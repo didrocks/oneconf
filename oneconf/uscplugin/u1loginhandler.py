@@ -36,13 +36,20 @@ DESKTOPCOUCH_LOG = os.path.expanduser('~/.cache/desktop-couch/log/desktop-couch-
 CHECK_CONNECT_STATE_DELAY = 60*5
 
 
-class LoginHandler(object):
+class LoginHandler(gobject.GObject):
 
     """"U1 login status and binding"""
 
+    __gsignals__ = {
+        "inventory-refreshed" : (gobject.SIGNAL_RUN_LAST,
+                             gobject.TYPE_NONE, 
+                             (),
+                            ),
+    }
+
     def __init__(self, oneconf, keyring=gnomekeyring):
         """Try to login with credentials"""
-
+        gobject.GObject.__init__(self)
         self.oneconf = oneconf
         self.keyring = keyring
         self._u1inventorydialog = None
@@ -85,6 +92,7 @@ class LoginHandler(object):
             # using name rather than email can be interesting
             #self.name_label.set_text(user.get('nickname', _("Unknown")))
             self.u1hosts = self.oneconf.get_all_hosts()
+            self.emit('inventory-refreshed')
             login = user.get('email', None)
             if login:
                 logging.debug("logged in, check hosts and last sync state")
@@ -122,6 +130,7 @@ class LoginHandler(object):
             result = None
             # as the callback won't be called, update the host list here
             self.u1hosts = self.oneconf.get_all_hosts()
+            self.emit('inventory-refreshed')
         callback(result)
 
     def get_last_sync_date(self):
