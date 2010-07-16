@@ -31,8 +31,8 @@ from gettext import gettext as _
 
 from oneconf.desktopcouchstate import get_last_sync_date
 
-CHECK_CONNECT_STATE_DELAY = 60*5
-
+CHECK_CONNECT_STATE_DELAY = 60*3
+#CHECK_CONNECT_STATE_DELAY = 30
 
 class OneConfEventHandler(gobject.GObject):
 

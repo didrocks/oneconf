@@ -25,6 +25,7 @@ import gtk
 import logging
 import os
 import sys
+from threading import Thread
 import xapian
 
 from gettext import gettext as _
@@ -38,9 +39,11 @@ from softwarecenter.view.softwarepane import SoftwarePane, wait_for_apt_cache_re
 # TODO:
 # - add hide/show apps
 # - add install all/remove all
-# - add correct refresh once an app is installed/removed (on this view or another) -> look at the code, with the notification stuff
-# - change the way to count and search in OneConfFilter()
-# - check focus/selection behavior when switching from one mode to another
+# - change the way to count and search in OneConfFilter() (have benefits, like search refresh)
+# - check focus/selection issue on filter refresh
+# - no model refresh despite refresh_apps() call (kiki still appears with
+#   "remove" if I try to remove it, if I don't mask it).
+# - no "progress" in installation shown
 
 class OneConfPane(SoftwarePane):
 
@@ -106,20 +109,23 @@ class OneConfPane(SoftwarePane):
         self._on_inventory_change(self.oneconfeventhandler)
 
     def _on_transaction_finished(self, backend, success):
-        # refresh inventory
+        # refresh inventory with delay and threaded (to avoid waiting if an oneconf update is in progress)
         if success:
-            print 'plop'
-            gobject.timeout_add_seconds(10, self._on_inventory_change, self.oneconfeventhandler)
+            gobject.timeout_add_seconds(5, Thread(target=self._on_inventory_change, args=(self.oneconfeventhandler,)).start)
 
     def _on_inventory_change(self, oneconfeventhandler):
         try:
             current, hostname, show_inventory, show_others = oneconfeventhandler.u1hosts[self.compared_with_hostid]
         except KeyError:
-            logging.critical("Host not registered")
+            logging.warning("Host not yet registered")
             return
+        # create first filter
+        if not self.apps_filter:
+            self.apps_filter = OneConfFilter(db, cache, set(), set())
         self.hostname = hostname
         (additional_pkg, missing_pkg) = oneconfeventhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
-        self.apps_filter = OneConfFilter(db, cache, set(additional_pkg), set(missing_pkg))
+        self.apps_filter.additional_pkglist = set(additional_pkg)
+        self.apps_filter.removed_pkglist = set(missing_pkg)
         self.refresh_apps()
 
     def refresh_selection_bar(self):
