@@ -36,7 +36,7 @@ DESKTOPCOUCH_LOG = os.path.expanduser('~/.cache/desktop-couch/log/desktop-couch-
 CHECK_CONNECT_STATE_DELAY = 60*5
 
 
-class LoginHandler(gobject.GObject):
+class OneConfEventHandler(gobject.GObject):
 
     """"U1 login status and binding"""
 

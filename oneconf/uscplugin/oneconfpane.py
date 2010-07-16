@@ -19,6 +19,7 @@
 
 
 import apt
+import gobject
 import gettext
 import gtk
 import logging
@@ -37,7 +38,9 @@ from softwarecenter.view.softwarepane import SoftwarePane, wait_for_apt_cache_re
 # TODO:
 # - add hide/show apps
 # - add install all/remove all
-# - add correct refresh once an app is installed/removed (on this view or another)
+# - add correct refresh once an app is installed/removed (on this view or another) -> look at the code, with the notification stuff
+# - change the way to count and search in OneConfFilter()
+# - check focus/selection behavior when switching from one mode to another
 
 class OneConfPane(SoftwarePane):
 
@@ -53,7 +56,7 @@ class OneConfPane(SoftwarePane):
                  distro, 
                  icons, 
                  datadir,
-                 u1loginhandler,
+                 oneconfeventhandler,
                  compared_with_hostid):
         # parent
         SoftwarePane.__init__(self, cache, history, db, distro, icons, datadir)
@@ -65,9 +68,12 @@ class OneConfPane(SoftwarePane):
         self.nonapps_visible = False
 
         # OneConf stuff there
-        self.u1loginhandler = u1loginhandler
-        u1loginhandler.connect('inventory-refreshed', self._on_inventory_change)
- 
+        self.oneconfeventhandler = oneconfeventhandler
+        oneconfeventhandler.connect('inventory-refreshed', self._on_inventory_change)
+
+        # Backend installation
+        self.backend.connect("transaction-finished", self._on_transaction_finished)
+
         # UI
         self._build_ui()
 
@@ -97,16 +103,22 @@ class OneConfPane(SoftwarePane):
         self.removed_pkg_action = removed_pkg_action
 
         # initial refresh
-        self._on_inventory_change(self.u1loginhandler)
+        self._on_inventory_change(self.oneconfeventhandler)
 
-    def _on_inventory_change(self, u1loginhandler):
+    def _on_transaction_finished(self, backend, success):
+        # refresh inventory
+        if success:
+            print 'plop'
+            gobject.timeout_add_seconds(10, self._on_inventory_change, self.oneconfeventhandler)
+
+    def _on_inventory_change(self, oneconfeventhandler):
         try:
-            current, hostname, show_inventory, show_others = u1loginhandler.u1hosts[self.compared_with_hostid]
+            current, hostname, show_inventory, show_others = oneconfeventhandler.u1hosts[self.compared_with_hostid]
         except KeyError:
             logging.critical("Host not registered")
             return
         self.hostname = hostname
-        (additional_pkg, missing_pkg) = u1loginhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
+        (additional_pkg, missing_pkg) = oneconfeventhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
         self.apps_filter = OneConfFilter(db, cache, set(additional_pkg), set(missing_pkg))
         self.refresh_apps()
 
@@ -117,8 +129,16 @@ class OneConfPane(SoftwarePane):
         else:
             number_additional_pkg = self.apps_filter.additional_apps_pkg
             number_removed_pkg = self.apps_filter.removed_apps_pkg
-        self.additional_pkg_action.set_label(_('%s items that aren\'t on that computer') % number_additional_pkg)
-        self.removed_pkg_action.set_label(_('%s items that are\'nt on the other computer') % number_removed_pkg)
+        if number_additional_pkg > 1:
+            msg_additional_pkg = _('%s items that aren\'t on that computer') % number_additional_pkg
+        else:
+            msg_additional_pkg = _('%s item that isn\'t on that computer') % number_additional_pkg
+        if number_removed_pkg > 1:
+            msg_removed_pkg = _('%s items that aren\'t on the remote computer') % number_removed_pkg
+        else:
+            msg_removed_pkg = _('%s item that isn\'t on the remote computer') % number_removed_pkg
+        self.additional_pkg_action.set_label(msg_additional_pkg)
+        self.removed_pkg_action.set_label(msg_removed_pkg)
 
     def refresh_number_of_pkg(self):
         self.oneconf
@@ -364,11 +384,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     from oneconf.dbusconnect import DbusConnect
-    from oneconf.uscplugin import u1loginhandler
+    from oneconf.uscplugin import oneconfeventhandler
     oneconf = DbusConnect()
-    u1loginhandler = u1loginhandler.LoginHandler(oneconf)
+    oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(oneconf)
 
-    w = OneConfPane(cache, None, db, 'Ubuntu', icons, datadir, u1loginhandler, 'AAAAA')
+    w = OneConfPane(cache, None, db, 'Ubuntu', icons, datadir, oneconfeventhandler, 'AAAAA')
     w.show()
 
     window = gtk.Window()

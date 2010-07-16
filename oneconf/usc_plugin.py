@@ -32,7 +32,7 @@ from gettext import gettext as _
 # append directory to take oneconf module
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 from oneconf.dbusconnect import DbusConnect
-from oneconf.uscplugin import u1inventorydialog, u1loginhandler
+from oneconf.uscplugin import u1inventorydialog, oneconfeventhandler
 
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 
@@ -65,17 +65,17 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             pos += 1
         # initialize dbus binding
         self.oneconf = DbusConnect()
-        self.u1loginhandler = u1loginhandler.LoginHandler(self.oneconf)
+        self.oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(self.oneconf)
         # add hosts
-        gobject.timeout_add_seconds(5, self.refresh_hosts, self.u1loginhandler, True)
-        gobject.timeout_add_seconds(120, self.refresh_hosts, self.u1loginhandler, False)
+        gobject.timeout_add_seconds(5, self.refresh_hosts, self.oneconfeventhandler, True)
+        gobject.timeout_add_seconds(120, self.refresh_hosts, self.oneconfeventhandler, False)
         self.view_switchers_oneconf_hostid = set()
 
 
     def show_manageui1inventory(self, menuitem):
         """build and show the u1 login window"""
 
-        u1logindialog = u1inventorydialog.U1InventoryDialog(self.datadir, self.u1loginhandler, parent=self.app.window_main)
+        u1logindialog = u1inventorydialog.U1InventoryDialog(self.datadir, self.oneconfeventhandler, parent=self.app.window_main)
         u1logindialog.show()
 
     def refresh_hosts(self, loginhandler, first_time=False):
@@ -85,8 +85,8 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         switcher_view = self.app.view_switcher
         model = switcher_view.model
 
-        for hostid in self.u1loginhandler.u1hosts:
-            current, name, show_inventory, show_others = self.u1loginhandler.u1hosts[hostid]
+        for hostid in self.oneconfeventhandler.u1hosts:
+            current, name, show_inventory, show_others = self.oneconfeventhandler.u1hosts[hostid]
             if not current and show_inventory:
                 new_elem['hostid'] = name
 

@@ -23,7 +23,7 @@ import logging
 import gettext
 from gettext import gettext as _
 
-import u1loginhandler
+import oneconfeventhandler
 import os
 import subprocess
 
@@ -32,7 +32,7 @@ NEW_ACCOUNT_URL = "https://one.ubuntu.com/plans/"
 class U1InventoryDialog(object):
     """Dialog to manage OneConf U1 inventory"""
 
-    def __init__(self, datadir, u1loginhandler, parent=None):
+    def __init__(self, datadir, oneconfeventhandler, parent=None):
 
         logging.debug("creating inventory manager dialog")
         # ui
@@ -46,8 +46,8 @@ class U1InventoryDialog(object):
             else:
                 print >> sys.stderr, "WARNING: can not get name for '%s'" % o
         # bind login handler to window
-        self.u1loginhandler = u1loginhandler
-        u1loginhandler.set_new_u1inventorydialog(self)
+        self.oneconfeventhandler = oneconfeventhandler
+        oneconfeventhandler.set_new_u1inventorydialog(self)
         # parent
         if parent:
             self.dialog_u1login.set_transient_for(parent)
@@ -104,10 +104,10 @@ class U1InventoryDialog(object):
         subprocess.Popen(['ubuntuone-preferences'])
 
     def show_others_toogle(self, widget):
-        self.u1loginhandler.oneconf.set_show_inventory(widget.get_active(), others=True)
+        self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=True)
 
     def show_inventory_toogle(self, widget):
-        self.u1loginhandler.oneconf.set_show_inventory(widget.get_active(), others=False)
+        self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=False)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -119,10 +119,10 @@ if __name__ == "__main__":
     # oneconf handler
     from oneconf.dbusconnect import DbusConnect
     oneconf = DbusConnect()
-    u1loginhandler = u1loginhandler.LoginHandler(oneconf)
+    oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(oneconf)
 
     # gui
-    u1logindialog = U1InventoryDialog('../../data', u1loginhandler, parent=None)
+    u1logindialog = U1InventoryDialog('../../data', oneconfeventhandler, parent=None)
     u1logindialog.show()
 
     gtk.main()
