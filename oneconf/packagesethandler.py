@@ -32,6 +32,7 @@ ONECONF_PACKAGE_RECORD_TYPE = "http://wiki.ubuntu.com/OneConf/Record/Package"
 from oneconf.package import Package
 from oneconf.hosts import Hosts, HostError
 from oneconf.distributor import get_distro
+from oneconf.desktopcouchstate import get_last_sync_date
 
 class PackageSetHandler(object):
     """
@@ -46,6 +47,7 @@ class PackageSetHandler(object):
             self.hosts = Hosts()
         self.distro = get_distro()
         self.current_time = time.time()
+        self.last_desktopcouch_sync = get_last_sync_date()
 
         # create cache for storage package list (two keys: view_name, hostid)
         self.cache_pkg_storage = {}
@@ -217,6 +219,15 @@ class PackageSetHandler(object):
         logging.debug(additional_target_pkg_for_host)
         logging.debug(removed_target_pkg_for_host)
         return(additional_target_pkg_for_host, removed_target_pkg_for_host)
+
+    def check_if_desktopcouch_refreshed(self):
+        '''check if desktopcouch has refreshed, invalidate caches if so'''
+        new_sync = get_last_sync_date()
+        if self.last_desktopcouch_sync != new_sync:
+            logging.debug('Invalide cache as desktopcouch has been synced')
+            self.cache_pkg_storage = {}
+            self.last_desktopcouch_sync = new_sync
+        logging.debug('same sync')
 
     def _get_packages_on_view_for_hostid(self, view_name, hostid):
         '''load records from CouchDB

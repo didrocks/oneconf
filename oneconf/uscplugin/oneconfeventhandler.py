@@ -18,12 +18,10 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import datetime
 import gnomekeyring
 import gobject
 import logging
 from oauth import oauth
-import os
 from threading import Thread
 from ubuntuone.api.restclient import RestClient
 from urllib2 import URLError
@@ -31,8 +29,8 @@ from urllib2 import URLError
 import gettext
 from gettext import gettext as _
 
+from oneconf.desktopcouchstate import get_last_sync_date
 
-DESKTOPCOUCH_LOG = os.path.expanduser('~/.cache/desktop-couch/log/desktop-couch-replication.log')
 CHECK_CONNECT_STATE_DELAY = 60*5
 
 
@@ -96,7 +94,7 @@ class OneConfEventHandler(gobject.GObject):
             login = user.get('email', None)
             if login:
                 logging.debug("logged in, check hosts and last sync state")
-                self.last_sync = self.get_last_sync_date()
+                self.last_sync = get_last_sync_date()
             # this will trigger updating the login GUI                
             self.login = login
 
@@ -133,55 +131,4 @@ class OneConfEventHandler(gobject.GObject):
             self.emit('inventory-refreshed')
         callback(result)
 
-    def get_last_sync_date(self):
-        """Check desktopcouch sync status"""
-        if not os.path.exists(DESKTOPCOUCH_LOG):
-            # no sync yet
-            return None
-        for line in self.BackwardsReader(file(DESKTOPCOUCH_LOG)):
-            # started replicating seems to take ages, so "now syncing" can't be done right now
-            if "finished replicating" in line:
-                try:
-                    last_sync = datetime.datetime.strptime(line[:19], '%Y-%m-%d %H:%M:%S')
-                    today = datetime.datetime.strptime(str(datetime.date.today()), '%Y-%m-%d')
-                    the_daybefore = today - datetime.timedelta(days=1)
-                    if last_sync > today:
-                        return _("Last sync %s") % last_sync.strftime('%H:%M')
-                    elif last_sync < today and last_sync > the_daybefore:
-                        return _("Last sync yesterday %s") % last_sync.strftime('%H:%M')
-                    else:
-                        return _("Last sync %s") % last_sync.strftime('%Y-%m-%d  %H:%M')                    
-                except ValueError, e:
-                    logging.warning("can't convert desktopcouch sync date to %s", e)
-                break
-        return None
-
-    def BackwardsReader(self, fileread, BLKSIZE = 4096):
-        """Read desktopcouch log file line by line, backwards"""
-        buf = ""
-        fileread.seek(-1, 2)
-        lastchar = fileread.read(1)
-        trailing_newline = (lastchar == "\n")
-
-        while 1:
-            newline_pos = buf.rfind("\n")
-            pos = fileread.tell()
-            if newline_pos != -1:
-                # Found a newline
-                line = buf[newline_pos+1:]
-                buf = buf[:newline_pos]
-                if pos or newline_pos or trailing_newline:
-                    line += "\n"
-                yield line
-            elif pos:
-                # Need to fill buffer
-                toread = min(BLKSIZE, pos)
-                fileread.seek(-toread, 1)
-                buf = fileread.read(toread) + buf
-                fileread.seek(-toread, 1)
-                if pos == toread:
-                    buf = "\n" + buf
-            else:
-                # Start-of-file
-                return
 

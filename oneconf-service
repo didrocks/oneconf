@@ -30,10 +30,12 @@ from oneconf.version import *
 MIN_TIME_WITHOUT_ACTIVITY = 180
 
 def quit(loop, myservice):
-    '''quit if no activity at least in 30s'''
+    '''quit if no activity at least in MIN_TIME_WITHOUT_ACTIVITYs'''
     if myservice.activity:
         logging.debug('Some recent activity, still alive for %ss'
                       % MIN_TIME_WITHOUT_ACTIVITY)
+        # check if new desktopcouch sync
+        myservice.PackageSetHandler.check_if_desktopcouch_refreshed()
         myservice.activity = False
         return True
     logging.debug('No more activity, go to sleep')
