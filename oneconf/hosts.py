@@ -52,7 +52,7 @@ class Hosts(object):
         self.hostid = open('/var/lib/dbus/machine-id').read()[:-1]
         self.hostname = platform.node()
         # faking this id for testing purpose
-        #self.hostid = 'AAAAA'
+        #self.hostid = 'BBBBBB'
         #self.hostname = "foomachine"
 
         results = self.database.execute_view("get_hosts")

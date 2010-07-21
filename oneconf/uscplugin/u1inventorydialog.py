@@ -75,7 +75,7 @@ class U1InventoryDialog(object):
                     self.check_show_inventory.set_active(show_inventory)
                     self.check_show_others.set_active(show_others)
                 if show_inventory:
-                    nb_hosts = +1                    
+                    nb_hosts += 1
             if nb_hosts:
                 msg = _("%s registered") % nb_hosts
             else:
@@ -108,6 +108,7 @@ class U1InventoryDialog(object):
 
     def show_inventory_toogle(self, widget):
         self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=False)
+        self.oneconfeventhandler.check_connect_state() # refresh hostid list
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

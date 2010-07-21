@@ -394,7 +394,7 @@ if __name__ == '__main__':
     oneconf = DbusConnect()
     oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(oneconf)
 
-    w = OneConfPane(cache, None, db, 'Ubuntu', icons, datadir, oneconfeventhandler, 'AAAAA')
+    w = OneConfPane(cache, None, db, 'Ubuntu', icons, datadir, oneconfeventhandler, 'BBBBBB')
     w.show()
 
     window = gtk.Window()
