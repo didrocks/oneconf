@@ -87,11 +87,13 @@ class OneConfPane(SoftwarePane):
         # details
         self.notebook.append_page(self.scroll_details, gtk.Label("details"))
 
+        self.embeeded_title_bar = gtk.HBox()
         self.toolbar = gtk.Toolbar()
         self.toolbar.show()
         self.toolbar.set_style(gtk.TOOLBAR_TEXT)
-        self.pack_start(self.toolbar, expand=False)
-        self.reorder_child(self.toolbar, 1)
+        self.pack_start(self.embeeded_title_bar, expand=False)
+        self.embeeded_title_bar.pack_start(self.toolbar, expand=True)
+        self.reorder_child(self.embeeded_title_bar, 1)
 
         additional_pkg_action = gtk.RadioAction('additional_pkg', None, None, None, self.ADDITIONAL_PKG)
         additional_pkg_action.connect('changed', self.change_current_mode)
@@ -104,9 +106,32 @@ class OneConfPane(SoftwarePane):
         additional_pkg_action.set_active(True)
         self.additional_pkg_action = additional_pkg_action
         self.removed_pkg_action = removed_pkg_action
+        self.act_on_store_button = gtk.Button()
+        self.embeeded_title_bar.pack_end(self.act_on_store_button, expand=False)
+        self.act_on_store_button.connect('clicked', self._act_on_current_appstore)
+        self.act_on_store_button.show()
 
         # initial refresh
         self._on_inventory_change(self.oneconfeventhandler)
+
+    def _act_on_current_appstore(self, widget):
+        '''
+        Function that installs or removes all applications displayed in the pane.
+        '''
+        pkgnames = []
+        appnames = []
+        iconnames = []
+        appstore = self.app_view.get_model()
+        for app in appstore.existing_apps:
+            pkgnames.append(app.pkgname)
+            appnames.append(app.appname)
+            # add iconnames
+            doc = self.db.get_xapian_document(app.appname, app.pkgname)
+            iconnames.append(self.db.get_iconname(doc))
+        if self.apps_filter.current_mode == ADDITIONAL_PKG:
+            self.backend.install_multiple(pkgnames, appnames, iconnames)
+        else:
+            self.backend.remove_multiple(pkgnames, appnames, iconnames)
 
     def _on_transaction_finished(self, backend, success):
         # refresh inventory with delay and threaded (to avoid waiting if an oneconf update is in progress)
@@ -137,14 +162,29 @@ class OneConfPane(SoftwarePane):
             number_removed_pkg = self.apps_filter.removed_apps_pkg
         if number_additional_pkg > 1:
             msg_additional_pkg = _('%s items that aren\'t on that computer') % number_additional_pkg
+            msg_add_act_on_store = _("Install those %s items") % number_additional_pkg
         else:
             msg_additional_pkg = _('%s item that isn\'t on that computer') % number_additional_pkg
+            msg_add_act_on_store = _("Install this item")
         if number_removed_pkg > 1:
             msg_removed_pkg = _('%s items that aren\'t on the remote computer') % number_removed_pkg
+            msg_remove_act_on_store = _("Remove those %s items") % number_removed_pkg
         else:
             msg_removed_pkg = _('%s item that isn\'t on the remote computer') % number_removed_pkg
+            msg_remove_act_on_store = _("Remove this item")
         self.additional_pkg_action.set_label(msg_additional_pkg)
         self.removed_pkg_action.set_label(msg_removed_pkg)
+        if self.apps_filter.current_mode == ADDITIONAL_PKG:
+            self.act_on_store_button.set_label(msg_add_act_on_store)
+            nb_pkg_to_act_on = number_additional_pkg
+        else:
+            self.act_on_store_button.set_label(msg_remove_act_on_store)
+            nb_pkg_to_act_on = number_removed_pkg
+        if nb_pkg_to_act_on > 0:
+            self.act_on_store_button.set_sensitive(True)
+        else:
+            self.act_on_store_button.set_sensitive(False)
+
 
     def refresh_number_of_pkg(self):
         self.oneconf
