@@ -47,8 +47,9 @@ class U1InventoryDialog(object):
                 print >> sys.stderr, "WARNING: can not get name for '%s'" % o
         # bind login handler to window
         self.oneconfeventhandler = oneconfeventhandler
-        oneconfeventhandler.set_new_u1inventorydialog(self)
-        # parent
+        self.refresh() # force first refresh (can speedup if already oneconfeventhandler)
+        oneconfeventhandler.connect('inventory-refreshed', self.refresh)
+        oneconfeventhandler.check_connect_state()
         if parent:
             self.dialog_u1login.set_transient_for(parent)
         self.parent = parent
@@ -58,10 +59,10 @@ class U1InventoryDialog(object):
 
     def refresh(self, logger=None):
         """switched connected mode on/off"""
-        logging.debug("ask for refreshing login state with login as %s" % logger.login)
         if not logger:
-            logger = self.logger
+            logger = self.oneconfeventhandler
         if logger.login:
+            logging.debug("ask for refreshing login state with login as %s" % logger.login)
             self.button_sign_in.hide()
             self.label_u1_status.set_text(_("Signed in as %s") % logger.login)
             self.button_manage_u1.set_label(_("Ubuntu One Settings…"))

@@ -128,7 +128,7 @@ class OneConfPane(SoftwarePane):
             # add iconnames
             doc = self.db.get_xapian_document(app.appname, app.pkgname)
             iconnames.append(self.db.get_iconname(doc))
-        if self.apps_filter.current_mode == ADDITIONAL_PKG:
+        if self.apps_filter.current_mode == self.ADDITIONAL_PKG:
             self.backend.install_multiple(pkgnames, appnames, iconnames)
         else:
             self.backend.remove_multiple(pkgnames, appnames, iconnames)
@@ -146,7 +146,7 @@ class OneConfPane(SoftwarePane):
             return
         # create first filter
         if not self.apps_filter:
-            self.apps_filter = OneConfFilter(db, cache, set(), set())
+            self.apps_filter = OneConfFilter(self.db, self.cache, set(), set())
         self.hostname = hostname
         (additional_pkg, missing_pkg) = oneconfeventhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
         self.apps_filter.additional_pkglist = set(additional_pkg)
@@ -174,7 +174,7 @@ class OneConfPane(SoftwarePane):
             msg_remove_act_on_store = _("Remove this item")
         self.additional_pkg_action.set_label(msg_additional_pkg)
         self.removed_pkg_action.set_label(msg_removed_pkg)
-        if self.apps_filter.current_mode == ADDITIONAL_PKG:
+        if self.apps_filter.current_mode == self.ADDITIONAL_PKG:
             self.act_on_store_button.set_label(msg_add_act_on_store)
             nb_pkg_to_act_on = number_additional_pkg
         else:
@@ -348,6 +348,8 @@ class OneConfFilter(object):
         self.current_mode = v
     def get_current_mode(self):
         return self.current_mode
+    def get_supported_only(self):
+        return False
     def reset_counter(self):
         self.additional_apps_pkg = 0
         self.removed_apps_pkg = 0

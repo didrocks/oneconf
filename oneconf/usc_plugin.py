@@ -32,7 +32,7 @@ from gettext import gettext as _
 # append directory to take oneconf module
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 from oneconf.dbusconnect import DbusConnect
-from oneconf.uscplugin import u1inventorydialog, oneconfeventhandler
+from oneconf.uscplugin import u1inventorydialog, oneconfeventhandler, oneconfpane
 
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 
@@ -48,6 +48,9 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         if not os.path.exists(self.datadir):
             self.datadir = ONECONF_DATADIR
         logging.debug("oneconf datadir: %s", self.datadir)
+
+        # FIXME: workaround for imperfect apps.py
+        #self.app.view_switcher.apps_filter = None
 
         # add menu item
         self.u1logindialog = None
@@ -66,57 +69,40 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         # initialize dbus binding
         self.oneconf = DbusConnect()
         self.oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(self.oneconf)
-        # add hosts
-        gobject.timeout_add_seconds(5, self.refresh_hosts, self.oneconfeventhandler, True)
-        gobject.timeout_add_seconds(120, self.refresh_hosts, self.oneconfeventhandler, False)
+        # refresh host list
+        self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
+        self.oneconfeventhandler.check_inventory()
         self.view_switchers_oneconf_hostid = set()
-
 
     def show_manageui1inventory(self, menuitem):
         """build and show the u1 login window"""
-
         u1logindialog = u1inventorydialog.U1InventoryDialog(self.datadir, self.oneconfeventhandler, parent=self.app.window_main)
         u1logindialog.show()
 
-    def refresh_hosts(self, loginhandler, first_time=False):
+    def refresh_hosts(self, loginhandler):
         """refresh hosts list in the panel view"""
 
+        view_switcher = self.app.view_switcher
+        model = view_switcher.get_model()
+        icon = None
+        parent_iter = None
+        channel = None
+        previous_iter = model.installed_iter
+
         new_elem = {}
-        switcher_view = self.app.view_switcher
-        model = switcher_view.model
 
         for hostid in self.oneconfeventhandler.u1hosts:
             current, name, show_inventory, show_others = self.oneconfeventhandler.u1hosts[hostid]
             if not current and show_inventory:
-                new_elem['hostid'] = name
+                new_elem[hostid] = name
 
-        iters_to_kill = set()
-        current_iter = model.iter_next(model.installed_iter)
-        while current_iter:
-            # apparently, iters are regularly destructed and rebuilt. Use hostid for getting oneconf ones.
-            for old_hostid in self.view_switchers_oneconf_hostid:
-                if model.get_value(current_iter, model.COL_CHANNEL) == old_hostid:
-                    iters_to_kill.add(current_iter)
-                    break
-            current_iter = model.iter_next(current_iter)
+        for current_hostid in new_elem:
+            if current_hostid not in self.view_switchers_oneconf_hostid:
+                current_pane = oneconfpane.OneConfPane(self.app.cache, None, self.app.db, 'Ubuntu', self.app.icons, self.app.datadir, self.oneconfeventhandler, current_hostid)
+                current_pane.show_all()
+                self.app.view_manager.register(current_pane, current_hostid)
+                icon = AnimatedImage(view_switcher.icons.load_icon("computer", model.ICON_SIZE, 0))
+                current_iter = model.insert_after(None, previous_iter, [icon, new_elem[current_hostid], current_hostid, channel])
+                previous_iter = current_iter
+                self.view_switchers_oneconf_hostid.add(current_hostid)
 
-        # add the new sorted iters
-        for hostname, hostid in sorted([(value,key) for (key,value) in new_elem.items()]):
-            icon = AnimatedImage(switcher_view.icons.load_icon("computer", switcher_view.model.ICON_SIZE, 0))
-            oneconf_iter = model.insert_after(None, model.installed_iter, [icon, hostname, 555, hostid])       
-            self.view_switchers_oneconf_hostid.add(hostid)
-
-        # delete the old ones
-        for child in iters_to_kill:
-            model.remove(child)
-
-        # dummy call: TODO replace with signal
-        self.switcher_view.on_action_refreshed()
-
-        # unlog now (5s timeout for the first time, then, 120 seconds)
-        if first_time:
-            #return False # keep 5s for test
-            return True
-        return True
-
-        

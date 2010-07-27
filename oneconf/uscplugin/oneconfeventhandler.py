@@ -32,7 +32,6 @@ from gettext import gettext as _
 from oneconf.desktopcouchstate import get_last_sync_date
 
 CHECK_CONNECT_STATE_DELAY = 60*3
-#CHECK_CONNECT_STATE_DELAY = 30
 
 class OneConfEventHandler(gobject.GObject):
 
@@ -50,12 +49,10 @@ class OneConfEventHandler(gobject.GObject):
         gobject.GObject.__init__(self)
         self.oneconf = oneconf
         self.keyring = keyring
-        self._u1inventorydialog = None
         self.u1hosts = {}
         self.login = None
         # update account info in the GUI in async mode
         gobject.threads_init()
-        self.update_u1info()
         gobject.timeout_add_seconds(CHECK_CONNECT_STATE_DELAY, self.check_connect_state)
 
     # login property
@@ -64,17 +61,22 @@ class OneConfEventHandler(gobject.GObject):
     def _set_login(self, newlogin):
         logging.debug("changed login to %s" % newlogin)
         self._login = newlogin
-        if self._u1inventorydialog:
-            self._u1inventorydialog.refresh(self)
+        self.emit('inventory-refreshed')
     login = property(_get_login, _set_login)
 
-    def set_new_u1inventorydialog(self, u1inventorydialog):
-        """set current inventory window has the one handled by logger and refresh it"""
-        self._u1inventorydialog = u1inventorydialog
-        u1inventorydialog.refresh(self)
+    def check_inventory(self):
+        Thread(target=self.check_async_inventory).start()
+
+    def check_async_inventory(self):
+        """check for available computers in a dedicated thread"""
+
+        self.u1hosts = self.oneconf.get_all_hosts()
+        self.emit('inventory-refreshed')
 
     def check_connect_state(self):
         """executed every CHECK_CONNECT_STATE_DELAY to check connectivity and update info"""
+
+        self.check_inventory()
         self.update_u1info()
         return True
 
@@ -89,8 +91,6 @@ class OneConfEventHandler(gobject.GObject):
         if user:
             # using name rather than email can be interesting
             #self.name_label.set_text(user.get('nickname', _("Unknown")))
-            self.u1hosts = self.oneconf.get_all_hosts()
-            self.emit('inventory-refreshed')
             login = user.get('email', None)
             if login:
                 logging.debug("logged in, check hosts and last sync state")
@@ -126,9 +126,6 @@ class OneConfEventHandler(gobject.GObject):
             result = rest_client.call(url, method, consumer, token)
         except URLError, e:
             result = None
-            # as the callback won't be called, update the host list here
-            self.u1hosts = self.oneconf.get_all_hosts()
-            self.emit('inventory-refreshed')
         callback(result)
 
 
