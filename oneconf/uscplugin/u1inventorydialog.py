@@ -59,6 +59,9 @@ class U1InventoryDialog(object):
     def show(self):
         self.dialog_u1login.show()
 
+    def on_button_close_clicked(self, button):
+        self.dialog_u1login.hide()
+
     def refresh(self, logger=None):
         """switched connected mode on/off"""
         if not logger:
