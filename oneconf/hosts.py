@@ -126,8 +126,8 @@ class Hosts(object):
             current = (hostid == self.hostid)
             curr_host = self._hosts[hostid]
             result[hostid] = (current, curr_host['hostname'],
-                              curr_host['show_inventory'],
-                              curr_host['show_others'])
+                              curr_host.get('show_inventory', False),
+                              curr_host.get('show_others', False))
         return result
 
     def set_show_inventory(self, show_inventory, others):

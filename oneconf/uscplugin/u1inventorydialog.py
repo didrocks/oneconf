@@ -59,6 +59,9 @@ class U1InventoryDialog(object):
     def show(self):
         self.dialog_u1login.show()
 
+    def on_button_close_clicked(self, button):
+        self.dialog_u1login.hide()
+
     def refresh(self, logger=None):
         """switched connected mode on/off"""
         if not logger:
@@ -69,7 +72,7 @@ class U1InventoryDialog(object):
             self.label_u1_status.set_text(_("Signed in as %s") % logger.login)
             self.button_manage_u1.set_label(_("Ubuntu One Settings…"))
             self.button_manage_u1.connect("clicked", self.setting)
-            self.label_sync_u1_date.set_label(logger.last_sync)
+            self.label_sync_u1_date.set_label(logger.last_sync or _("unknown"))
             self.label_sync_u1_date.show()
         else:
             self.button_sign_in.show()
