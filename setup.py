@@ -23,9 +23,6 @@ DISTRO='%s'
 RELEASE='%s'
 """ % (VERSION, CODENAME, DISTRO, RELEASE))
 
-#should be replace by $USR
-open("misc/version.py","w").write("""
-
 # real setup
 setup(name="oneconf", version=VERSION,
       scripts=["oneconf-query",
