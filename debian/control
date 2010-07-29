@@ -1,0 +1,37 @@
+Source: oneconf
+Section: python
+Priority: extra
+Build-Depends: debhelper (>= 7.0.50),
+               lsb-release,
+               gettext,
+               intltool,
+               python,
+               python-central,
+               python-distutils-extra,
+               python-setuptools,
+Maintainer: Didier Roche <didrocks@ubuntu.com>
+Standards-Version: 3.9.1
+XS-Python-Version: current
+
+Package: oneconf
+Architecture: all
+XB-Python-Version: ${python:Versions}
+Depends: ${misc:Depends},
+         ${python:Depends},
+         python-xapian,
+         python-dbus,
+         desktopcouch,
+         python-oauth,
+         python-gobject,
+         python-apt,
+         python-gtk2,
+         python-gnomekeyring,
+Recommends: software-center (>= 2.1.6),
+            update-notifier (>= 0.103),
+            python-ubuntuone-client,
+Description: sync your data over network
+ OneConf is used to sync your data, like package sync between computers over
+ your network.
+ .
+ It integrates nicely with Ubuntu Software Center and have a command line for
+ looking at diff between the computers and such.

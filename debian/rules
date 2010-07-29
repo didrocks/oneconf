@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+share:=usr/share/oneconf
+
+%:
+	dh --with=python-central $@
+
+# Install the modules in a private directory, as our applications are the
+# only ones using them.
+override_dh_auto_install:
+	dh_auto_install -- --install-lib /usr/share/oneconf
+	rm -r debian/oneconf/usr/share/oneconf/*.egg-info
+	# Move the scripts to $(SHARE) and relink some again later.
+	mv debian/oneconf/usr/*bin/* debian/oneconf/$(share)
+	rmdir debian/software-center/usr/*bin
+
+
+override_dh_install:
+	dh_install --fail-missing
+
+	dh_link $(share)/oneconf-query usr/bin/oneconf-query \
+		$(share)/oneconf/usc_plugin.py usr/share/software-center/plugins/oneconf_plugin.py \
+		$(share)/oneconf-update usr/share/update-notifier/plugins/cache-changed/
+
+.PHONY: override_dh_auto_install

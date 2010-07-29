@@ -81,6 +81,7 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
 
     def refresh_hosts(self, loginhandler):
         """refresh hosts list in the panel view"""
+        logging.debug('oneconf: refresh hosts')
 
         view_switcher = self.app.view_switcher
         model = view_switcher.get_model()
@@ -99,10 +100,11 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         for current_hostid in new_elem:
             if current_hostid not in self.view_switchers_oneconf_hostid:
                 current_pane = oneconfpane.OneConfPane(self.app.cache, None, self.app.db, 'Ubuntu', self.app.icons, self.app.datadir, self.oneconfeventhandler, current_hostid)
-                current_pane.show_all()
                 self.app.view_manager.register(current_pane, current_hostid)
                 icon = AnimatedImage(view_switcher.icons.load_icon("computer", model.ICON_SIZE, 0))
                 current_iter = model.insert_after(None, previous_iter, [icon, new_elem[current_hostid], current_hostid, channel])
                 previous_iter = current_iter
                 self.view_switchers_oneconf_hostid.add(current_hostid)
+                # show the pane and its content once it's added to the notebook
+                current_pane.show_all()
 

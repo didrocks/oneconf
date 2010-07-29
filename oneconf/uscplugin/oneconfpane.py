@@ -112,7 +112,7 @@ class OneConfPane(SoftwarePane):
         self.act_on_store_button.show()
 
         # initial refresh
-        self._on_inventory_change(self.oneconfeventhandler)
+        self.force_refresh()
 
     def _act_on_current_appstore(self, widget):
         '''
@@ -133,10 +133,14 @@ class OneConfPane(SoftwarePane):
         else:
             self.backend.remove_multiple(pkgnames, appnames, iconnames)
 
-    def _on_transaction_finished(self, backend, success):
+    def force_refresh(self):
+        """dummy call to force async refresh"""
+        self._on_transaction_finished(None, True, 0)
+
+    def _on_transaction_finished(self, backend, success, time=5):
         # refresh inventory with delay and threaded (to avoid waiting if an oneconf update is in progress)
         if success:
-            gobject.timeout_add_seconds(5, Thread(target=self._on_inventory_change, args=(self.oneconfeventhandler,)).start)
+            gobject.timeout_add_seconds(time, Thread(target=self._on_inventory_change, args=(self.oneconfeventhandler,)).start)
 
     def _on_inventory_change(self, oneconfeventhandler):
         try:
