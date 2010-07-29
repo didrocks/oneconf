@@ -62,8 +62,10 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         for menu in self.app.menu1.get_children():
             if menu == self.app.menuitem_close:        
                 #self.app.menu1.insert(self.menuitem_saveinventory, pos)
-                self.app.menu1.insert(self.menuitem_manageu1inventory, pos+1)
-                self.app.menu1.insert(gtk.SeparatorMenuItem(), pos+2)
+                #self.app.menu1.insert(self.menuitem_manageu1inventory, pos+1)
+                #self.app.menu1.insert(gtk.SeparatorMenuItem(), pos+2)
+                self.app.menu1.insert(self.menuitem_manageu1inventory, pos)
+                self.app.menu1.insert(gtk.SeparatorMenuItem(), pos+1)
                 break
             pos += 1
         # initialize dbus binding
