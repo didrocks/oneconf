@@ -49,7 +49,9 @@ class U1InventoryDialog(object):
         self.oneconfeventhandler = oneconfeventhandler
         self.refresh() # force first refresh (can speedup if already oneconfeventhandler)
         oneconfeventhandler.connect('inventory-refreshed', self.refresh)
-        oneconfeventhandler.check_connect_state()
+        if oneconfeventhandler and not oneconfeventhandler.login:
+            print "there"
+            oneconfeventhandler.check_connect_state()
         if parent:
             self.dialog_u1login.set_transient_for(parent)
         self.parent = parent
@@ -69,6 +71,16 @@ class U1InventoryDialog(object):
             self.button_manage_u1.connect("clicked", self.setting)
             self.label_sync_u1_date.set_label(logger.last_sync)
             self.label_sync_u1_date.show()
+        else:
+            self.button_sign_in.show()
+            self.label_u1_status.set_text(_("You are not signed in."))
+            self.check_show_inventory.set_sensitive(False)
+            self.check_show_others.set_sensitive(False)
+            self.button_manage_u1.set_label(_("Join Ubuntu one…"))
+            self.button_manage_u1.connect("clicked", self.register)
+            self.label_sync_u1_date.hide()
+
+        if logger.u1hosts:
             nb_hosts = 0
             for hostid in logger.u1hosts:
                 current, name, show_inventory, show_others = logger.u1hosts[hostid]
@@ -86,15 +98,6 @@ class U1InventoryDialog(object):
             self.label_nb_host.set_label(msg)
             self.label_nb_host.show()
 
-        else:
-            self.button_sign_in.show()
-            self.label_u1_status.set_text(_("You are not signed in."))
-            self.check_show_inventory.set_sensitive(False)
-            self.check_show_others.set_sensitive(False)
-            self.button_manage_u1.set_label(_("Join Ubuntu one…"))
-            self.button_manage_u1.connect("clicked", self.register)
-            self.label_sync_u1_date.hide()
-
     def sign_in(self, widget):
         subprocess.Popen(['ubuntuone-preferences'])
 
@@ -106,6 +109,7 @@ class U1InventoryDialog(object):
 
     def show_others_toogle(self, widget):
         self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=True)
+        self.oneconfeventhandler.check_connect_state() # refresh hostid list        
 
     def show_inventory_toogle(self, widget):
         self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=False)

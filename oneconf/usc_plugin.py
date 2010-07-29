@@ -54,14 +54,14 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
 
         # add menu item
         self.u1logindialog = None
-        self.menuitem_saveinventory = gtk.MenuItem(_("Save Inventory…"))
+        #self.menuitem_saveinventory = gtk.MenuItem(_("Save Inventory…"))
         self.menuitem_manageu1inventory = gtk.MenuItem(_("Inventory on Ubuntu One…"))
         self.menuitem_manageu1inventory.connect_object("activate", self.show_manageui1inventory, None)
         # maybe a placeholder for plugins would be better, isn't?
         pos = 0
         for menu in self.app.menu1.get_children():
             if menu == self.app.menuitem_close:        
-                self.app.menu1.insert(self.menuitem_saveinventory, pos)
+                #self.app.menu1.insert(self.menuitem_saveinventory, pos)
                 self.app.menu1.insert(self.menuitem_manageu1inventory, pos+1)
                 self.app.menu1.insert(gtk.SeparatorMenuItem(), pos+2)
                 break
@@ -96,6 +96,9 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             current, name, show_inventory, show_others = self.oneconfeventhandler.u1hosts[hostid]
             if not current and show_inventory:
                 new_elem[hostid] = name
+            else:
+                if not show_others:
+                    return # TODO: need to unregister
 
         for current_hostid in new_elem:
             if current_hostid not in self.view_switchers_oneconf_hostid:
