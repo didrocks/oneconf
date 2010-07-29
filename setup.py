@@ -33,7 +33,7 @@ setup(name="oneconf", version=VERSION,
                   'oneconf.uscplugin',
                  ],
       data_files=[
-                  ('share/oneconf/ui/',
+                  ('share/oneconf/data/ui/',
                    glob.glob("data/ui/*.ui")),
                   ('share/dbus-1/services/',
                    ["misc/com.ubuntu.OneConf.service"]),
