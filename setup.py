@@ -23,8 +23,11 @@ DISTRO='%s'
 RELEASE='%s'
 """ % (VERSION, CODENAME, DISTRO, RELEASE))
 
-#should be replace by $USR
-open("misc/version.py","w").write("""
+#should be replaced by $USR
+oneconf_service_path = "/usr/share/oneconf/oneconf-service"
+open("misc/com.ubuntu.OneConf.service","w").write("""[D-BUS Service]
+Name=com.ubuntu.OneConf
+Exec=%s""" % oneconf_service_path)
 
 # real setup
 setup(name="oneconf", version=VERSION,
@@ -36,7 +39,7 @@ setup(name="oneconf", version=VERSION,
                   'oneconf.uscplugin',
                  ],
       data_files=[
-                  ('share/oneconf/ui/',
+                  ('share/oneconf/data/ui/',
                    glob.glob("data/ui/*.ui")),
                   ('share/dbus-1/services/',
                    ["misc/com.ubuntu.OneConf.service"]),
