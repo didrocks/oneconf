@@ -29,9 +29,10 @@ Depends: ${misc:Depends},
 Recommends: software-center (>= 2.1.6),
             update-notifier (>= 0.103),
             python-ubuntuone-client,
-Description: sync your data over network
- OneConf is used to sync your data, like package sync between computers over
- your network.
- .
- It integrates nicely with Ubuntu Software Center and have a command line for
- looking at diff between the computers and such.
+Description: synchronize your configuration data over the network
+ OneConf provides the ability to sync your computer's configuration data over
+ the network.
+ . 
+ It integrates nicely with the Ubuntu Software Center and using the command
+ line to allow you to compare the set of installed software on your current
+ computer to that of another.
