@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7.0.50),
                gettext,
                intltool,
                python,
-               python-central,
+               python-support,
                python-distutils-extra,
                python-setuptools,
 Maintainer: Didier Roche <didrocks@ubuntu.com>

@@ -2,7 +2,7 @@
 share:=usr/share/oneconf
 
 %:
-	dh --with=python-central $@
+	dh --with=python-support $@
 
 # Install the modules in a private directory, as our applications are the
 # only ones using them.
