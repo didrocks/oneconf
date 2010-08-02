@@ -31,7 +31,7 @@ from gettext import gettext as _
 
 # append directory to take oneconf module
 oneconf_usr_dir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(oneconf_usr_dir)
+sys.path.insert(0, oneconf_usr_dir)
 from oneconf.dbusconnect import DbusConnect
 from oneconf.uscplugin import u1inventorydialog, oneconfeventhandler, oneconfpane
 
