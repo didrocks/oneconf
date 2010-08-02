@@ -32,7 +32,7 @@ Recommends: software-center (>= 2.1.6),
 Description: synchronize your configuration data over the network
  OneConf provides the ability to sync your computer's configuration data over
  the network.
- . 
- It integrates nicely with the Ubuntu Software Center and the command line
- tool can be used to compare the set of installed software on your current
- computer to that of another.
+ .
+ It integrates nicely with the Ubuntu Software Center to compare sets of
+ installed software between computers. A command line tool also provides for
+ the same functionality.
