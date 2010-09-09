@@ -1,3 +1,10 @@
+oneconf (0.1.1) UNRELEASED; urgency=low
+
+  * data/ui/u1inventorydialog.ui:
+    - fix a u1 typo
+
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 09 Sep 2010 12:27:26 +0200
+
 oneconf (0.1) maverick; urgency=low
 
   * Initial release.
