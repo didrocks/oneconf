@@ -3,7 +3,7 @@
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
   <object class="GtkWindow" id="dialog_u1login">
-    <property name="title" translatable="yes">Inventory on Ubuntu On</property>
+    <property name="title" translatable="yes">Inventory on Ubuntu One</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
     <child>
