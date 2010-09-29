@@ -52,6 +52,7 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
 
         # FIXME: workaround for imperfect apps.py
         #self.app.view_switcher.apps_filter = None
+        self.view_switchers_oneconf_hostid = set()
 
         # add menu item
         self.u1logindialog = None
@@ -75,7 +76,6 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         # refresh host list
         self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
         self.oneconfeventhandler.check_inventory()
-        self.view_switchers_oneconf_hostid = set()
 
     def show_manageui1inventory(self, menuitem):
         """build and show the u1 login window"""
@@ -99,9 +99,8 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             current, name, show_inventory, show_others = self.oneconfeventhandler.u1hosts[hostid]
             if not current and show_inventory:
                 new_elem[hostid] = name
-            else:
-                if not show_others:
-                    return # TODO: need to unregister
+            if current and not show_others:
+                return # TODO: need to continue
 
         for current_hostid in new_elem:
             if current_hostid not in self.view_switchers_oneconf_hostid:

@@ -50,7 +50,6 @@ class U1InventoryDialog(object):
         self.refresh() # force first refresh (can speedup if already oneconfeventhandler)
         oneconfeventhandler.connect('inventory-refreshed', self.refresh)
         if oneconfeventhandler and not oneconfeventhandler.login:
-            print "there"
             oneconfeventhandler.check_connect_state()
         if parent:
             self.dialog_u1login.set_transient_for(parent)

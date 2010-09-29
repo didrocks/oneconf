@@ -18,13 +18,19 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import gnomekeyring
+import dbus.service
 import gobject
+import gtk
 import logging
+from multiprocessing import Pipe, Process
 from oauth import oauth
+import os
 from threading import Thread
-from ubuntuone.api.restclient import RestClient
-from urllib2 import URLError
+from ubuntu_sso import DBUS_BUS_NAME, DBUS_IFACE_CRED_NAME, DBUS_CRED_PATH
+from ubuntuone import clientdefs
+
+oauth_consumer = None
+oauth_token = None
 
 import gettext
 from gettext import gettext as _
@@ -44,15 +50,17 @@ class OneConfEventHandler(gobject.GObject):
                             ),
     }
 
-    def __init__(self, oneconf, keyring=gnomekeyring):
+    def __init__(self, oneconf):
         """Try to login with credentials"""
         gobject.GObject.__init__(self)
         self.oneconf = oneconf
-        self.keyring = keyring
         self.u1hosts = {}
         self.login = None
+        self.bus = dbus.SessionBus()
         # update account info in the GUI in async mode
         gobject.threads_init()
+        self.register_u1_signal_handlers()
+        gobject.timeout_add_seconds(1, self.do_login_request, self.bus)
         gobject.timeout_add_seconds(CHECK_CONNECT_STATE_DELAY, self.check_connect_state)
 
     # login property
@@ -83,7 +91,6 @@ class OneConfEventHandler(gobject.GObject):
     def update_u1info(self):
         """Request account info from server, and update display."""
         self.make_rest_request(url='https://one.ubuntu.com/api/account/',
-                               keyring=self.keyring,
                                callback=self.got_account_info)
 
     def got_account_info(self, user):
@@ -98,34 +105,94 @@ class OneConfEventHandler(gobject.GObject):
             # this will trigger updating the login GUI                
             self.login = login
 
-    def make_rest_request(self, url=None, method='GET',
-                          callback=None, keyring=None):
+    def make_rest_request(self, url=None, method='GET', callback=None):
         """Helper that makes an oauth-wrapped REST request."""
-        token = self.get_access_token(keyring)
+        conn1, conn2 = Pipe(False)
+        p = Process(target=really_do_rest_request, args=(url, method, conn2))
+        p.start()
+        Thread(target=do_rest_request, args=(p, conn1, callback)).start()
 
-        rest_client = RestClient(url)
-        Thread(target=self.do_rest_request, args=(rest_client, url, method, token, callback)).start()
+    def register_u1_signal_handlers(self):
+        """Register the dbus signal handlers."""
+        self.bus.add_signal_receiver(
+            handler_function=self.got_newcredentials,
+            signal_name='CredentialsFound',
+            dbus_interface=DBUS_IFACE_CRED_NAME)
+        self.bus.add_signal_receiver(
+            handler_function=self.got_credentialserror,
+            signal_name='CredentialsError',
+            dbus_interface=DBUS_IFACE_CRED_NAME)
+        self.bus.add_signal_receiver(
+            handler_function=self.got_authdenied,
+            signal_name='AuthorizationDenied',
+            dbus_interface=DBUS_IFACE_CRED_NAME)
 
-    def get_access_token(self, keyring):
-        """Get the access token from the keyring."""
-        items = []
+    def got_newcredentials(self, app_name, credentials):
+        """Show our dialog, since we can do stuff now."""
+        global oauth_consumer
+        global oauth_token
+
+        if app_name == clientdefs.APP_NAME:
+            oauth_consumer = oauth.OAuthConsumer(credentials['consumer_key'],
+                                                 credentials['consumer_secret'])
+            oauth_token = oauth.OAuthToken(credentials['token'],
+                                           credentials['token_secret'])
+            logging.info("Got credentials for %s", app_name)
+
+    def got_credentialserror(self, app_name, message, detailed_error):
+        """Got an error during authentication."""
+        if app_name == clientdefs.APP_NAME:
+            logging.error("Credentials error for %s: %s - %s" %
+                         (app_name, message, detailed_error))
+
+    def got_authdenied(self, app_name):
+        """User denied access."""
+        if app_name == clientdefs.APP_NAME:
+            logging.error("Authorization was denied for %s" % app_name)
+
+    def dbus_async(self, *args, **kwargs):
+        """Simple handler to make dbus do stuff async."""
+    	pass
+
+    def got_dbus_error(self, error):
+        """Got a DBusError."""
+        logging.error(error)
+
+    def do_login_request(self, bus):
+        """Make a login request to the login handling daemon."""
         try:
-            items = keyring.find_items_sync(
-                keyring.ITEM_GENERIC_SECRET,
-                {'ubuntuone-realm': "https://ubuntuone.com",
-                 'oauth-consumer-key': 'ubuntuone'})
-            secret = items[0].secret
-            return oauth.OAuthToken.from_string(secret)
-        except (gnomekeyring.NoMatchError, gnomekeyring.DeniedError):
-            return None
+            client = bus.get_object(DBUS_BUS_NAME,
+					                DBUS_CRED_PATH,
+					                follow_name_owner_changes=True)
+            iface = dbus.Interface(client, DBUS_IFACE_CRED_NAME)
+            iface.login_or_register_to_get_credentials(
+                clientdefs.APP_NAME,
+                clientdefs.TC_URL,
+                clientdefs.DESCRIPTION,
+                0,
+                reply_handler=self.dbus_async,
+                error_handler=self.got_dbus_error)
+        except DBusException, e:
+            error_handler(e)
 
-    def do_rest_request(self, rest_client, url, method, token, callback):
-        """Helper that handles the REST response."""
-        try:
-            consumer = oauth.OAuthConsumer('ubuntuone', 'hammertime')
-            result = rest_client.call(url, method, consumer, token)
-        except URLError, e:
-            result = None
-        callback(result)
 
+def really_do_rest_request(url, method, conn):
+	"""Second-order helper that does the REST request.
+
+	Necessary because of libproxy's orneriness WRT threads: LP:633241.
+	"""
+	from ubuntuone.api.restclient import RestClient
+	rest_client = RestClient(url)
+	result = rest_client.call(url, method, oauth_consumer, oauth_token)
+	conn.send(result)
+
+def do_rest_request(proc, conn, callback):
+    """Helper that handles the REST response."""
+    pid = os.getpid()
+    proc.join()
+
+    result = conn.recv()
+    if callback is not None:
+        with gtk.gdk.lock:
+            callback(result)
 
