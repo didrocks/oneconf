@@ -38,12 +38,7 @@ from softwarecenter.view.softwarepane import SoftwarePane, wait_for_apt_cache_re
 
 # TODO:
 # - add hide/show apps
-# - add install all/remove all
 # - change the way to count and search in OneConfFilter() (have benefits, like search refresh)
-# - check focus/selection issue on filter refresh
-# - no model refresh despite refresh_apps() call (kiki still appears with
-#   "remove" if I try to remove it, if I don't mask it).
-# - no "progress" in installation shown
 
 class OneConfPane(SoftwarePane):
 
