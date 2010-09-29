@@ -57,18 +57,21 @@ class Hosts(object):
 
         results = self.database.execute_view("get_hosts")
         for rec in results:
+            # transition old OneConf format
+            show_inventory = rec.value.get('show_inventory', False)
+            show_others = rec.value.get('show_others', False)
             if (rec.id == self.hostid and
                 rec.value['hostname'] != self.hostname):
                 update = {'hostname': self.hostname}
                 logging.debug("Update current hostname")
-                self.database.update_fields(rec.id, update)
+                self.database.update_fields(rec.id, update)            
                 self._hosts[self.hostid] = {'hostname': self.hostname,
-                                            'show_inventory': rec.value['show_inventory'],
-                                            'show_others': rec.value['show_others']}
+                                            'show_inventory': show_inventory,
+                                            'show_others': show_others}
             else:
                 self._hosts[rec.id] = {'hostname': rec.value['hostname'],
-                                       'show_inventory': rec.value['show_inventory'],
-                                       'show_others': rec.value['show_others']}
+                                       'show_inventory': show_inventory,
+                                       'show_others': show_others}
 
         if self.hostid not in self._hosts:
             logging.debug("Adding this host to storage")
