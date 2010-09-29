@@ -64,6 +64,7 @@ class OneConfPane(SoftwarePane):
         self.current_appview_selection = None
         self.apps_filter = None
         self.nonapps_visible = False
+        self.refreshing = False
 
         # OneConf stuff there
         self.oneconfeventhandler = oneconfeventhandler
@@ -154,7 +155,7 @@ class OneConfPane(SoftwarePane):
 
     def _append_refresh_apps(self):
         """thread hammer protector for asking refresh of apps in pane"""
-        gobject.timeout_add_seconds(1, self.refresh_apps)
+        gobject.timeout_add(1, self.refresh_apps)
 
     def refresh_selection_bar(self):
         if self.nonapps_visible:
@@ -215,6 +216,12 @@ class OneConfPane(SoftwarePane):
         """refresh the applist after search changes and update the 
            navigation bar
         """
+
+        # seems like some part is done async, try to protect this by pane
+        if self.refreshing:
+            return False
+        self.refreshing = True
+
         self.apps_filter.reset_counter()
         if self.search_terms:
             query = self.db.get_query_list_from_search_entry(self.search_terms)
@@ -233,6 +240,8 @@ class OneConfPane(SoftwarePane):
         old_model = self.app_view.get_model()
         if old_model is not None:
             old_model.active = False
+        # DEBUG: count to show I'm not dreaming
+        self.apps_filter.num_pkg = 0
         # get a new store and attach it to the view
         new_model = AppStore(self.cache,
                              self.db, 
@@ -241,8 +250,11 @@ class OneConfPane(SoftwarePane):
                              nonapps_visible = self.nonapps_visible,
                              filter=self.apps_filter)
         self.app_view.set_model(new_model)
+        # DEBUG: count to show I'm not dreaming
+        print self.apps_filter.num_pkg
         self.emit("app-list-changed", len(new_model))
         self.refresh_selection_bar()
+        self.refreshing = False
         return False
 
     def on_search_terms_changed(self, searchentry, terms):
@@ -322,6 +334,7 @@ class OneConfPane(SoftwarePane):
         # there is no category view in the OneConf pane
         return False
 
+
 # TODO: find a way to replace that by a Xapian query ?
 class OneConfFilter(object):
     """
@@ -358,6 +371,8 @@ class OneConfFilter(object):
         self.removed_apps_pkg = 0
     def filter(self, doc, pkgname):
         """return True if the package should be displayed"""
+        # DEBUG: count to show I'm not dreaming
+        self.num_pkg = self.num_pkg + 1
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
             other_list = self.removed_pkglist
@@ -366,20 +381,29 @@ class OneConfFilter(object):
             other_list = self.additional_pkglist
 
         # TODO: that's ugly, but if we could have a direct Xapian request
-        # for that (OneConf doesn't know what are applications)
+        # for that (OneConf doesn't know which packages are applications)
+        # it would be better.
+
+        # /!\ it seems there is a fallback somewhere!
+        # if I return "False" to every pkgname in the filter (without a search),
+        # it's not looking only for apps, but for the whole set of packages.
+        # Tremendously slowing down everything (36844 against 2345)
+        #if pkgname == "xserver-xorg-video-tseng":
+        #    print "found"
+
         if pkgname in other_list:
             if self.current_mode == self.ADDITIONAL_PKG:
                 self.removed_apps_pkg += 1
             else:
                 self.additional_apps_pkg += 1
                                     
-
         if pkgname in pkg_list_to_compare:
             if self.current_mode == self.ADDITIONAL_PKG:
                 self.additional_apps_pkg += 1
             else:
                 self.removed_apps_pkg += 1
             return True
+            #return False # try that for fun and profit, and all the set is triggerred !!!
         return False
 
 if __name__ == '__main__':
