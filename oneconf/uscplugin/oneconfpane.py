@@ -155,7 +155,11 @@ class OneConfPane(SoftwarePane):
         (additional_pkg, missing_pkg) = oneconfeventhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
         self.apps_filter.additional_pkglist = set(additional_pkg)
         self.apps_filter.removed_pkglist = set(missing_pkg)
-        self.refresh_apps()
+        self._append_refresh_apps()
+
+    def _append_refresh_apps(self):
+        """thread hammer protector for asking refresh of apps in pane"""
+        gobject.timeout_add_seconds(1, self.refresh_apps)
 
     def refresh_selection_bar(self):
         if self.nonapps_visible:
@@ -197,7 +201,7 @@ class OneConfPane(SoftwarePane):
     def change_current_mode(self, action, current):
         if self.apps_filter:
             self.apps_filter.set_new_current_mode(action.get_current_value())
-            self.refresh_apps()
+            self._append_refresh_apps()
 
     def _show_installed_overview(self):
         " helper that goes back to the overview page "
@@ -252,11 +256,11 @@ class OneConfPane(SoftwarePane):
         self.search_terms = terms
         if not self.search_terms:
             self._clear_search()
-        self.refresh_apps()
+        self._append_refresh_apps()
         self.notebook.set_current_page(self.PAGE_APPLIST)
 
     def on_db_reopen(self, db):
-        self.refresh_apps()
+        self._append_refresh_apps()
         self._show_installed_overview()
         
     def on_navigation_search(self, pathbar, part):
