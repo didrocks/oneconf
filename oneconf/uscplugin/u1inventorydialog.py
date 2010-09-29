@@ -45,9 +45,12 @@ class U1InventoryDialog(object):
                 setattr(self, name, o)
             else:
                 print >> sys.stderr, "WARNING: can not get name for '%s'" % o
+        self.no_refresh = False
+
         # bind login handler to window
         self.oneconfeventhandler = oneconfeventhandler
         self.refresh() # force first refresh (can speedup if already oneconfeventhandler)
+
         oneconfeventhandler.connect('inventory-refreshed', self.refresh)
         if oneconfeventhandler and not oneconfeventhandler.login:
             oneconfeventhandler.check_connect_state()
@@ -63,6 +66,9 @@ class U1InventoryDialog(object):
 
     def refresh(self, logger=None):
         """switched connected mode on/off"""
+        # prevent some hanging up: changing the set_active state triggers an ascync
+        # refresh of u1 host list and then, can blow up the results
+        self.no_refresh = True
         if not logger:
             logger = self.oneconfeventhandler
         if logger.login:
@@ -81,11 +87,11 @@ class U1InventoryDialog(object):
             self.button_manage_u1.set_label(_("Join Ubuntu one…"))
             self.button_manage_u1.connect("clicked", self.register)
             self.label_sync_u1_date.hide()
-
-        if logger.u1hosts:
+        u1hosts_list = logger.u1hosts.copy()
+        if u1hosts_list:
             nb_hosts = 0
-            for hostid in logger.u1hosts:
-                current, name, show_inventory, show_others = logger.u1hosts[hostid]
+            for hostid in u1hosts_list:
+                current, name, show_inventory, show_others = u1hosts_list[hostid]
                 if current:
                     self.check_show_inventory.set_active(show_inventory)
                     self.check_show_others.set_active(show_others)
@@ -99,6 +105,7 @@ class U1InventoryDialog(object):
             self.check_show_others.set_sensitive(True)
             self.label_nb_host.set_label(msg)
             self.label_nb_host.show()
+        self.no_refresh = False
 
     def sign_in(self, widget):
         subprocess.Popen(['ubuntuone-preferences'])
@@ -110,12 +117,14 @@ class U1InventoryDialog(object):
         subprocess.Popen(['ubuntuone-preferences'])
 
     def show_others_toogle(self, widget):
-        self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=True)
-        self.oneconfeventhandler.check_connect_state() # refresh hostid list        
+        if not self.no_refresh:
+            self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=True)
+            self.oneconfeventhandler.check_connect_state() # refresh hostid list        
 
     def show_inventory_toogle(self, widget):
-        self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=False)
-        self.oneconfeventhandler.check_connect_state() # refresh hostid list
+        if not self.no_refresh:
+            self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=False)
+            self.oneconfeventhandler.check_connect_state() # refresh hostid list
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
