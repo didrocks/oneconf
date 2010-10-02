@@ -63,7 +63,10 @@ class OneConfPane(SoftwarePane):
         self.compared_with_hostid = compared_with_hostid
         self.current_appview_selection = None
         self.apps_filter = None
-        self.nonapps_visible = False
+        try:
+            self.nonapps_visible = AppStore.NONAPPS_NEVER_VISIBLE
+        except AttributeError: # be compatible with older USC
+            self.nonapps_visible = False
         self.refreshing = False
 
         # OneConf stuff there
@@ -158,7 +161,14 @@ class OneConfPane(SoftwarePane):
         gobject.timeout_add(1, self.refresh_apps)
 
     def refresh_selection_bar(self):
-        if self.nonapps_visible:
+        try: # be compatible with older USC
+            if self.nonapps_visible == AppStore.NONAPPS_ALWAYS_VISIBLE:
+                nonapps_visible = True
+            else:
+                nonapps_visible = False
+        except AttributeError:
+            nonapps_visible = self.nonapps_visible
+        if nonapps_visible:
             number_additional_pkg = len(self.apps_filter.additional_pkg)
             number_removed_pkg = len(self.apps_filter.removed_pkg)
         else:
@@ -240,8 +250,6 @@ class OneConfPane(SoftwarePane):
         old_model = self.app_view.get_model()
         if old_model is not None:
             old_model.active = False
-        # DEBUG: count to show I'm not dreaming
-        self.apps_filter.num_pkg = 0
         # get a new store and attach it to the view
         new_model = AppStore(self.cache,
                              self.db, 
@@ -250,8 +258,6 @@ class OneConfPane(SoftwarePane):
                              nonapps_visible = self.nonapps_visible,
                              filter=self.apps_filter)
         self.app_view.set_model(new_model)
-        # DEBUG: count to show I'm not dreaming
-        print self.apps_filter.num_pkg
         self.emit("app-list-changed", len(new_model))
         self.refresh_selection_bar()
         self.refreshing = False
@@ -371,8 +377,7 @@ class OneConfFilter(object):
         self.removed_apps_pkg = 0
     def filter(self, doc, pkgname):
         """return True if the package should be displayed"""
-        # DEBUG: count to show I'm not dreaming
-        self.num_pkg = self.num_pkg + 1
+
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
             other_list = self.removed_pkglist
@@ -383,13 +388,6 @@ class OneConfFilter(object):
         # TODO: that's ugly, but if we could have a direct Xapian request
         # for that (OneConf doesn't know which packages are applications)
         # it would be better.
-
-        # /!\ it seems there is a fallback somewhere!
-        # if I return "False" to every pkgname in the filter (without a search),
-        # it's not looking only for apps, but for the whole set of packages.
-        # Tremendously slowing down everything (36844 against 2345)
-        #if pkgname == "xserver-xorg-video-tseng":
-        #    print "found"
 
         if pkgname in other_list:
             if self.current_mode == self.ADDITIONAL_PKG:
@@ -403,7 +401,6 @@ class OneConfFilter(object):
             else:
                 self.removed_apps_pkg += 1
             return True
-            #return False # try that for fun and profit, and all the set is triggerred !!!
         return False
 
 if __name__ == '__main__':
