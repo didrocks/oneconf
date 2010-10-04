@@ -1,3 +1,16 @@
+oneconf (0.1.2) UNRELEASED; urgency=low
+
+  * New release:
+    - fix possible rash on login to u1account (LP: #650911)
+    - be compatible with previous OneConf format (LP: #650637)
+    - fix some hanging when u1dialog window triggered at wrong time
+    - protect pane refresh in multiple threads
+    - be compatible with incoming USC, enhancing the loop performance
+      when non apps not visible (LP: #653787) (still compatible with previous
+      one)
+
+ -- Didier Roche <didrocks@ubuntu.com>  Mon, 04 Oct 2010 12:18:36 +0200
+
 oneconf (0.1.1) maverick; urgency=low
 
   * data/ui/u1inventorydialog.ui:
