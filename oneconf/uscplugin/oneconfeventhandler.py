@@ -28,6 +28,7 @@ import os
 from threading import Thread
 from ubuntu_sso import DBUS_BUS_NAME, DBUS_IFACE_CRED_NAME, DBUS_CRED_PATH
 from ubuntuone import clientdefs
+from urllib2 import URLError
 
 oauth_consumer = None
 oauth_token = None
@@ -43,11 +44,15 @@ class OneConfEventHandler(gobject.GObject):
 
     """"U1 login status and binding"""
 
+    # TODO:
+    # We need to be smarter there and handle more signals:
+    # inventory-changed (new OneConf syncing and so, new potential value)
+    # inventory-refreshed (or others): just adding/removing something when new host
     __gsignals__ = {
         "inventory-refreshed" : (gobject.SIGNAL_RUN_LAST,
-                             gobject.TYPE_NONE, 
-                             (),
-                            ),
+                                 gobject.TYPE_NONE, 
+                                 (),
+                              ),
     }
 
     def __init__(self, oneconf):
@@ -55,8 +60,8 @@ class OneConfEventHandler(gobject.GObject):
         gobject.GObject.__init__(self)
         self.oneconf = oneconf
         self.u1hosts = {}
-        self.login = None
         self.bus = dbus.SessionBus()
+        self._login = None
         # update account info in the GUI in async mode
         gobject.threads_init()
         self.register_u1_signal_handlers()
@@ -67,9 +72,10 @@ class OneConfEventHandler(gobject.GObject):
     def _get_login(self):
         return self._login
     def _set_login(self, newlogin):
-        logging.debug("changed login to %s" % newlogin)
-        self._login = newlogin
-        self.emit('inventory-refreshed')
+        if newlogin != self._login:
+            logging.debug("changed login to %s" % newlogin)
+            self._login = newlogin
+            self.emit('inventory-refreshed')
     login = property(_get_login, _set_login)
 
     def check_inventory(self):
@@ -177,14 +183,18 @@ class OneConfEventHandler(gobject.GObject):
 
 
 def really_do_rest_request(url, method, conn):
-	"""Second-order helper that does the REST request.
+    """Second-order helper that does the REST request.
 
-	Necessary because of libproxy's orneriness WRT threads: LP:633241.
-	"""
-	from ubuntuone.api.restclient import RestClient
-	rest_client = RestClient(url)
-	result = rest_client.call(url, method, oauth_consumer, oauth_token)
-	conn.send(result)
+    Necessary because of libproxy's orneriness WRT threads: LP:633241.
+    """
+    from ubuntuone.api.restclient import RestClient
+    rest_client = RestClient(url)
+    try:
+        result = rest_client.call(url, method, oauth_consumer, oauth_token)
+    except (AttributeError, URLError):
+        # to finish the stack call, otherwise freeze the ui
+        result = None
+    conn.send(result)
 
 def do_rest_request(proc, conn, callback):
     """Helper that handles the REST response."""
