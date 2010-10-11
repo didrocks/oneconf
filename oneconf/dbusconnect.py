@@ -21,8 +21,6 @@ import dbus.service
 import glib
 import sys
 
-from oneconf.hosts import Hosts, HostError
-from oneconf.packagesethandler import PackageSetHandler
 
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 HOSTS_OBJECT_NAME = "/com/ubuntu/oneconf/HostsHandler"
@@ -47,6 +45,11 @@ class DbusHostsService(dbus.service.Object):
         bus_name = dbus.service.BusName(ONECONF_SERVICE_NAME,
                                         bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name, HOSTS_OBJECT_NAME)
+        # Only import oneconf module now (and so load desktopcouch and such)
+        # in the server side
+        from oneconf.hosts import Hosts, HostError
+        from oneconf.packagesethandler import PackageSetHandler
+
         self.hosts = Hosts()
         self.PackageSetHandler = PackageSetHandler(self.hosts)
         self.activity = False
