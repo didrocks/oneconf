@@ -57,7 +57,8 @@ class OneConfPane(SoftwarePane):
                  oneconfeventhandler,
                  compared_with_hostid):
         # parent
-        SoftwarePane.__init__(self, cache, history, db, distro, icons, datadir)
+        SoftwarePane.__init__(self, cache, db, distro, icons, datadir)
+        self.init_view()
         self.hostname = ''
         self.search_terms = ""
         self.compared_with_hostid = compared_with_hostid
@@ -82,7 +83,7 @@ class OneConfPane(SoftwarePane):
     def _build_ui(self):
 
         self.navigation_bar.set_size_request(26, -1)
-        self.notebook.append_page(self.scroll_app_list, gtk.Label("app list"))
+        self.notebook.append_page(self.box_app_list, gtk.Label("app list"))
         # details
         self.notebook.append_page(self.scroll_details, gtk.Label("details"))
 
@@ -174,8 +175,9 @@ class OneConfPane(SoftwarePane):
         else:
             number_additional_pkg = self.apps_filter.additional_apps_pkg
             number_removed_pkg = self.apps_filter.removed_apps_pkg
+        # FIXME: use positive language, use ngettext
         if number_additional_pkg > 1:
-            msg_additional_pkg = _('%s items that aren\'t on that computer') % number_additional_pkg
+            msg_additional_pkg = _('%s new items that are on the remove computer') % number_additional_pkg
             msg_add_act_on_store = _("Install those %s items") % number_additional_pkg
         else:
             msg_additional_pkg = _('%s item that isn\'t on that computer') % number_additional_pkg
@@ -342,15 +344,14 @@ class OneConfPane(SoftwarePane):
 
 
 # TODO: find a way to replace that by a Xapian query ?
-class OneConfFilter(object):
+class OneConfFilter(AppViewFilter):
     """
     Filter that can be hooked into AppStore to filter for pkg name criteria
     """
     (ADDITIONAL_PKG, REMOVED_PKG) = range(2)
 
     def __init__(self, db, cache, additional_pkglist, removed_pkglist):
-        self.db = db
-        self.cache = cache
+        super(OneConfFilter, self).__init__(db, cache)
         self.additional_pkglist = additional_pkglist
         self.removed_pkglist = removed_pkglist
         self.only_packages_without_applications = False
@@ -375,9 +376,9 @@ class OneConfFilter(object):
     def reset_counter(self):
         self.additional_apps_pkg = 0
         self.removed_apps_pkg = 0
-    def filter(self, doc, pkgname):
+    def __call__(self, doc):
         """return True if the package should be displayed"""
-
+        pkgname =  doc.get_value(XAPIAN_VALUE_PKGNAME)
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
             other_list = self.removed_pkglist
@@ -400,8 +401,8 @@ class OneConfFilter(object):
                 self.additional_apps_pkg += 1
             else:
                 self.removed_apps_pkg += 1
-            return True
-        return False
+            return False
+        return True
 
 if __name__ == '__main__':
     from softwarecenter.apt.apthistory import get_apt_history

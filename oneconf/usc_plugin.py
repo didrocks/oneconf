@@ -111,7 +111,7 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
                 self.app.view_manager.register(current_pane, current_hostid)
                 current_pane.app_view.connect("application-request-action", self.app.on_application_request_action)
                 icon = AnimatedImage(view_switcher.icons.load_icon("computer", model.ICON_SIZE, 0))
-                current_iter = model.insert_after(None, previous_iter, [icon, new_elem[current_hostid], current_hostid, channel])
+                current_iter = model.insert_after(None, previous_iter, [icon, new_elem[current_hostid], current_hostid, channel, None])
                 previous_iter = current_iter
                 self.view_switchers_oneconf_hostid.add(current_hostid)
                 # show the pane and its content once it's added to the notebook
