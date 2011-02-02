@@ -242,10 +242,19 @@ class OneConfPane(SoftwarePane):
 
         # call partent to do the real work
         super(OneConfPane, self).refresh_apps()
+        
+        # FIXME: his is fake just to see if the label shows up
+        #self.app_view.get_model().nr_apps = 1
+        #self.app_view.get_model().nr_pkgs = 9
 
-        #self.refresh_selection_bar()
+        self.update_show_hide_nonapps()
+        self.refresh_selection_bar()
         self.refreshing = False
         return False
+
+    def is_applist_view_showing(self):
+        # FIXME: actually make this useful
+        return True
 
     def on_search_terms_changed(self, searchentry, terms):
         """callback when the search entry widget changes"""
@@ -354,7 +363,7 @@ class OneConfFilter(AppViewFilter):
         pkgname =  doc.get_value(XAPIAN_VALUE_PKGNAME)
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
-            #pkg_list_to_compare = set(["unace", "unworkable"])
+            #pkg_list_to_compare = set(["unace", "unworkable", "apt"])
             other_list = self.removed_pkglist
         else:
             pkg_list_to_compare = self.removed_pkglist
