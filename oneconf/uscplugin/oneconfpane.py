@@ -87,7 +87,6 @@ class OneConfPane(SoftwarePane):
 
         self.navigation_bar.set_size_request(26, -1)
         self.notebook.append_page(self.box_app_list, gtk.Label("app list"))
-        self.box_app_list.show_all()
         # details
         self.notebook.append_page(self.scroll_details, gtk.Label("details"))
 
@@ -95,9 +94,9 @@ class OneConfPane(SoftwarePane):
         self.toolbar = gtk.Toolbar()
         self.toolbar.show()
         self.toolbar.set_style(gtk.TOOLBAR_TEXT)
-        self.pack_start(self.embeeded_title_bar, expand=False)
+        self.box_app_list.pack_start(self.embeeded_title_bar, expand=False)
         self.embeeded_title_bar.pack_start(self.toolbar, expand=True)
-        self.reorder_child(self.embeeded_title_bar, 1)
+        self.box_app_list.reorder_child(self.embeeded_title_bar, 1)
 
         additional_pkg_action = gtk.RadioAction('additional_pkg', None, None, None, self.ADDITIONAL_PKG)
         additional_pkg_action.connect('changed', self.change_current_mode)
@@ -114,6 +113,8 @@ class OneConfPane(SoftwarePane):
         self.embeeded_title_bar.pack_end(self.act_on_store_button, expand=False)
         self.act_on_store_button.connect('clicked', self._act_on_current_appstore)
         self.act_on_store_button.show()
+        
+        self.box_app_list.show_all()
 
         # initial refresh
         self.force_refresh()
