@@ -109,7 +109,8 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             if current_hostid not in self.view_switchers_oneconf_hostid:
                 current_pane = oneconfpane.OneConfPane(self.app.cache, None, self.app.db, 'Ubuntu', self.app.icons, self.app.datadir, self.oneconfeventhandler, current_hostid)
                 self.app.view_manager.register(current_pane, current_hostid)
-                current_pane.app_view.connect("application-request-action", self.app.on_application_request_action)
+                # FIXME: portme
+                #current_pane.app_view.connect("application-request-action", self.app.on_application_request_action)
                 icon = AnimatedImage(view_switcher.icons.load_icon("computer", model.ICON_SIZE, 0))
                 current_iter = model.insert_after(None, previous_iter, [icon, new_elem[current_hostid], current_hostid, channel, None])
                 previous_iter = current_iter

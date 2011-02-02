@@ -33,7 +33,7 @@ from gettext import gettext as _
 from softwarecenter.enums import *
 
 from softwarecenter.view.appview import AppView, AppStore, AppViewFilter
-
+from softwarecenter.models.appstore import AppStore
 from softwarecenter.view.softwarepane import SoftwarePane, wait_for_apt_cache_ready
 
 # TODO:
@@ -58,8 +58,8 @@ class OneConfPane(SoftwarePane):
                  compared_with_hostid):
         # parent
         SoftwarePane.__init__(self, cache, db, distro, icons, datadir)
-        self.init_view()
         self.hostname = ''
+        self.pane_name = ''
         self.search_terms = ""
         self.compared_with_hostid = compared_with_hostid
         self.current_appview_selection = None
@@ -77,13 +77,17 @@ class OneConfPane(SoftwarePane):
         # Backend installation
         self.backend.connect("transaction-finished", self._on_transaction_finished)
 
-        # UI
-        self._build_ui()
+    def init_view(self):
+        if not self.view_initialized:
+            super(OneConfPane, self).init_view()
+            self._build_ui()
+            self.view_initialized = True
 
     def _build_ui(self):
 
         self.navigation_bar.set_size_request(26, -1)
         self.notebook.append_page(self.box_app_list, gtk.Label("app list"))
+        self.box_app_list.show_all()
         # details
         self.notebook.append_page(self.scroll_details, gtk.Label("details"))
 
@@ -152,6 +156,7 @@ class OneConfPane(SoftwarePane):
         if not self.apps_filter:
             self.apps_filter = OneConfFilter(self.db, self.cache, set(), set())
         self.hostname = hostname
+        self.pane_name = hostname
         (additional_pkg, missing_pkg) = oneconfeventhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
         self.apps_filter.additional_pkglist = set(additional_pkg)
         self.apps_filter.removed_pkglist = set(missing_pkg)
@@ -170,8 +175,8 @@ class OneConfPane(SoftwarePane):
         except AttributeError:
             nonapps_visible = self.nonapps_visible
         if nonapps_visible:
-            number_additional_pkg = len(self.apps_filter.additional_pkg)
-            number_removed_pkg = len(self.apps_filter.removed_pkg)
+            number_additional_pkg = len(self.apps_filter.additional_pkglist)
+            number_removed_pkg = len(self.apps_filter.removed_pkglist)
         else:
             number_additional_pkg = self.apps_filter.additional_apps_pkg
             number_removed_pkg = self.apps_filter.removed_apps_pkg
@@ -233,35 +238,12 @@ class OneConfPane(SoftwarePane):
         if self.refreshing:
             return False
         self.refreshing = True
-
         self.apps_filter.reset_counter()
-        if self.search_terms:
-            query = self.db.get_query_list_from_search_entry(self.search_terms)
-            self.navigation_bar.add_with_id(_("Search Results"),
-                                            self.on_navigation_search, 
-                                            "search")
-        else:
-            query = None
-        self.navigation_bar.add_with_id(self.hostname, 
-                                        self.on_navigation_list,
-                                        "list",
-                                        animate=False)
-        # *ugh* deactivate the old model because otherwise it keeps
-        # getting progress_changed events and eats CPU time until it's
-        # garbage collected
-        old_model = self.app_view.get_model()
-        if old_model is not None:
-            old_model.active = False
-        # get a new store and attach it to the view
-        new_model = AppStore(self.cache,
-                             self.db, 
-                             self.icons, 
-                             query,
-                             nonapps_visible = self.nonapps_visible,
-                             filter=self.apps_filter)
-        self.app_view.set_model(new_model)
-        self.emit("app-list-changed", len(new_model))
-        self.refresh_selection_bar()
+
+        # call partent to do the real work
+        super(OneConfPane, self).refresh_apps()
+
+        #self.refresh_selection_bar()
         self.refreshing = False
         return False
 
@@ -354,25 +336,16 @@ class OneConfFilter(AppViewFilter):
         super(OneConfFilter, self).__init__(db, cache)
         self.additional_pkglist = additional_pkglist
         self.removed_pkglist = removed_pkglist
-        self.only_packages_without_applications = False
         self.current_mode = self.ADDITIONAL_PKG
         self.reset_counter()
-    def set_only_packages_without_applications(self, v):
-        """
-        only show packages that are not displayed as applications
-
-        e.g. abiword (the package document) will not be displayed
-             because there is a abiword application already
-        """
-        self.only_packages_without_applications = v
-    def get_only_packages_without_applications(self, v):
-        return self.only_packages_without_applications
+    @property
+    def required(self):
+        """ True if the filter is in a state that it should be part of a query """
+        return True
     def set_new_current_mode(self, v):
         self.current_mode = v
     def get_current_mode(self):
         return self.current_mode
-    def get_supported_only(self):
-        return False
     def reset_counter(self):
         self.additional_apps_pkg = 0
         self.removed_apps_pkg = 0
@@ -381,6 +354,7 @@ class OneConfFilter(AppViewFilter):
         pkgname =  doc.get_value(XAPIAN_VALUE_PKGNAME)
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
+            #pkg_list_to_compare = set(["unace", "unworkable"])
             other_list = self.removed_pkglist
         else:
             pkg_list_to_compare = self.removed_pkglist
@@ -401,8 +375,8 @@ class OneConfFilter(AppViewFilter):
                 self.additional_apps_pkg += 1
             else:
                 self.removed_apps_pkg += 1
-            return False
-        return True
+            return True
+        return False
 
 if __name__ == '__main__':
     from softwarecenter.apt.apthistory import get_apt_history
