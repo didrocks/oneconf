@@ -34,6 +34,7 @@ from softwarecenter.enums import *
 
 from softwarecenter.view.appview import AppView, AppStore, AppViewFilter
 from softwarecenter.models.appstore import AppStore
+from softwarecenter.distro import get_distro
 from softwarecenter.view.softwarepane import SoftwarePane, wait_for_apt_cache_ready
 
 # TODO:
@@ -83,6 +84,7 @@ class OneConfPane(SoftwarePane):
             super(OneConfPane, self).init_view()
             self._build_ui()
             self.view_initialized = True
+            self.force_refresh()
 
     def _build_ui(self):
 
@@ -117,9 +119,6 @@ class OneConfPane(SoftwarePane):
         self.act_on_store_button.show()
         
         self.box_app_list.show_all()
-
-        # initial refresh
-        self.force_refresh()
 
     def _act_on_current_appstore(self, widget):
         '''
@@ -225,7 +224,7 @@ class OneConfPane(SoftwarePane):
 
     def _show_installed_overview(self):
         " helper that goes back to the overview page "
-        self.navigation_bar.remove_id("details")
+        self.navigation_bar.remove_id(NAV_BUTTON_ID_DETAILS)
         self.notebook.set_current_page(self.PAGE_APPLIST)
         self.toolbar.show()
         self.searchentry.show()
@@ -318,7 +317,7 @@ class OneConfPane(SoftwarePane):
         self.current_appview_selection = app
 
     def display_search(self):
-        self.navigation_bar.remove_id("details")
+        self.navigation_bar.remove_id(NAV_BUTTON_ID_DETAILS)
         self.notebook.set_current_page(self.PAGE_APPLIST)
         model = self.app_view.get_model()
         if model:
@@ -355,14 +354,23 @@ class OneConfPane(SoftwarePane):
 
 
 # TODO: find a way to replace that by a Xapian query ?
-class OneConfFilter(AppViewFilter):
+class OneConfFilter(xapian.MatchDecider):
     """
-    Filter that can be hooked into AppStore to filter for pkg name criteria
+    Filter that can be hooked into xapian get_mset to filter for criteria that
+    are based around the package details that are not listed in xapian
+    (like installed_only) or archive section
     """
+    
     (ADDITIONAL_PKG, REMOVED_PKG) = range(2)
 
     def __init__(self, db, cache, additional_pkglist, removed_pkglist):
-        super(OneConfFilter, self).__init__(db, cache)
+        xapian.MatchDecider.__init__(self)
+        self.distro = get_distro()
+        self.db = db
+        self.cache = cache
+        self.supported_only = False
+        self.installed_only = False
+        self.not_installed_only = False
         self.additional_pkglist = additional_pkglist
         self.removed_pkglist = removed_pkglist
         self.current_mode = self.ADDITIONAL_PKG
@@ -375,6 +383,18 @@ class OneConfFilter(AppViewFilter):
         self.current_mode = v
     def get_current_mode(self):
         return self.current_mode
+    def get_supported_only(self):
+        return self.supported_only
+    def __eq__(self, other):
+        if self is None and other is not None: 
+            return True
+        if self is None or other is None: 
+            return False
+        return (self.current_mode == other.current_mode and
+                self.additional_pkglist == other.additional_pkglist and
+                self.emoved_pkglist == other.removed_pkglist)
+    def __ne__(self, other):
+        return not self.__eq__(other)
     def reset_counter(self):
         self.additional_apps_pkg = 0
         self.removed_apps_pkg = 0

@@ -74,6 +74,7 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         self.oneconf = DbusConnect()
         self.oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(self.oneconf)
         # refresh host list
+        self._refreshing_hosts = False
         # Connect the signal and then only ask for checking the inventory
         self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
         self.oneconfeventhandler.check_inventory()
@@ -86,6 +87,11 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
     def refresh_hosts(self, loginhandler):
         """refresh hosts list in the panel view"""
         logging.debug('oneconf: refresh hosts')
+
+        # this function can be called in different threads
+        if self._refreshing_hosts:
+            return
+        self._refreshing_hosts = True
 
         view_switcher = self.app.view_switcher
         model = view_switcher.get_model()
@@ -115,4 +121,6 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
                 self.view_switchers_oneconf_hostid.add(current_hostid)
                 # show the pane and its content once it's added to the notebook
                 current_pane.show_all()
+                
+        self._refreshing_hosts = False
 
