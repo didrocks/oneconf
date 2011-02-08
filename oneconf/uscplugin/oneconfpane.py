@@ -65,10 +65,7 @@ class OneConfPane(SoftwarePane):
         self.compared_with_hostid = compared_with_hostid
         self.current_appview_selection = None
         self.apps_filter = None
-        try:
-            self.nonapps_visible = AppStore.NONAPPS_NEVER_VISIBLE
-        except AttributeError: # be compatible with older USC
-            self.nonapps_visible = False
+        self.nonapps_visible = AppStore.NONAPPS_NEVER_VISIBLE
         self.refreshing = False
 
         # OneConf stuff there
@@ -173,19 +170,13 @@ class OneConfPane(SoftwarePane):
         gobject.timeout_add(1, self.refresh_apps)
 
     def refresh_selection_bar(self):
-        try: # be compatible with older USC
-            if self.nonapps_visible == AppStore.NONAPPS_ALWAYS_VISIBLE:
-                nonapps_visible = True
-            else:
-                nonapps_visible = False
-        except AttributeError:
-            nonapps_visible = self.nonapps_visible
-        if nonapps_visible:
+        if self.nonapps_visible == AppStore.NONAPPS_ALWAYS_VISIBLE:
             number_additional_pkg = len(self.apps_filter.additional_pkglist)
             number_removed_pkg = len(self.apps_filter.removed_pkglist)
         else:
             number_additional_pkg = self.apps_filter.additional_apps_pkg
             number_removed_pkg = self.apps_filter.removed_apps_pkg
+
         # FIXME: use positive language, use ngettext
         if number_additional_pkg > 1:
             msg_additional_pkg = _('%s new items that are on the remove computer') % number_additional_pkg
@@ -353,6 +344,11 @@ class OneConfPane(SoftwarePane):
     def is_category_view_showing(self):
         # there is no category view in the OneConf pane
         return False
+        
+    def _hide_nonapp_pkgs(self):
+        # override to never show apps visible
+        self.nonapps_visible = AppStore.NONAPPS_NEVER_VISIBLE
+        self.refresh_apps()
 
 
 # TODO: find a way to replace that by a Xapian query ?
@@ -388,13 +384,19 @@ class OneConfFilter(xapian.MatchDecider):
     def get_supported_only(self):
         return self.supported_only
     def __eq__(self, other):
-        if self is None and other is not None: 
-            return True
-        if self is None or other is None: 
-            return False
-        return (self.current_mode == other.current_mode and
-                self.additional_pkglist == other.additional_pkglist and
-                self.removed_pkglist == other.removed_pkglist)
+        #if self is None and other is not None: 
+        #    return True
+        #if self is None or other is None: 
+        #    return False
+        #return (self.current_mode == other.current_mode and
+        #        self.additional_pkglist == other.additional_pkglist and
+        #        self.removed_pkglist == other.removed_pkglist)
+        # FIXME: EVILHACK
+        # let be evil for now and reforce all the reference. This bad hack can be removed once:
+        # 1. __call__ doesn't need the filtering to be performed again for counting the number of package both side (so a one-only tree will be needed)
+        # 2. we create a new signal other than "inventory-refreshed" to first check if the list of host is different or if something really happened
+        # Note: evil here mean "as in maverick" case as there was not this kind of filter :)
+        return False
     def __ne__(self, other):
         return not self.__eq__(other)
     def reset_counter(self):
