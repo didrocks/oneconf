@@ -392,7 +392,7 @@ class OneConfFilter(xapian.MatchDecider):
             return False
         return (self.current_mode == other.current_mode and
                 self.additional_pkglist == other.additional_pkglist and
-                self.emoved_pkglist == other.removed_pkglist)
+                self.removed_pkglist == other.removed_pkglist)
     def __ne__(self, other):
         return not self.__eq__(other)
     def reset_counter(self):
