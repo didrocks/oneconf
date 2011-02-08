@@ -248,7 +248,9 @@ class OneConfPane(SoftwarePane):
         self.apps_filter.reset_counter()
 
         # call parent to do the real work
+        print "there"
         super(OneConfPane, self).refresh_apps()
+        print "there"
         
         # FIXME: his is fake just to see if the label shows up
         #self.app_view.get_model().nr_apps = 1
@@ -401,6 +403,8 @@ class OneConfFilter(xapian.MatchDecider):
     def __call__(self, doc):
         """return True if the package should be displayed"""
         pkgname =  doc.get_value(XAPIAN_VALUE_PKGNAME)
+        if pkgname == "bughugger":
+            print "%s" % pkgname
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
             other_list = self.removed_pkglist
@@ -423,8 +427,8 @@ class OneConfFilter(xapian.MatchDecider):
                 self.additional_apps_pkg += 1
             else:
                 self.removed_apps_pkg += 1
-            return False
-        return True
+            return True
+        return False
 
 if __name__ == '__main__':
     from softwarecenter.apt.apthistory import get_apt_history
