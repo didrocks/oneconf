@@ -79,17 +79,18 @@ class OneConfPane(SoftwarePane):
 
     def init_view(self):
         if not self.view_initialized:
-            super(OneConfPane, self).init_view()
             self.show_appview_spinner()
+            super(OneConfPane, self).init_view()
             self._build_ui()
             self.view_initialized = True
 
     def _build_ui(self):
 
         self.navigation_bar.set_size_request(26, -1)
-        self.notebook.append_page(self.box_app_list, gtk.Label("app list"))
+        self.notebook.append_page(self.box_app_list, gtk.Label(NAV_BUTTON_ID_LIST))
         # details
-        self.notebook.append_page(self.scroll_details, gtk.Label("details"))
+        self.notebook.append_page(self.scroll_details, gtk.Label(NAV_BUTTON_ID_DETAILS))
+        self.scroll_details.show()
 
         self.embeeded_title_bar = gtk.HBox()
         self.toolbar = gtk.Toolbar()
@@ -232,7 +233,8 @@ class OneConfPane(SoftwarePane):
     def _clear_search(self):
         # remove the details and clear the search
         self.searchentry.clear()
-        self.navigation_bar.remove_id("search")
+        self.apps_search_term = ""
+        self.navigation_bar.remove_id(NAV_BUTTON_ID_SEARCH)
 
     @wait_for_apt_cache_ready
     def refresh_apps(self):
@@ -261,15 +263,27 @@ class OneConfPane(SoftwarePane):
     def is_applist_view_showing(self):
         # FIXME: actually make this useful
         return True
-
-    def on_search_terms_changed(self, searchentry, terms):
+        
+    def on_search_terms_changed(self, widget, new_text):
         """callback when the search entry widget changes"""
-        logging.debug("on_search_terms_changed: '%s'" % terms)
-        self.search_terms = terms
-        if not self.search_terms:
+        logging.debug("on_search_terms_changed: %s" % new_text)
+
+        # we got the signal after we already switched to a details
+        # page, ignore it
+        if self.notebook.get_current_page() == self.PAGE_APP_DETAILS:
+            return
+
+        # DTRT if the search is reseted
+        if not new_text:
             self._clear_search()
+        else:
+            self.apps_search_term = new_text
+            self.apps_limit = DEFAULT_SEARCH_LIMIT
+            # enter custom list mode if search has non-trailing
+            # comma per custom list spec.
+            self.custom_list_mode = "," in new_text.rstrip(',')
         self._append_refresh_apps()
-        self.notebook.set_current_page(self.PAGE_APPLIST)
+        self.notebook.set_current_page(self.PAGE_APPLIST)        
 
     def on_db_reopen(self, db):
         self._append_refresh_apps()
