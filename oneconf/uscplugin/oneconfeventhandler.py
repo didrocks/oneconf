@@ -67,6 +67,7 @@ class OneConfEventHandler(gobject.GObject):
         self.register_u1_signal_handlers()
         gobject.timeout_add_seconds(1, self.do_login_request, self.bus)
         gobject.timeout_add_seconds(CHECK_CONNECT_STATE_DELAY, self.check_connect_state)
+        self.check_connect_state()
 
     # login property
     def _get_login(self):

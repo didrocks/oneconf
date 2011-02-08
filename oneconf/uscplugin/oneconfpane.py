@@ -80,6 +80,7 @@ class OneConfPane(SoftwarePane):
     def init_view(self):
         if not self.view_initialized:
             super(OneConfPane, self).init_view()
+            self.show_appview_spinner()
             self._build_ui()
             self.view_initialized = True
 
@@ -148,6 +149,10 @@ class OneConfPane(SoftwarePane):
             gobject.timeout_add_seconds(time, Thread(target=self._on_inventory_change, args=(self.oneconfeventhandler,)).start)
 
     def _on_inventory_change(self, oneconfeventhandler):
+        
+        # only make oneconf calls once initialized
+        if not self.view_initialized:
+            return
         try:
             current, hostname, show_inventory, show_others = oneconfeventhandler.u1hosts[self.compared_with_hostid]
         except KeyError:
@@ -241,7 +246,7 @@ class OneConfPane(SoftwarePane):
         self.refreshing = True
         self.apps_filter.reset_counter()
 
-        # call partent to do the real work
+        # call parent to do the real work
         super(OneConfPane, self).refresh_apps()
         
         # FIXME: his is fake just to see if the label shows up
@@ -364,7 +369,6 @@ class OneConfFilter(AppViewFilter):
         pkgname =  doc.get_value(XAPIAN_VALUE_PKGNAME)
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
-            #pkg_list_to_compare = set(["unace", "unworkable", "apt"])
             other_list = self.removed_pkglist
         else:
             pkg_list_to_compare = self.removed_pkglist
@@ -385,8 +389,8 @@ class OneConfFilter(AppViewFilter):
                 self.additional_apps_pkg += 1
             else:
                 self.removed_apps_pkg += 1
-            return True
-        return False
+            return False
+        return True
 
 if __name__ == '__main__':
     from softwarecenter.apt.apthistory import get_apt_history

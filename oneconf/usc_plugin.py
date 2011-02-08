@@ -74,9 +74,7 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         self.oneconf = DbusConnect()
         self.oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(self.oneconf)
         # refresh host list
-        # TODO: we should be smarter when calling this one:
-        # this is what slow down everything and we should call it in a more clever way with multiple signals
-        # (see oneconfevenhandler)
+        # Connect the signal and then only ask for checking the inventory
         self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
         self.oneconfeventhandler.check_inventory()
 
