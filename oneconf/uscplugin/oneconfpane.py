@@ -404,7 +404,7 @@ class OneConfFilter(xapian.MatchDecider):
         self.removed_apps_pkg = 0
     def __call__(self, doc):
         """return True if the package should be displayed"""
-        pkgname =  doc.get_value(XAPIAN_VALUE_PKGNAME)
+        pkgname =  self.db.get_pkgname(doc)
         if pkgname == "bughugger":
             print "%s" % pkgname
         if self.current_mode == self.ADDITIONAL_PKG:
