@@ -157,7 +157,7 @@ class OneConfPane(SoftwarePane):
             return
         # create first filter
         if not self.apps_filter:
-            self.apps_filter = OneConfFilter(self.db, self.cache, set(), set())
+            self.apps_filter = OneConfFilter(self.db, self.cache, set(), set(), self.nonapps_visible)
         self.hostname = hostname
         self.pane_name = hostname
         (additional_pkg, missing_pkg) = oneconfeventhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
@@ -171,8 +171,8 @@ class OneConfPane(SoftwarePane):
 
     def refresh_selection_bar(self):
         if self.nonapps_visible == AppStore.NONAPPS_ALWAYS_VISIBLE:
-            number_additional_pkg = len(self.apps_filter.additional_pkglist)
-            number_removed_pkg = len(self.apps_filter.removed_pkglist)
+            number_additional_pkg = len(self.apps_filter.additional_apps_pkg)
+            number_removed_pkg = len(self.apps_filter.removed_apps_pkg)
         else:
             number_additional_pkg = len(self.apps_filter.additional_apps_pkg)
             number_removed_pkg = len(self.apps_filter.removed_apps_pkg)
@@ -239,9 +239,7 @@ class OneConfPane(SoftwarePane):
         self.apps_filter.reset_counter()
 
         # call parent to do the real work
-        print "there"
         super(OneConfPane, self).refresh_apps()
-        print "there"
         
         # FIXME: his is fake just to see if the label shows up
         #self.app_view.get_model().nr_apps = 1
@@ -348,8 +346,14 @@ class OneConfPane(SoftwarePane):
     def _hide_nonapp_pkgs(self):
         # override to never show apps visible
         self.nonapps_visible = AppStore.NONAPPS_NEVER_VISIBLE
+        self.apps_filter.set_non_apps_visible(self.nonapps_visible)
         self.refresh_apps()
 
+    def _show_nonapp_pkgs(self):
+        # override to never show apps visible
+        self.nonapps_visible = AppStore.NONAPPS_ALWAYS_VISIBLE
+        self.apps_filter.set_non_apps_visible(self.nonapps_visible)
+        self.refresh_apps()
 
 # TODO: find a way to replace that by a Xapian query ?
 class OneConfFilter(xapian.MatchDecider):
@@ -361,7 +365,7 @@ class OneConfFilter(xapian.MatchDecider):
     
     (ADDITIONAL_PKG, REMOVED_PKG) = range(2)
 
-    def __init__(self, db, cache, additional_pkglist, removed_pkglist):
+    def __init__(self, db, cache, additional_pkglist, removed_pkglist, non_apps_visible):
         xapian.MatchDecider.__init__(self)
         self.distro = get_distro()
         self.db = db
@@ -372,6 +376,7 @@ class OneConfFilter(xapian.MatchDecider):
         self.additional_pkglist = additional_pkglist
         self.removed_pkglist = removed_pkglist
         self.current_mode = self.ADDITIONAL_PKG
+        self._non_apps_visible = non_apps_visible
         self.reset_counter()
     @property
     def required(self):
@@ -383,6 +388,8 @@ class OneConfFilter(xapian.MatchDecider):
         return self.current_mode
     def get_supported_only(self):
         return self.supported_only
+    def set_non_apps_visible(self, non_apps_visible):
+        self._non_apps_visible = non_apps_visible
     def __eq__(self, other):
         #if self is None and other is not None: 
         #    return True
@@ -402,11 +409,16 @@ class OneConfFilter(xapian.MatchDecider):
     def reset_counter(self):
         self.additional_apps_pkg = set()
         self.removed_apps_pkg = set()
+    def _current_package_is_app(self, pkgname):
+        if not self._package_cache_is_app:
+            self._package_name_is_app = (self._non_apps_visible == AppStore.NONAPPS_ALWAYS_VISIBLE or
+                                         len(self.db.get_apps_for_pkgname(pkgname)) == 1)
+        return self._package_name_is_app
     def __call__(self, doc):
         """return True if the package should be displayed"""
         pkgname =  self.db.get_pkgname(doc)
-        if pkgname == "bughugger":
-            print "%s" % pkgname
+        self._package_cache_is_app = None
+        
         if self.current_mode == self.ADDITIONAL_PKG:
             pkg_list_to_compare = self.additional_pkglist
             other_list = self.removed_pkglist
@@ -418,17 +430,18 @@ class OneConfFilter(xapian.MatchDecider):
         # for that (OneConf doesn't know which packages are applications)
         # it would be better.
 
-        if pkgname in other_list:
+        if pkgname in other_list and self._current_package_is_app(pkgname): 
             if self.current_mode == self.ADDITIONAL_PKG:
                 self.removed_apps_pkg.add(pkgname)
             else:
                 self.additional_apps_pkg.add(pkgname)
                                     
         if pkgname in pkg_list_to_compare:
-            if self.current_mode == self.ADDITIONAL_PKG:
-                self.additional_apps_pkg.add(pkgname)
-            else:
-                self.removed_apps_pkg.add(pkgname)
+            if self._current_package_is_app(pkgname):
+                if self.current_mode == self.ADDITIONAL_PKG:
+                    self.additional_apps_pkg.add(pkgname)
+                else:
+                    self.removed_apps_pkg.add(pkgname)
             return True
         return False
 
