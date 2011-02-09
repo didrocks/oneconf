@@ -174,8 +174,8 @@ class OneConfPane(SoftwarePane):
             number_additional_pkg = len(self.apps_filter.additional_pkglist)
             number_removed_pkg = len(self.apps_filter.removed_pkglist)
         else:
-            number_additional_pkg = self.apps_filter.additional_apps_pkg
-            number_removed_pkg = self.apps_filter.removed_apps_pkg
+            number_additional_pkg = len(self.apps_filter.additional_apps_pkg)
+            number_removed_pkg = len(self.apps_filter.removed_apps_pkg)
 
         # FIXME: use positive language, use ngettext
         if number_additional_pkg > 1:
@@ -400,8 +400,8 @@ class OneConfFilter(xapian.MatchDecider):
     def __ne__(self, other):
         return not self.__eq__(other)
     def reset_counter(self):
-        self.additional_apps_pkg = 0
-        self.removed_apps_pkg = 0
+        self.additional_apps_pkg = set()
+        self.removed_apps_pkg = set()
     def __call__(self, doc):
         """return True if the package should be displayed"""
         pkgname =  self.db.get_pkgname(doc)
@@ -420,15 +420,15 @@ class OneConfFilter(xapian.MatchDecider):
 
         if pkgname in other_list:
             if self.current_mode == self.ADDITIONAL_PKG:
-                self.removed_apps_pkg += 1
+                self.removed_apps_pkg.add(pkgname)
             else:
-                self.additional_apps_pkg += 1
+                self.additional_apps_pkg.add(pkgname)
                                     
         if pkgname in pkg_list_to_compare:
             if self.current_mode == self.ADDITIONAL_PKG:
-                self.additional_apps_pkg += 1
+                self.additional_apps_pkg.add(pkgname)
             else:
-                self.removed_apps_pkg += 1
+                self.removed_apps_pkg.add(pkgname)
             return True
         return False
 
