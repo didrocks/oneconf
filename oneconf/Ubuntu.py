@@ -17,7 +17,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 from oneconf.distributor import Distro
-import re
 
 
 class Ubuntu(Distro):
@@ -28,14 +27,6 @@ class Ubuntu(Distro):
 
     def is_recommends_as_dep(self):
         return True
-
-    def get_false_defaults(self):
-        return set(['p7zip-full', 'vim-gnome', 'vim'])
-
-    def get_distribution_meta_packages(self):
-        return set(['ubuntu-minimal', 'ubuntu-standard', 'ubuntu-desktop',
-                    'ubuntu-netbook', 'xubuntu-desktop', 'lubuntu-desktop',
-                    'mythbuntu-desktop'])
 
 
 

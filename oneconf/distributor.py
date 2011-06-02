@@ -41,13 +41,6 @@ class Distro(object):
         Return: boolean'''
         raise UnimplementedError
 
-    def get_false_defaults(self):
-        '''return a set of false default positive packages'''
-        raise UnimplementedError
-
-    def get_distribution_meta_packages(self):
-        '''return a set of default distribution meta package'''
-        raise UnimplementedError
 
 def _get_distro():
     distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
