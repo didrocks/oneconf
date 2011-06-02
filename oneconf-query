@@ -30,8 +30,7 @@ from gettext import gettext as _
 from oneconf.version import *
 
 SCOPE_NONE, SCOPE_SELECTION, SCOPE_ALL, SCOPE_HOSTS, SCOPE_HOST = range(5)
-ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_SHOW_INVENTORY, \
-ACTION_SHOW_OTHERS = range(6)
+ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_SHARE_INVENTORY = range(5)
 
 
 def print_packages(installed_pkg_by_host, removed_pkg_by_host=None):
@@ -81,16 +80,19 @@ def print_hosts(hosts, only_current=False):
         print "Hosts stored for OneConf:"
 
     for hostid in hosts:
-        current, name, show_inventory, show_others = hosts[hostid]
+        current, name, share_inventory = hosts[hostid]
+        additional_text = ""
+        if current:
+            additional_text = "[Current]"
         if (only_current and current) or not only_current:
-            print "ID: %s\n name: %s\n share_inventory: %s\n show_others: %s" % (hostid, name, show_inventory, show_others)
+            print "ID: %s %s\n name: %s\n share_inventory: %s" % (hostid, additional_text, name, share_inventory)
 
 def err_scope():
     print _("you can't define --selection, --all or --hosts together.")
     sys.exit(1)
 
 def err_action():
-    print _("you can't define --list, --diff, --update, --show/hide-inventory, --show/hide-others together.")
+    print _("you can't define --list, --diff, --update, --share-inventory")
     sys.exit(1)
 
 def option_not_compatible(options, action):
@@ -99,6 +101,7 @@ def option_not_compatible(options, action):
 
 if __name__ == '__main__':
     
+    # TODO: choose the future, choose argparse!
     usage = _("usage: %prog [options]")
     parser = OptionParser(version= "%prog " + VERSION, usage=usage)
     parser.add_option("-d", "--diff", action="store_true",
@@ -121,8 +124,7 @@ if __name__ == '__main__':
                        "scope to consider for list and diff command.")
     scope_group.add_option("-s", "--selection", action="store_true",
                       dest="scope_selection",
-                      help=_("manually installed packages, not present " \
-                                      "by default (default)"))
+                      help=_("manually installed packages"))
     scope_group.add_option("-a", "--all", action="store_true",
                       dest="scope_all",
                       help=_("get all relevant packages from storage"))
@@ -140,24 +142,16 @@ if __name__ == '__main__':
                       help=_("specify target host"), default='')
     scope_hosts.add_option("--hostid", action="store", dest="hostid",
                       help=_("specify target host"), default='')
-    scope_manage_host = OptionGroup(parser, "GUI host management:",
+    scope_manage_host = OptionGroup(parser, "host management:",
                         "Those options can't be used with anything else and are "
-                        "present to manage GUI parameters for this host.")
-    scope_manage_host.add_option("--show-inventory", action="store_true",
-                      dest="show_inventory",
-                      help=_("show this inventory in GUI"),
+                        "present to manage host parameters.")
+    scope_manage_host.add_option("--share-inventory", action="store_true",
+                      dest="share_inventory",
+                      help=_("share this inventory on the web"),
                       default=None)
     scope_manage_host.add_option("--hide-inventory", action="store_false",
-                      dest="show_inventory",
-                      help=_("hide this inventory in GUI"),
-                      default=None)
-    scope_manage_host.add_option("--show-others", action="store_true",
-                      dest="show_others",
-                      help=_("show others inventory in GUI"),
-                      default=None)
-    scope_manage_host.add_option("--hide-others", action="store_false",
-                      dest="show_others",
-                      help=_("hide others others inventory in GUI"),
+                      dest="share_inventory",
+                      help=_("hide this inventory on the web"),
                       default=None)
     parser.add_option_group(scope_group)
     parser.add_option_group(scope_hosts)
@@ -208,14 +202,10 @@ if __name__ == '__main__':
         if action != ACTION_NONE:
             err_action()
         action = ACTION_UPDATE
-    if options.show_inventory is not None: # True and False both used
+    if options.share_inventory is not None: # True and False both used
         if action != ACTION_NONE:
             err_action()
-        action = ACTION_SHOW_INVENTORY
-    if options.show_others is not None: # True and False both used
-        if action != ACTION_NONE:
-            err_action()
-        action = ACTION_SHOW_OTHERS
+        action = ACTION_SHARE_INVENTORY
     if action == ACTION_NONE:
         action = ACTION_LIST
 
@@ -274,26 +264,16 @@ if __name__ == '__main__':
                     use_cache=(not options.nocache))
         print_packages_diff(additional_pkg, missing_pkg)
 
-    elif action == ACTION_SHOW_INVENTORY:
+    elif action == ACTION_SHARE_INVENTORY:
         if options.nocache:
-            option_not_compatible("--nocache", "--show/hide-inventory")
+            option_not_compatible("--nocache", "--share-inventory")
         if options.hostid or options.hostname:
             print _("You can't use hostid or hostname when changing show inventory status")
             sys.exit(1)
         if scope != SCOPE_NONE:
             print _("You can't define --selection, --all, --host or --hosts " \
                     "when changing show inventory status")
-        oneconf.set_show_inventory(options.show_inventory, others=False)
+        oneconf.set_share_inventory(options.share_inventory)
 
-    elif action == ACTION_SHOW_OTHERS:
-        if options.nocache:
-            option_not_compatible("--nocache", "--show/hide-others")
-        if options.hostid or options.hostname:
-            print _("You can't use hostid or hostname when changing show inventory status")
-            sys.exit(1)
-        if scope != SCOPE_NONE:
-            print _("You can't define --selection, --all, --host or --hosts " \
-                    "when changing show inventory status")
-        oneconf.set_show_inventory(options.show_others, others=True)
     sys.exit(0)
 

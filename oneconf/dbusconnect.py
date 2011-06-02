@@ -48,11 +48,16 @@ class DbusHostsService(dbus.service.Object):
         # Only import oneconf module now (and so load desktopcouch and such)
         # in the server side
         from oneconf.hosts import Hosts, HostError
-        from oneconf.packagesethandler import PackageSetHandler
 
         self.hosts = Hosts()
-        self.PackageSetHandler = PackageSetHandler(self.hosts)
+        self.PackageSetHandler = None
         self.activity = False
+        
+    def _ensurePackageSetHandler(self):
+        '''Ensure we load the package set handler at the right time'''
+        if not self.PackageSetHandler:
+            from oneconf.packagesethandler import PackageSetHandler
+            self.PackageSetHandler = PackageSetHandler(self.hosts)
 
     @dbus.service.method(HOSTS_INTERFACE)
     def get_all_hosts(self):
@@ -60,39 +65,44 @@ class DbusHostsService(dbus.service.Object):
         return self.hosts.get_all_hosts()
 
     @dbus.service.method(HOSTS_INTERFACE)
-    def set_show_inventory(self, show_inventory, others):
+    def set_share_inventory(self, share_inventory):
         self.activity = True
-        if show_inventory: # map to boolean to avoid difference in dbus call and direct
-            show_inventory = True
+        if share_inventory: # map to boolean to avoid difference in dbus call and direct
+            share_inventory = True
         else:
-            show_inventory = False
-        return self.hosts.set_show_inventory(show_inventory, others)
+            share_inventory = False
+        return self.hosts.set_share_inventory(share_inventory)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_selection(self, hostid, hostname, use_cache):
         self.activity = True
+        _ensurePackageSetHandler()
         return self.PackageSetHandler.get_selection(hostid, hostname, use_cache)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_all(self, hostid, hostname, use_cache):
         self.activity = True
+        _ensurePackageSetHandler()
         return self.PackageSetHandler.get_all(hostid, hostname, use_cache)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def diff(self, selection, hostid, hostname, use_cache):
         self.activity = True
+        _ensurePackageSetHandler()
         return self.PackageSetHandler.diff(selection, hostid, hostname,
                                            use_cache)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def update(self):
         self.activity = True
+        _ensurePackageSetHandler()
         self.PackageSetHandler.update()
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def async_update(self):
         self.activity = True
-        glib.timeout_add_seconds(1,self.PackageSetHandler.update)
+        _ensurePackageSetHandler()
+        glib.timeout_add_seconds(1, self.PackageSetHandler.update)
 
 class DbusConnect(object):
 
@@ -118,9 +128,9 @@ class DbusConnect(object):
         '''get a dictionnary of all available hosts'''
         return self._get_hosts_dbusobject().get_all_hosts()
 
-    def set_show_inventory(self, show_inventory, others=False):
-        '''update if current host show or can see inventory in GUI'''
-        self._get_hosts_dbusobject().set_show_inventory(show_inventory, others)
+    def set_share_inventory(self, share_inventory):
+        '''update if we share the current inventory on the server'''
+        self._get_hosts_dbusobject().set_share_inventory(share_inventory)
 
     def get_all(self, hostid, hostname, use_cache):
         '''trigger getall handling'''

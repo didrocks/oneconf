@@ -16,7 +16,6 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from oneconf.packagesethandler import PackageSetHandler
 from oneconf.hosts import Hosts, HostError
 
 import sys
@@ -26,14 +25,18 @@ class DirectConnect(object):
     """
     Dummy backend handling exit and exception directly
     """
+    
+    def _ensurePackageSetHandler(self):
+        '''Ensure we import the package set handler at the right time'''
+        from oneconf.packagesethandler import PackageSetHandler
 
     def get_all_hosts(self):
         '''get a dict of all available hosts'''
         return Hosts().get_all_hosts()
 
-    def set_show_inventory(self, show_inventory, others=False):
+    def set_share_inventory(self, share_inventory):
         '''update if current host show or can see inventory in GUI'''
-        Hosts().set_show_inventory(show_inventory, others)
+        Hosts().set_share_inventory(share_inventory)
 
     def get_all(self, hostid, hostname, use_cache):
         '''trigger getall handling'''
@@ -48,6 +51,7 @@ class DirectConnect(object):
         '''trigger selection handling'''
 
         try:
+            _ensurePackageSetHandler()
             return PackageSetHandler().get_selection(hostid, hostname, use_cache)
         except HostError, e:
             print(e)
@@ -56,6 +60,7 @@ class DirectConnect(object):
     def diff_all(self, hostid, hostname, use_cache):
         '''trigger diff_all handling'''
         try:
+            _ensurePackageSetHandler()
             return PackageSetHandler().diff(False, hostid, hostname, use_cache)
         except HostError, e:
             print(e)
@@ -65,6 +70,7 @@ class DirectConnect(object):
         '''trigger diff_selection handling'''
 
         try:
+            _ensurePackageSetHandler()
             return PackageSetHandler().diff(True, hostid, hostname, use_cache)
         except HostError, e:
             print(e)
@@ -73,6 +79,7 @@ class DirectConnect(object):
     def update(self):
         '''trigger update handling'''
         try:
+            _ensurePackageSetHandler()
             PackageSetHandler().update()
         except HostError, e:
             print(e)

@@ -29,7 +29,6 @@ from desktopcouch.records.server import CouchDatabase
 from desktopcouch.records.record import Record as CouchRecord  
 ONECONF_PACKAGE_RECORD_TYPE = "http://wiki.ubuntu.com/OneConf/Record/Package"
 
-from oneconf.package import Package
 from oneconf.hosts import Hosts, HostError
 from oneconf.distributor import get_distro
 from oneconf.desktopcouchstate import get_last_sync_date
@@ -349,7 +348,6 @@ class PackageSetHandler(object):
         for pkg in apt_cache:
             installed = False
             auto_installed = False
-            selection = False
             origin = ''
             if pkg.candidate:
                 origin = pkg.candidate.origins[0]
@@ -357,13 +355,11 @@ class PackageSetHandler(object):
                 installed = True
                 if not pkg.is_auto_installed:
                     auto_installed = False
-                    if not pkg.priority in ('required', 'important'):
-                        selection = True
             # check if update/creation is needed for that package
             if updating:
                 try:
                     if stored_pkg[pkg.name].update_needed(installed,
-                           auto_installed, selection, self.current_time,
+                           auto_installed, self.current_time,
                            str(origin)):
                         pkg_to_update.add(stored_pkg[pkg.name])
                 except KeyError:
@@ -371,7 +367,7 @@ class PackageSetHandler(object):
                     # auto_installed for initial storage
                     if installed and not auto_installed:
                         stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                            True, False, selection, self.current_time,
+                            True, False, self.current_time,
                             str(origin))
                         pkg_to_create.add(stored_pkg[pkg.name])
             else:
@@ -379,7 +375,7 @@ class PackageSetHandler(object):
                 # installed and not auto_installed for this host
                 if installed and not auto_installed:
                     stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                        True, False, selection, self.current_time,
+                        True, False, self.current_time,
                         str(origin))
                     # this is only for first load on an host in update mode:
                     # don't lost time to get KeyError on stored_pkg[pkg.name].
