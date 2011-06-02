@@ -64,7 +64,7 @@ class Hosts(object):
                     self.current_host['hostname'] = hostname
                     self._save_current_host()
         except IOError:
-            self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False, 'packagelist_etag': None}
+            self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False}
             self._save_current_host()
 
         (self._other_hosts_etag, self._other_hosts) = self._load_other_hosts()
@@ -104,9 +104,10 @@ class Hosts(object):
             os.mkdir(self._host_file_dir)
         with open(os.path.join(self._host_file_dir, ONECONF_HOST_DATA), 'w') as f:
             json.dump({'ETag': etag, 'host': self.current_host}, f)
-            
+    
+    
     def gethost_by_id(self, hostid):
-        '''Get gost dictionnary by id
+        '''Get host dictionnary by id
 
         Return: hostname
 
@@ -129,8 +130,8 @@ class Hosts(object):
         can trigger HostError excpetion if no hostname found for this id
         '''
         
-        logging.debug("Get a hostname by id")
-        return gethost_by_id(hostid)
+        logging.debug("Get a hostname for %s", hostid)
+        return self.gethost_by_id(hostid)['hostname']
         
 
     def gethostid_by_name(self, hostname):
@@ -142,13 +143,13 @@ class Hosts(object):
         or multiple hostid for this hostname
         '''
         
-        logging.debug("Get a hostid by name")
+        logging.debug("Get a hostid for %s", hostname)
 
         result_hostid = None
         if hostname == self.current_host['hostname']:
             result_hostid = self.current_host['hostid']
         for hostid in self._other_hosts:
-            if hostname == self._hosts[hostid]['hostname']:
+            if hostname == self._other_hosts[hostid]['hostname']:
                 if not result_hostid:
                     result_hostid = hostid
                 else:
@@ -165,9 +166,9 @@ class Hosts(object):
         put in them as dict -> tuple for dbus connection'''
 
         logging.debug("Request to compute an list of all hosts")
-        result = {self.current_host['hostid']: (True, self.current_host['hostname'], self.current_host['share_inventory'], self.current_host['packagelist_etag'])}
+        result = {self.current_host['hostid']: (True, self.current_host['hostname'], self.current_host['share_inventory'])}
         for hostid in self._other_hosts:
-            result[hostid] = (False, self._other_hosts[hostid]['hostname'], True, self._other_hosts[hostid]['packagelist_etag'])
+            result[hostid] = (False, self._other_hosts[hostid]['hostname'], True)
         return result
 
     def set_share_inventory(self, share_inventory):

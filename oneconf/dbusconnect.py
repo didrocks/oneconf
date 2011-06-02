@@ -74,28 +74,21 @@ class DbusHostsService(dbus.service.Object):
         return self.hosts.set_share_inventory(share_inventory)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def get_selection(self, hostid, hostname, use_cache):
+    def get_packages(self, hostid, hostname):
         self.activity = True
-        _ensurePackageSetHandler()
-        return self.PackageSetHandler.get_selection(hostid, hostname, use_cache)
+        self._ensurePackageSetHandler()
+        return self.PackageSetHandler.get_packages(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def get_all(self, hostid, hostname, use_cache):
+    def diff(self, hostid, hostname):
         self.activity = True
-        _ensurePackageSetHandler()
-        return self.PackageSetHandler.get_all(hostid, hostname, use_cache)
-
-    @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def diff(self, selection, hostid, hostname, use_cache):
-        self.activity = True
-        _ensurePackageSetHandler()
-        return self.PackageSetHandler.diff(selection, hostid, hostname,
-                                           use_cache)
+        self._ensurePackageSetHandler()
+        return self.PackageSetHandler.diff(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def update(self):
         self.activity = True
-        _ensurePackageSetHandler()
+        self._ensurePackageSetHandler()
         self.PackageSetHandler.update()
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
@@ -132,42 +125,22 @@ class DbusConnect(object):
         '''update if we share the current inventory on the server'''
         self._get_hosts_dbusobject().set_share_inventory(share_inventory)
 
-    def get_all(self, hostid, hostname, use_cache):
-        '''trigger getall handling'''
+    def get_packages(self, hostid, hostname):
+        '''trigger getpackages handling'''
 
         try:
-            return self._get_package_handler_dbusobject().get_all(hostid,
-                                                           hostname, use_cache)
+            return self._get_package_handler_dbusobject().get_packages(hostid,
+                                                           hostname)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
-    def get_selection(self, hostid, hostname, use_cache):
-        '''trigger selection handling'''
+    def diff(self, hostid, hostname):
+        '''trigger diff handling'''
 
         try:
-            return self._get_package_handler_dbusobject().get_selection(hostid,
-                                                           hostname, use_cache)
-        except dbus.exceptions.DBusException,e:
-            print(e)
-            sys.exit(1)
-
-    def diff_all(self, hostid, hostname, use_cache):
-        '''trigger diff_all handling'''
-        try:
-            return self._get_package_handler_dbusobject().diff(False, hostid,
-                                                            hostname, use_cache,
-                                                            timeout=ONE_CONF_DBUS_TIMEOUT)
-        except dbus.exceptions.DBusException,e:
-            print(e)
-            sys.exit(1)
-
-    def diff_selection(self, hostid, hostname, use_cache):
-        '''trigger diff_selection handling'''
-
-        try:
-            return self._get_package_handler_dbusobject().diff(True, hostid,
-                                                            hostname, use_cache,
+            return self._get_package_handler_dbusobject().diff(hostid,
+                                                            hostname,
                                                             timeout=ONE_CONF_DBUS_TIMEOUT)
         except dbus.exceptions.DBusException,e:
             print(e)

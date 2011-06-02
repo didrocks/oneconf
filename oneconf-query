@@ -29,49 +29,25 @@ from gettext import gettext as _
 
 from oneconf.version import *
 
-SCOPE_NONE, SCOPE_PACKAGES, SCOPE_HOSTS, SCOPE_HOST = range(4)
+SCOPE_NONE, SCOPE_PACKAGE, SCOPE_HOSTS, SCOPE_HOST = range(4)
 ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_SHARE_INVENTORY = range(5)
 
 
-def print_packages(installed_pkg_by_host, removed_pkg_by_host=None):
+def print_packages(installed_pkg):
 
-    if installed_pkg_by_host:
-        print "Installed package:"
-        for pkg_name in installed_pkg_by_host:
-            (last_modification, distro_channel) = installed_pkg_by_host[pkg_name]
-            print " %s: %s, installed from: %s" % (pkg_name,
-                 strftime("%a, %d %b %Y %H:%M:%S", localtime(last_modification)),
-                 distro_channel)
-    if removed_pkg_by_host:
-        print "Removed package:"
-        for pkg_name in removed_pkg_by_host:
-            (last_modification, distro_channel) = removed_pkg_by_host[pkg_name]
-            print " %s: %s, was installed from: %s" % (pkg_name,
-                 strftime("%a, %d %b %Y %H:%M:%S",
-                              localtime(last_modification)))
+    print "Installed package:"
+    for pkg_name in installed_pkg:
+        print pkg_name
 
 
-def print_packages_diff(additional_pkg_by_host, missing_pkg_by_host):
+def print_packages_diff(packages_to_install, packages_to_remove):
 
     print "Additional packages: (package to install)"
-    for pkg_name in additional_pkg_by_host:
-        (time_added_on_hostid, distro_channel) = additional_pkg_by_host[pkg_name]
-        message = "  %s: added on %s, from: %s" % (pkg_name,
-                  strftime("%a, %d %b %Y %H:%M:%S",
-                  localtime(time_added_on_hostid)), distro_channel)
-        print message
+    for pkg_name in packages_to_install:
+        print " %s" % pkg_name
     print "Missing packages: (package to remove)"
-    for pkg_name in missing_pkg_by_host:
-        (time_removed_on_hostid, distro_channel) = missing_pkg_by_host[pkg_name]
-        message = "  %s: " % pkg_name
-        if time_removed_on_hostid:
-            message += "remotely removed on %s, was from: %s" % \
-                      strftime("%a, %d %b %Y %H:%M:%S",
-                      localtime(time_removed_on_hostid), distro_channel)
-        else:
-            message += "has never been present remotely"
-        print message
-
+    for pkg_name in packages_to_remove:
+        print " %s" % pkg_name
 
 def print_hosts(hosts, only_current=False):
     if len(hosts) == 1 or only_current:
@@ -80,12 +56,12 @@ def print_hosts(hosts, only_current=False):
         print "Hosts stored for OneConf:"
 
     for hostid in hosts:
-        current, name, share_inventory, packagelist_etag = hosts[hostid]
+        current, name, share_inventory = hosts[hostid]
         additional_text = ""
         if current:
             additional_text = "[Current]"
         if (only_current and current) or not only_current:
-            print "ID: %s %s\n name: %s\n share inventory: %s\n packagelist ETag: %s" % (hostid, additional_text, name, share_inventory, packagelist_etag)
+            print "ID: %s %s\n name: %s\n share inventory: %s" % (hostid, additional_text, name, share_inventory)
 
 def err_scope():
     print _("you can't define --package or --hosts together.")
@@ -110,7 +86,7 @@ if __name__ == '__main__':
                              "provided by hostname/hostid"))
     parser.add_option("-l", "--list", action="store_true",
                       dest="action_list",
-                      help=_("List stored package or host lists (default)"))
+                      help=_("List stored package (default to hostid) or host lists"))
     parser.add_option("-u", "--update", action="store_true",
                       dest="action_update",
                       help=_("update the package list in couchdb if host accepts updates"))
@@ -118,8 +94,6 @@ if __name__ == '__main__':
                       help=_("enable debug mode (use --direct)"))
     parser.add_option("--direct", action="store_true", dest="directaccess",
                       help=_("don't use dbus for the request"))
-    parser.add_option("--nocache", action="store_true", dest="nocache",
-                      help=_("ignore cache (in daemon mode)"))
     scope_group = OptionGroup(parser, "Scope of actions:", "This define the " \
                        "scope to consider for list and diff command.")
     scope_group.add_option("-p", "--packages", action="store_true",
@@ -207,8 +181,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if action == ACTION_UPDATE:
-        if options.nocache:
-            option_not_compatible("--nocache", "--update")
         if options.hostid or options.hostname:
             print _("You can't use hostid or hostname when updating")
             sys.exit(1)
@@ -225,16 +197,9 @@ if __name__ == '__main__':
             print_hosts(oneconf.get_all_hosts())
         if scope == SCOPE_HOST:
             print_hosts(oneconf.get_all_hosts(), True)
-        elif scope == SCOPE_SELECTION:
-            package_selection = oneconf.get_selection(
-                               hostid=options.hostid, hostname=options.hostname,
-                               use_cache=(not options.nocache))
-            print_packages(package_selection)
-        elif scope == SCOPE_ALL:
-            (manually_installed_pkg, removed_pkg) = oneconf.get_all(
-                    hostid=options.hostid, hostname=options.hostname,
-                    use_cache=(not options.nocache))
-            print_packages(manually_installed_pkg, removed_pkg)
+        elif scope == SCOPE_PACKAGE:
+            installed_pkg = oneconf.get_packages(hostid=options.hostid, hostname=options.hostname)
+            print_packages(installed_pkg)
 
     elif action == ACTION_DIFF:
         if not options.hostid and not options.hostname:
@@ -247,19 +212,12 @@ if __name__ == '__main__':
             option_not_compatible("--hosts", "--diff")
         if scope == SCOPE_HOST:
             option_not_compatible("--host", "--diff")
-        elif scope == SCOPE_SELECTION:
-            (additional_pkg, missing_pkg) = oneconf.diff_selection(
-                    hostid=options.hostid, hostname=options.hostname,
-                    use_cache=(not options.nocache))
-        elif scope == SCOPE_ALL:
-            (additional_pkg, missing_pkg) = oneconf.diff_all(
-                    hostid=options.hostid, hostname=options.hostname,
-                    use_cache=(not options.nocache))
-        print_packages_diff(additional_pkg, missing_pkg)
+        elif scope == SCOPE_PACKAGE:
+            (packages_to_install, packages_to_remove) = oneconf.diff(
+                    hostid=options.hostid, hostname=options.hostname)
+        print_packages_diff(packages_to_install, packages_to_remove)
 
     elif action == ACTION_SHARE_INVENTORY:
-        if options.nocache:
-            option_not_compatible("--nocache", "--share-inventory")
         if options.hostid or options.hostname:
             print _("You can't use hostid or hostname when changing show inventory status")
             sys.exit(1)

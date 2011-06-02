@@ -18,9 +18,10 @@
 
 
 import apt
+import hashlib
+import json
 import logging
-import time
-import re
+import os
 
 import gettext
 from gettext import gettext as _
@@ -42,184 +43,90 @@ class PackageSetHandler(object):
         if not hosts:
             self.hosts = Hosts()
         self.distro = get_distro()
-        self.current_time = time.time()
         self.last_storage_sync = None
 
         # create cache for storage package list, indexed by hostid
-        self.cache_pkg_storage = {}
+        self.package_list = {}
     
-    
-    def _load_package_list_for_hostid(self, host_id):
-        '''load package list for every computer in cache'''
-        
-        
-        pkg_list = set()
-        try:
-            etag = self.cache_pkg_storage[hostid]['etag']
-        except IndexError:
-            etag = None
-
-        # try a first load on cache, in particular to get the ETag
-        if not etag:
-            try:
-                with open("%s/other_hosts" % ONECONF_CACHE_DIR, 'r') as f:
-                    file_content = json.load(f)
-                    other_hosts = file_content['hosts']
-                    etag  = file_content['ETag']
-            except IOError:
-                pass
-        
-        #TODO: FAKE for now, we will get the agregated list from the server (we need to check if we are offline first)
-        # check cache with ETag (file is {ETag: etag, hosts: {}}
-        
-        
-        # TODO: if cache is not valid, rewrite it
-                
 
     def update(self):
-        '''update the database'''
+        '''update the database with package list'''
 
-        this_computer_stored_pkg = self._get_packages_on_view_for_hostid(
-                                    "get_all_pkg_by_hostid", self.hosts.hostid)
-        logging.debug("Initial set: %s" % this_computer_stored_pkg)
-
-        # get the list of update to do
-        logging.debug("computing list of update to do")
-        (this_computer_stored_pkg, pkg_to_create, pkg_to_update) = \
-                            self._computepackagelist(this_computer_stored_pkg)
-        # invalidate cache for others queries on the daemon
-        self.cache_pkg_storage = {}
-        logging.debug("After update, it will be: %s" % this_computer_stored_pkg)
-
-        # update minimal set of records
-        logging.debug("creating new package objects")
-        new_records = []
-        for pkg in pkg_to_create:
-            new_records.append(self._new_record(pkg))
-        logging.debug("pushing new object to couchdb")
-        self.database.put_records_batch(new_records)
-        logging.debug("creating new update objects")
-        for pkg in pkg_to_update:
-            self._update_record(pkg)
-
-    def get_all(self, hostid=None, hostname=None, use_cache=True):
-        '''get all manually installed packages from the storage
-
-        Return: * a double dictionnary, first indexed by hostid and then
-                  by installed package name, with Package
-                * a double dictionnary, first indexed by hostid and then
-                  by removed package name, with Package
-        '''
-
+        hostid = self.hosts.current_host['hostid']
+        
+        logging.debug("Updating package list")
+        newpkg_list = self._computepackagelist()
+        
+        logging.debug("Creating the etag")
+        etag = hashlib.sha224(str(newpkg_list)).hexdigest()
+        
+        if not hostid in self.package_list:
+            logging.debug("First load of cached package list from disk")
+            self.package_list[hostid] = {}
+            (self.package_list[hostid]['ETag'], self.package_list[hostid]['package_list']) = self._get_packages_etag(hostid)
+        
+        if etag != self.package_list[hostid]['ETag']:
+            logging.debug("Package list need refresh")
+            self.package_list[hostid]['ETag'] = etag
+            self.package_list[hostid]['package_list'] = list(newpkg_list)
+            with open(os.path.join(ONECONF_CACHE_DIR, hostid, "package_list"), 'w') as f:
+                json.dump(self.package_list[hostid], f)
+            logging.debug("Update done")
+        else:
+            logging.debug("No refresh needed")
+    
+    def get_packages(self, hostid=None, hostname=None):        
+        '''get all installed packages from the storage'''
+        
         hostid = self._get_hostid_from_context(hostid, hostname)
-        installed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid \
-                                 ("get_manuallyinstalled_pkg_by_hostid", hostid, use_cache)
-        removed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid \
-                                 ("get_removed_pkg_by_hostid", hostid, use_cache)
-        # convert for dbus empty dict to ''
-        if not installed_pkg_for_host:
-            installed_pkg_for_host = ''
-        if not removed_pkg_for_host:
-            removed_pkg_for_host = ''
-        return(installed_pkg_for_host, removed_pkg_for_host)
+        logging.debug ("Request for package list for %s", hostid)
+        return self._get_packages_etag(hostid)[1]
+        
+    
+    def _get_packages_etag(self, hostid):
+        '''get all etag, installed packages from the storage
+        
+        Return: (etag, package_list)'''
+        
+        try:
+            etag = self.package_list[hostid]['ETag']
+            package_list = self.package_list[hostid]['package_list']
+            logging.debug("Hit cache")
+        except KeyError:
+            self.package_list[hostid] = self._get_packagelist_from_store(hostid)
+            etag = self.package_list[hostid]['ETag']
+            package_list = self.package_list[hostid]['package_list']
+        return (etag, package_list)
+        
 
-    def get_selection(self, hostid=None, hostname=None, use_cache=True):
-        '''get the package selection from the storage
-
-        Selection is manually installed packages not part of default
-
-        Return: * a double dictionnary, first indexed by hostid and then
-                  by installed package name, with Package
-        '''
-
-        hostid = self._get_hostid_from_context(hostid, hostname)
-        selection_for_host = self._get_simplified_packages_on_view_for_hostid \
-                                        ("get_selection_pkg_by_hostid", hostid, use_cache)
-        # convert for dbus empty dict to ''
-        if not selection_for_host:
-            selection_for_host = ''
-        return selection_for_host
-
-    def diff(self, selection=True, hostid=None, hostname=None, use_cache=True):
+    def diff(self, distant_hostid=None, distant_hostname=None):
         '''get a diff from current package state from another host
 
-        This function can be use to make a diff for selection or for
-        all packages.
+        This function can be use to make a diff between all packages installed on both computer
 , use_cache
-        Return: * a double dictionnary, first indexed by hostid and then
-                  by additionnal packages not present here, with
-                  (time_added_on_hostid)
-                * a double dictionnary, first indexed by hostid and then
-                  by missing packages present on hostid, with
-                  time_removed_on_hostid (=None if never present)
+        Return: (packages_to_install (packages in distant_hostid not in local_hostid),
+                 packages_to_remove (packages in local hostid not in distant_hostid))
         '''
-
-        logging.debug("Collecting all manually installed packages on this system")
-        all_this_computer_pkg_name = \
-            self._get_simplified_packages_on_view_for_hostid \
-                                ("get_manuallyinstalled_pkg_by_hostid", self.hosts.hostid, use_cache)
-        if selection:
-            logging.debug("Collecting installed selection on this system")
-            this_computer_target_pkg_name = \
-                self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_selection_pkg_by_hostid", self.hosts.hostid, use_cache)
-        else:
-            this_computer_target_pkg_name = all_this_computer_pkg_name
         
-        logging.debug("Comparing to others hostid")
-        installed_pkg_for_host = {}
-        selection_for_host = {}
-        removed_pkg_for_host = {}
-        hostid = self._get_hostid_from_context(hostid, hostname)
-        logging.debug("Comparing to %s", hostid)
-        installed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_installed_pkg_by_hostid", hostid, use_cache)
-        removed_pkg_for_host = \
-            self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_removed_pkg_by_hostid", hostid, use_cache)
-        if selection:
-            selection_for_host = \
-                self._get_simplified_packages_on_view_for_hostid \
-                                    ("get_selection_pkg_by_hostid", hostid, use_cache)
-        # additionally installed selection on hostid not present locally
-        additional_target_pkg_for_host = {}
-        if selection:
-            target_reference_list = selection_for_host
-        else:
-            target_reference_list = installed_pkg_for_host
-        for pkg_name in target_reference_list:
-            # comparing to all_this_computer_pkg_name and not to this_computer_target_pkg_name
-            # to avoid some fanzy cases (like app coming in
-            # default will be shown as deleted otherwise, same for
-            # manually installed -> auto installed)
-            if not pkg_name in all_this_computer_pkg_name:
-                added_str_pkg_on_hostid = target_reference_list[pkg_name]
-                additional_target_pkg_for_host[pkg_name] = \
-                                                        added_str_pkg_on_hostid
-        #  missing selection on hostid present locally
-        removed_target_pkg_for_host = {}
-        for pkg_name in this_computer_target_pkg_name:
-            # comparing to installed_pkg_for_host and not to selection_for_host
-            # to avoid some fanzy cases (like app coming in
-            # default will be shown as deleted otherwise, same for
-            # manually installed -> auto installed)
-            if not pkg_name in installed_pkg_for_host:
-                try:
-                    removed_str_pkg_on_hostid = removed_pkg_for_host[pkg_name]
-                except KeyError:
-                    removed_str_pkg_on_hostid = ('', '')
-                removed_target_pkg_for_host[pkg_name] = removed_str_pkg_on_hostid
-        # convert for dbus empty dict to ''
-        if not additional_target_pkg_for_host:
-            additional_target_pkg_for_host = ''
-        if not removed_target_pkg_for_host:
-            removed_target_pkg_for_host = ''
-        logging.debug(additional_target_pkg_for_host)
-        logging.debug(removed_target_pkg_for_host)
-        return(additional_target_pkg_for_host, removed_target_pkg_for_host)
+        distant_hostid = self._get_hostid_from_context(distant_hostid, distant_hostname)
+        
+        logging.debug("Collecting all installed packages on this system")
+        local_package_list = set(self.get_packages(self.hosts.current_host['hostid']))
+        
+        logging.debug("Collecting all installed packages on the other system")
+        distant_package_list = set(self.get_packages(distant_hostid))
+
+        logging.debug("Comparing")
+        packages_to_install = [x for x in local_package_list if x not in distant_package_list]
+        packages_to_remove = [x for x in distant_package_list if x not in local_package_list]
+        
+        # for Dbus which doesn't like empty list
+        if not packages_to_install:
+            packages_to_install = ''
+        if not packages_to_remove:
+            packages_to_remove = ''
+        
+        return(packages_to_install, packages_to_remove)
 
     def check_if_storage_refreshed(self):
         '''check if server storage has refreshed, invalidate caches if so'''
@@ -230,50 +137,6 @@ class PackageSetHandler(object):
             self.last_storage_sync = new_sync
         logging.debug('same sync')
 
-    def _get_packages_on_view_for_hostid(self, view_name, hostid):
-        '''load records from CouchDB
-
-        Return: get dictionnary of all packages in the DB respecting the view
-                with: {pkg_name : Package}
-        '''
-        results = self.database.execute_view(view_name)
-        pkg_for_hostid = {}
-        for rec in results[hostid]:
-            pkg_name = rec.value["name"]
-            pkg_for_hostid[pkg_name] = Package(hostid, pkg_name,
-                rec.value["installed"], rec.value["auto_installed"],
-                rec.value["selection"], rec.value["last_modification"],
-                rec.value["distro_channel"])
-        return pkg_for_hostid
-
-    def _get_simplified_packages_on_view_for_hostid(self, view_name, hostid, use_cache):
-        '''load records from CouchDB and return a simplified view
-
-        Contrary to _get_packages_on_view_for_hostid, this function doesn't
-        Build package object (to be compatible with dbus interface)
-        Return: get dictionnary of all packages in the DB respecting the view
-                with: {pkg_name : (last_modification, distro_channel)}
-        '''
-
-        try:
-            if use_cache:
-                pkg_for_hostid = \
-                            self.cache_pkg_storage[view_name][hostid]
-                logging.debug("Use local cache for %s view to %s hostid" % (view_name, hostid))
-        except KeyError:
-            use_cache = False
-        if not use_cache:
-            results = self.database.execute_view(view_name)
-            pkg_for_hostid = {}
-            for rec in results[hostid]:
-                pkg_for_hostid[rec.value["name"]] = (rec.value["last_modification"],
-                                                     rec.value["distro_channel"])
-        # cache the result
-        if not view_name in self.cache_pkg_storage:
-            self.cache_pkg_storage[view_name] = {}
-        self.cache_pkg_storage[view_name][hostid] = pkg_for_hostid
-        return pkg_for_hostid
-
     def _get_hostid_from_context(self, hostid=None, hostname=None):
         '''get and check hostid
 
@@ -283,106 +146,53 @@ class PackageSetHandler(object):
         '''
 
         if not hostid and not hostname:
-            hostid = self.hosts.hostid
+            hostid = self.hosts.current_host['hostid']
         if hostid:
             # just checking it exists
-            self.hosts.gethostname_by_id(hostid)
+            self.hosts.gethost_by_id(hostid)
             hostid = hostid
         else:
             hostid = self.hosts.gethostid_by_name(hostname) 
         return hostid
+        
+        
+    def _get_packagelist_from_store(self, hostid):
+        '''load package list for every computer in cache'''
+        
+        logging.debug('get package list from store for hostid: %s' % hostid)
+        pkg_list = {'ETag': None, "package_list": set ()}
 
-    def _update_record(self, pkg):
-        '''Update an existing record matching (hostid, package)'''
-
-        rec = None
-        update = {}
-        results = self.database.execute_view("get_all_pkg_by_hostid_and_name")
-        for rec in results[[pkg.hostid, pkg.name]]:
-            update["installed"] = pkg.installed
-            update["auto_installed"] = pkg.auto_installed
-            update["selection"] = pkg.selection
-            update["last_modification"] = pkg.last_modification
-            update["distro_channel"] = pkg.distro_channel
-            self.database.update_fields(rec.id, update)
-        if not rec:
-            logging.warning("Try to update a non existing record: %s, %s",
-                            pkg.hostid, pkg.name)
-
-    def _new_record(self, pkg):
-        '''Create a new record for a new package never stored in CouchDB
-
-        Return: new record ready to be pushed in CouchDB
-        '''
-
-        return CouchRecord({"hostid": pkg.hostid,
-                              "name": pkg.name,
-                              "installed": pkg.installed,
-                              "auto_installed": pkg.auto_installed,
-                              "selection": pkg.selection,
-                              "last_modification": pkg.last_modification,
-                              "distro_channel": pkg.distro_channel
-                               }, ONECONF_PACKAGE_RECORD_TYPE)
+        # try a first load on cache, in particular to get the ETag
+        try:
+            with open(os.path.join(ONECONF_CACHE_DIR, hostid, "package_list"), 'r') as f:
+                pkg_list = json.load(f)
+                etag = pkg_list['ETag']
+        except IOError:
+            etag = None
+        
+        #TODO: FAKE for now, we will get the agregated list from the server (we need to check if we are offline first)
+        # check cache with ETag (file is {ETag: etag, packages: {}}
+        
+        
+        # TODO: if cache is not valid, rewrite it
+        
+        return pkg_list
         
 
     def _computepackagelist(self, stored_pkg=None):
         '''Introspect what's installed on this hostid
 
-        Return: stored_pkg of all package states for this hostid
-                set of package to create if in update mode (empty otherwise)
-                set of package to update if in update mode (empty otherwise)
+        Return: installed_packages of all auto_installed packages for the current hostid
         '''
 
+        logging.debug ('Compute package list for current host')
         apt_cache = apt.Cache()
 
-        # speedup first batch package insertion and
-        # when computing list in read mode for diff between hostA and this host
-        if stored_pkg:
-            updating = True
-        else:
-            stored_pkg = {}
-            updating = False            
-
         # get list of all apps installed
-        installed_packages = {}
-        pkg_to_update = set()
-        pkg_to_create = set()
+        installed_packages = set ()
         for pkg in apt_cache:
-            installed = False
-            auto_installed = False
-            origin = ''
-            if pkg.candidate:
-                origin = pkg.candidate.origins[0]
             if pkg.is_installed:
-                installed = True
-                if not pkg.is_auto_installed:
-                    auto_installed = False
-            # check if update/creation is needed for that package
-            if updating:
-                try:
-                    if stored_pkg[pkg.name].update_needed(installed,
-                           auto_installed, self.current_time,
-                           str(origin)):
-                        pkg_to_update.add(stored_pkg[pkg.name])
-                except KeyError:
-                    # new package, we are only interested in installed and not
-                    # auto_installed for initial storage
-                    if installed and not auto_installed:
-                        stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                            True, False, self.current_time,
-                            str(origin))
-                        pkg_to_create.add(stored_pkg[pkg.name])
-            else:
-                # for making a diff, we are only interested in packages
-                # installed and not auto_installed for this host
-                if installed and not auto_installed:
-                    stored_pkg[pkg.name] = Package(self.hosts.hostid, pkg.name,
-                        True, False, self.current_time,
-                        str(origin))
-                    # this is only for first load on an host in update mode:
-                    # don't lost time to get KeyError on stored_pkg[pkg.name].
-                    # pkg_to_create isn't relevant for read mode
-                    pkg_to_create.add(stored_pkg[pkg.name])
+                installed_packages.add(pkg.name)
 
-        return stored_pkg, pkg_to_create, pkg_to_update
+        return installed_packages
 

@@ -29,6 +29,7 @@ class DirectConnect(object):
     def _ensurePackageSetHandler(self):
         '''Ensure we import the package set handler at the right time'''
         from oneconf.packagesethandler import PackageSetHandler
+        self.PackageSetHandler = PackageSetHandler
 
     def get_all_hosts(self):
         '''get a dict of all available hosts'''
@@ -38,40 +39,22 @@ class DirectConnect(object):
         '''update if current host show or can see inventory in GUI'''
         Hosts().set_share_inventory(share_inventory)
 
-    def get_all(self, hostid, hostname, use_cache):
-        '''trigger getall handling'''
+    def get_packages(self, hostid, hostname):
+        '''trigger getpackages handling'''
 
         try:
-            return PackageSetHandler().get_all(hostid, hostname, use_cache)
+            self._ensurePackageSetHandler()
+            return self.PackageSetHandler().get_packages(hostid, hostname)
         except HostError, e:
             print(e)
             sys.exit(1)
 
-    def get_selection(self, hostid, hostname, use_cache):
-        '''trigger selection handling'''
+    def diff(self, hostid, hostname):
+        '''trigger diff handling'''
 
         try:
-            _ensurePackageSetHandler()
-            return PackageSetHandler().get_selection(hostid, hostname, use_cache)
-        except HostError, e:
-            print(e)
-            sys.exit(1)
-
-    def diff_all(self, hostid, hostname, use_cache):
-        '''trigger diff_all handling'''
-        try:
-            _ensurePackageSetHandler()
-            return PackageSetHandler().diff(False, hostid, hostname, use_cache)
-        except HostError, e:
-            print(e)
-            sys.exit(1)
-
-    def diff_selection(self, hostid, hostname, use_cache):
-        '''trigger diff_selection handling'''
-
-        try:
-            _ensurePackageSetHandler()
-            return PackageSetHandler().diff(True, hostid, hostname, use_cache)
+            self._ensurePackageSetHandler()
+            return self.PackageSetHandler().diff(hostid, hostname)
         except HostError, e:
             print(e)
             sys.exit(1)
@@ -79,8 +62,8 @@ class DirectConnect(object):
     def update(self):
         '''trigger update handling'''
         try:
-            _ensurePackageSetHandler()
-            PackageSetHandler().update()
+            self._ensurePackageSetHandler()
+            self.PackageSetHandler().update()
         except HostError, e:
             print(e)
             sys.exit(1)
