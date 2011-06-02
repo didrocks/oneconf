@@ -19,7 +19,12 @@
 
 
 import logging
+import os
 import subprocess
+
+#FIXME: where should the cache go? Ideally /var/cache/oneconf, but owned by root (not root when just updating the list)
+# home: in addition to the duplication, it's not nice as on new install dpkg -> no update to every user account
+ONECONF_CACHE_DIR = "%s/.cache/oneconf" % os.path.expanduser('~')
 
 from gettext import gettext as _
 

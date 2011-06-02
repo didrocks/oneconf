@@ -26,9 +26,7 @@ import platform
 import gettext
 from gettext import gettext as _
 
-#FIXME: where should the cache go? Ideally /var/cache/oneconf, but owned by root (not root when just updating the list)
-# home: in addition to the duplication, it's not nice as on new install dpkg -> no update to every user account
-ONECONF_CACHE_DIR = "%s/.cache/oneconf" % os.path.expanduser('~')
+from oneconf.distributor import ONECONF_CACHE_DIR
 ONECONF_HOST_DATA = "host_data"
 
 class HostError(Exception):
@@ -39,7 +37,7 @@ class HostError(Exception):
 
 class Hosts(object):
     """
-    Class to get hostid <-> hostname 
+    Class to get hosts
     """
 
     def __init__(self):
@@ -52,19 +50,22 @@ class Hosts(object):
         if not os.path.isdir(ONECONF_CACHE_DIR):
             os.mkdir(ONECONF_CACHE_DIR)
 
-        self.hostid = open('/var/lib/dbus/machine-id').read()[:-1]
-        self.hostname = platform.node()
+        hostid = open('/var/lib/dbus/machine-id').read()[:-1]
+        hostname = platform.node()
         # faking this id for testing purpose
-        #self.hostid = 'BBBBBB'
-        #self.hostname = "foomachine"
+        #hostid = 'BBBBBB'
+        #hostname = "foomachine"
 
-        self._host_file_dir = os.path.join(ONECONF_CACHE_DIR, self.hostid)
+        self._host_file_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
         try:
             with open(os.path.join(self._host_file_dir, ONECONF_HOST_DATA), 'r') as f:
-                self.share_inventory = json.load(f)['host']['share_inventory']
+                self.current_host = json.load(f)['host']
+                if hostname != self.current_host['hostname']:
+                    self.current_host['hostname'] = hostname
+                    self._save_current_host()
         except IOError:
-            self.share_inventory = False
-            self._save_host()
+            self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False, 'packagelist_etag': None}
+            self._save_current_host()
 
         (self._other_hosts_etag, self._other_hosts) = self._load_other_hosts()
 
@@ -92,18 +93,33 @@ class Hosts(object):
 
         return (etag, other_hosts)
 
-    def _save_host(self):
-        '''Save host on disk'''
+    def _save_current_host(self):
+        '''Save current host on disk'''
         
         logging.debug("Save current host to disk")
 
-        json_elem = {'hostid': self.hostid, 'hostname': self.hostname, 'share_inventory': self.share_inventory}
-        etag = hashlib.sha224(str(json_elem)).hexdigest()
+        etag = hashlib.sha224(str(self.current_host)).hexdigest()
         
         if not os.path.isdir(self._host_file_dir):
             os.mkdir(self._host_file_dir)
         with open(os.path.join(self._host_file_dir, ONECONF_HOST_DATA), 'w') as f:
-            json.dump({'ETag': etag, 'host': json_elem}, f)
+            json.dump({'ETag': etag, 'host': self.current_host}, f)
+            
+    def gethost_by_id(self, hostid):
+        '''Get gost dictionnary by id
+
+        Return: hostname
+
+        can trigger HostError excpetion if no hostname found for this id
+        '''
+        
+        if hostid == self.current_host['hostid']:
+            return self.current_host
+
+        try:
+            return self._other_hosts[hostid]
+        except KeyError:
+            raise HostError(_("No hostname registered for this id"))
 
     def gethostname_by_id(self, hostid):
         '''Get hostname by id
@@ -114,14 +130,8 @@ class Hosts(object):
         '''
         
         logging.debug("Get a hostname by id")
+        return gethost_by_id(hostid)
         
-        if hostid == self.hostid:
-            return self.hostname
-
-        try:
-            return self._other_hosts[hostid]
-        except KeyError:
-            raise HostError(_("No hostname registered for this id"))
 
     def gethostid_by_name(self, hostname):
         '''Get hostid by hostname
@@ -135,10 +145,10 @@ class Hosts(object):
         logging.debug("Get a hostid by name")
 
         result_hostid = None
-        if hostname == self.hostname:
-            result_hostid = self.hostid
-        for hostid in self._hosts:
-            if hostname == self._hosts[hostid]:
+        if hostname == self.current_host['hostname']:
+            result_hostid = self.current_host['hostid']
+        for hostid in self._other_hosts:
+            if hostname == self._hosts[hostid]['hostname']:
                 if not result_hostid:
                     result_hostid = hostid
                 else:
@@ -155,17 +165,17 @@ class Hosts(object):
         put in them as dict -> tuple for dbus connection'''
 
         logging.debug("Request to compute an list of all hosts")
-        result = {self.hostid: (True, self.hostname, self.share_inventory)}
+        result = {self.current_host['hostid']: (True, self.current_host['hostname'], self.current_host['share_inventory'], self.current_host['packagelist_etag'])}
         for hostid in self._other_hosts:
-            result[hostid] = (False, self._other_hosts[hostid]['hostname'], True)
+            result[hostid] = (False, self._other_hosts[hostid]['hostname'], True, self._other_hosts[hostid]['packagelist_etag'])
         return result
 
     def set_share_inventory(self, share_inventory):
         '''Change if we share the current inventory to other hosts'''
 
         logging.debug("Update current share_inventory state to %s" % share_inventory)
-        self.share_inventory = share_inventory
-        self._save_host()
+        self.current_host['share_inventory'] = share_inventory
+        self._save_current_host()
         # TODO: update, and take the case into account once offline
 
 

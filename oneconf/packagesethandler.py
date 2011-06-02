@@ -25,13 +25,11 @@ import re
 import gettext
 from gettext import gettext as _
 
-from desktopcouch.records.server import CouchDatabase  
-from desktopcouch.records.record import Record as CouchRecord  
-ONECONF_PACKAGE_RECORD_TYPE = "http://wiki.ubuntu.com/OneConf/Record/Package"
-
 from oneconf.hosts import Hosts, HostError
 from oneconf.distributor import get_distro
-from oneconf.desktopcouchstate import get_last_sync_date
+from oneconf.distributor import ONECONF_CACHE_DIR
+
+ONECONF_HOST_PACKAGE = "packages"
 
 class PackageSetHandler(object):
     """
@@ -39,40 +37,44 @@ class PackageSetHandler(object):
     """
 
     def __init__(self, hosts=None):
-        # Connect to CouchDB and create the database  
-        self.database = CouchDatabase("oneconf_pkg", create=True)
+
         self.hosts = hosts
         if not hosts:
             self.hosts = Hosts()
         self.distro = get_distro()
         self.current_time = time.time()
-        self.last_desktopcouch_sync = get_last_sync_date()
+        self.last_storage_sync = None
 
-        # create cache for storage package list (two keys: view_name, hostid)
+        # create cache for storage package list, indexed by hostid
         self.cache_pkg_storage = {}
+    
+    
+    def _load_package_list_for_hostid(self, host_id):
+        '''load package list for every computer in cache'''
+        
+        
+        pkg_list = set()
+        try:
+            etag = self.cache_pkg_storage[hostid]['etag']
+        except IndexError:
+            etag = None
 
-        # Be careful get_manuallyinstalled_pkg_for_hostid + get_removed_pkg_for_hostid
-        # != storage for hostid. There are manually installed packages, which
-        # have been marked as automatic then
-        # listing them doesn't seem relevant as of today
-        if not self.database.view_exists("get_all_pkg_by_hostid"):  
-            viewfn = 'function(doc) { emit(doc.hostid, doc); }'
-            self.database.add_view("get_all_pkg_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_installed_pkg_by_hostid"):  
-            viewfn = 'function(doc) { if (doc.installed) { emit(doc.hostid, doc) }; }'
-            self.database.add_view("get_installed_pkg_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_manuallyinstalled_pkg_by_hostid"):  
-            viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed) { emit(doc.hostid, doc) }; }'
-            self.database.add_view("get_manuallyinstalled_pkg_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_selection_pkg_by_hostid"):  
-            viewfn = 'function(doc) { if (doc.installed && !doc.auto_installed && doc.selection) { emit(doc.hostid, doc) }; }'
-            self.database.add_view("get_selection_pkg_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_removed_pkg_by_hostid"):  
-            viewfn = 'function(doc) { if (!doc.installed) { emit(doc.name, doc) }; }'
-            self.database.add_view("get_removed_pkg_by_hostid", viewfn, None, None)
-        if not self.database.view_exists("get_all_pkg_by_hostid_and_name"):  
-            viewfn = 'function(doc) { emit([doc.hostid,doc.name], doc); }'  
-            self.database.add_view("get_all_pkg_by_hostid_and_name", viewfn, None, None)
+        # try a first load on cache, in particular to get the ETag
+        if not etag:
+            try:
+                with open("%s/other_hosts" % ONECONF_CACHE_DIR, 'r') as f:
+                    file_content = json.load(f)
+                    other_hosts = file_content['hosts']
+                    etag  = file_content['ETag']
+            except IOError:
+                pass
+        
+        #TODO: FAKE for now, we will get the agregated list from the server (we need to check if we are offline first)
+        # check cache with ETag (file is {ETag: etag, hosts: {}}
+        
+        
+        # TODO: if cache is not valid, rewrite it
+                
 
     def update(self):
         '''update the database'''
@@ -219,13 +221,13 @@ class PackageSetHandler(object):
         logging.debug(removed_target_pkg_for_host)
         return(additional_target_pkg_for_host, removed_target_pkg_for_host)
 
-    def check_if_desktopcouch_refreshed(self):
-        '''check if desktopcouch has refreshed, invalidate caches if so'''
+    def check_if_storage_refreshed(self):
+        '''check if server storage has refreshed, invalidate caches if so'''
         new_sync = get_last_sync_date()
-        if self.last_desktopcouch_sync != new_sync:
-            logging.debug('Invalide cache as desktopcouch has been synced')
+        if self.last_storage_sync != new_sync:
+            logging.debug('Invalide cache as storage has been synced')
             self.cache_pkg_storage = {}
-            self.last_desktopcouch_sync = new_sync
+            self.last_storage_sync = new_sync
         logging.debug('same sync')
 
     def _get_packages_on_view_for_hostid(self, view_name, hostid):

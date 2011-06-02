@@ -31,13 +31,14 @@ from oneconf.version import *
 # to get it up while USC is running (there is a ping every CHECK_CONNECT_STATE_DELAY)
 MIN_TIME_WITHOUT_ACTIVITY = 60*5+10
 #MIN_TIME_WITHOUT_ACTIVITY = 30+10
+MIN_TIME_WITHOUT_ACTIVITY = 30
 def quit(loop, myservice):
     '''quit if no activity at least in MIN_TIME_WITHOUT_ACTIVITYs'''
     if myservice.activity:
         logging.debug('Some recent activity, still alive for %ss'
                       % MIN_TIME_WITHOUT_ACTIVITY)
-        # check if new desktopcouch sync
-        myservice.PackageSetHandler.check_if_desktopcouch_refreshed()
+        # TODO: check if server has new sync info and send a dbus signal there
+        
         myservice.activity = False
         return True
     logging.debug('No more activity, go to sleep')
