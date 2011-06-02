@@ -324,54 +324,6 @@ class PackageSetHandler(object):
                                }, ONECONF_PACKAGE_RECORD_TYPE)
         
 
-    def _get_dep_rec_list(self, root_package, default_packages, apt_cache,
-                          recursive=True):
-            '''Get list of dep of package_root, add them to default_packages'''
-
-            # if no candidate package available, give up
-            if not root_package.candidate:
-		return
-
-            if self.distro.is_recommends_as_dep():
-                relations_list = (root_package.candidate.dependencies,
-                                  root_package.candidate.recommends)
-            else:
-                relations_list = (root_package.candidate.dependencies)
-
-            for relations in relations_list:
-                for dep in relations:
-                    for or_dep in dep.or_dependencies:
-                        # don't introspect same package twice (or more)
-                        if or_dep.name not in default_packages:
-                            default_packages.add(or_dep.name)
-                            try:
-                                if recursive:
-                                    self._get_dep_rec_list \
-                                        (apt_cache[or_dep.name],
-                                         default_packages, apt_cache)
-                            except KeyError:
-                                pass
-
-    def _get_default_package_list(self, apt_cache):
-        '''Get default package installed in the distribution
-
-        Return: set of default packages from the meta_package
-        '''
-
-        default_packages = set()
-        # these are false default package as alternatives deps are taken
-        # into account by the algorithm like file-roller depends zip | p7zip-full
-        # -> p7zip-full won't be listed as it will be in "default" on ubuntu
-        false_defaults = self.distro.get_false_defaults()
-        meta_package_list = self.distro.get_distribution_meta_packages()
-
-        for meta_package in meta_package_list:
-            if apt_cache[meta_package].is_installed:
-                self._get_dep_rec_list(apt_cache[meta_package],
-                                       default_packages, apt_cache)
-        default_packages -= false_defaults
-        return default_packages
-
     def _computepackagelist(self, stored_pkg=None):
         '''Introspect what's installed on this hostid
 
@@ -381,11 +333,6 @@ class PackageSetHandler(object):
         '''
 
         apt_cache = apt.Cache()
-
-        # remove for now: seems to not scale to user case. For instance:
-        # remove gbrainy (default) -> doesn't show as in default
-        #default_packages = self._get_default_package_list(apt_cache)
-        default_packages = set()
 
         # speedup first batch package insertion and
         # when computing list in read mode for diff between hostA and this host
@@ -411,8 +358,7 @@ class PackageSetHandler(object):
                 if not pkg.is_auto_installed:
                     auto_installed = False
                     if not pkg.priority in ('required', 'important'):
-                        if not pkg.name in default_packages:
-                            selection = True
+                        selection = True
             # check if update/creation is needed for that package
             if updating:
                 try:

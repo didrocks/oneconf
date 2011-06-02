@@ -36,8 +36,6 @@ oauth_token = None
 import gettext
 from gettext import gettext as _
 
-from oneconf.desktopcouchstate import get_last_sync_date
-
 CHECK_CONNECT_STATE_DELAY = 60*4
 
 class OneConfEventHandler(gobject.GObject):
@@ -108,7 +106,7 @@ class OneConfEventHandler(gobject.GObject):
             login = user.get('email', None)
             if login:
                 logging.debug("logged in, check hosts and last sync state")
-                self.last_sync = get_last_sync_date()
+                self.last_sync = "foo"
             # this will trigger updating the login GUI                
             self.login = login
 
