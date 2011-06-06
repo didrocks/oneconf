@@ -74,10 +74,10 @@ class DbusHostsService(dbus.service.Object):
         return self.hosts.set_share_inventory(share_inventory)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
-    def get_packages(self, hostid, hostname):
+    def get_packages(self, hostid, hostname, only_manual):
         self.activity = True
         self._ensurePackageSetHandler()
-        return self.PackageSetHandler.get_packages(hostid, hostname)
+        return self.PackageSetHandler.get_packages(hostid, hostname, only_manual)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def diff(self, hostid, hostname):
@@ -125,12 +125,12 @@ class DbusConnect(object):
         '''update if we share the current inventory on the server'''
         self._get_hosts_dbusobject().set_share_inventory(share_inventory)
 
-    def get_packages(self, hostid, hostname):
+    def get_packages(self, hostid, hostname, only_manual):
         '''trigger getpackages handling'''
 
         try:
             return self._get_package_handler_dbusobject().get_packages(hostid,
-                                                           hostname)
+                                                           hostname, only_manual)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)

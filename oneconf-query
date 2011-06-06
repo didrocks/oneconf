@@ -29,7 +29,7 @@ from gettext import gettext as _
 
 from oneconf.version import *
 
-SCOPE_NONE, SCOPE_PACKAGE, SCOPE_HOSTS, SCOPE_HOST = range(4)
+SCOPE_NONE, SCOPE_ALL_PACKAGES, SCOPE_MANUAL_PACKAGES, SCOPE_HOSTS, SCOPE_HOST = range(5)
 ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_SHARE_INVENTORY = range(5)
 
 
@@ -64,7 +64,7 @@ def print_hosts(hosts, only_current=False):
             print "ID: %s %s\n name: %s\n share inventory: %s" % (hostid, additional_text, name, share_inventory)
 
 def err_scope():
-    print _("you can't define --package or --hosts together.")
+    print _("you can't define --all-packages, --manual-packages or --hosts together.")
     sys.exit(1)
 
 def err_action():
@@ -86,7 +86,7 @@ if __name__ == '__main__':
                              "provided by hostname/hostid"))
     parser.add_option("-l", "--list", action="store_true",
                       dest="action_list",
-                      help=_("List stored package (default to hostid) or host lists"))
+                      help=_("List stored package (default for local hostid) or host lists"))
     parser.add_option("-u", "--update", action="store_true",
                       dest="action_update",
                       help=_("update the package list in couchdb if host accepts updates"))
@@ -96,16 +96,19 @@ if __name__ == '__main__':
                       help=_("don't use dbus for the request"))
     scope_group = OptionGroup(parser, "Scope of actions:", "This define the " \
                        "scope to consider for list and diff command.")
-    scope_group.add_option("-p", "--packages", action="store_true",
-                      dest="scope_package",
-                      help=_("get all relevant packages from storage"))
+    scope_group.add_option("--all-packages", action="store_true",
+                      dest="scope_all_packages",
+                      help=_("get all installed packages from storage"))
+    scope_group.add_option("--manual-packages", action="store_true",
+                      dest="scope_manual_packages",
+                      help=_("get only manual installed packages from storage"))
     scope_group.add_option("--hosts", action="store_true",
                       dest="scope_hosts",
                       help=_("all available hosts from storage (only with list)"))
     scope_group.add_option("--host", action="store_true",
                       dest="scope_host",
                       help=_("This host (only with list)"))
-    scope_hosts = OptionGroup(parser, "Host print management:", "Thoses options " \
+    scope_hosts = OptionGroup(parser, "Host scope:", "Thoses options " \
                        "can't be used together and only concerns diff and " \
                        "list actions. List hosts to get registered strings.")
     # default is '' for dbus compatible format
@@ -146,8 +149,12 @@ if __name__ == '__main__':
 
     # store_const doesn't handle conflicts, so use manual triage
     scope = SCOPE_NONE
-    if options.scope_package:
-        scope = SCOPE_PACKAGE
+    if options.scope_manual_packages:
+        scope = SCOPE_MANUAL_PACKAGES
+    if options.scope_all_packages:
+        if scope != SCOPE_NONE:
+            err_scope()
+        scope = SCOPE_ALL_PACKAGES
     if options.scope_hosts:
         if scope != SCOPE_NONE:
             err_scope()
@@ -192,13 +199,16 @@ if __name__ == '__main__':
 
     elif action == ACTION_LIST:
         if scope == SCOPE_NONE:
-            scope = SCOPE_PACKAGE
+            scope = SCOPE_ALL_PACKAGES
         if scope == SCOPE_HOSTS:
             print_hosts(oneconf.get_all_hosts())
         if scope == SCOPE_HOST:
             print_hosts(oneconf.get_all_hosts(), True)
-        elif scope == SCOPE_PACKAGE:
-            installed_pkg = oneconf.get_packages(hostid=options.hostid, hostname=options.hostname)
+        if scope == SCOPE_MANUAL_PACKAGES:
+            installed_pkg = oneconf.get_packages(hostid=options.hostid, hostname=options.hostname, only_manual=True)            
+            print_packages(installed_pkg)
+        if scope == SCOPE_ALL_PACKAGES:
+            installed_pkg = oneconf.get_packages(hostid=options.hostid, hostname=options.hostname, only_manual=False)
             print_packages(installed_pkg)
 
     elif action == ACTION_DIFF:
@@ -207,12 +217,14 @@ if __name__ == '__main__':
                     "getting a diff")
             sys.exit(1)
         if scope == SCOPE_NONE:
-            scope = SCOPE_PACKAGE
+            scope = SCOPE_ALL_PACKAGES
         if scope == SCOPE_HOSTS:
             option_not_compatible("--hosts", "--diff")
         if scope == SCOPE_HOST:
             option_not_compatible("--host", "--diff")
-        elif scope == SCOPE_PACKAGE:
+        if scope == SCOPE_MANUAL_PACKAGES:
+            option_not_compatible("--manual-packages", "--diff")
+        if scope == SCOPE_ALL_PACKAGES:
             (packages_to_install, packages_to_remove) = oneconf.diff(
                     hostid=options.hostid, hostname=options.hostname)
         print_packages_diff(packages_to_install, packages_to_remove)

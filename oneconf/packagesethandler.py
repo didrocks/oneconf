@@ -61,29 +61,31 @@ class PackageSetHandler(object):
         etag = hashlib.sha224(str(newpkg_list)).hexdigest()
         
         if not hostid in self.package_list:
-            logging.debug("First load of cached package list from disk")
             self.package_list[hostid] = {}
-            (self.package_list[hostid]['ETag'], self.package_list[hostid]['package_list']) = self._get_packages_etag(hostid)
+            (self.package_list[hostid]['ETag'], self.package_list[hostid]['package_list']) = self._get_installed_packages_etag(hostid)
         
         if etag != self.package_list[hostid]['ETag']:
             logging.debug("Package list need refresh")
             self.package_list[hostid]['ETag'] = etag
-            self.package_list[hostid]['package_list'] = list(newpkg_list)
+            self.package_list[hostid]['package_list'] = newpkg_list
             with open(os.path.join(ONECONF_CACHE_DIR, hostid, "package_list"), 'w') as f:
                 json.dump(self.package_list[hostid], f)
             logging.debug("Update done")
         else:
             logging.debug("No refresh needed")
     
-    def get_packages(self, hostid=None, hostname=None):        
+    def get_packages(self, hostid=None, hostname=None, only_manual=False):        
         '''get all installed packages from the storage'''
         
         hostid = self._get_hostid_from_context(hostid, hostname)
-        logging.debug ("Request for package list for %s", hostid)
-        return self._get_packages_etag(hostid)[1]
+        logging.debug ("Request for package list for %s with only manual packages reduced scope to: %s", hostid, only_manual)
+        package_list = self._get_installed_packages_etag(hostid)[1]
+        if only_manual:
+            package_list = [package_elem for package_elem in package_list if package_list[package_elem]["auto"] == False]
+        return package_list
         
     
-    def _get_packages_etag(self, hostid):
+    def _get_installed_packages_etag(self, hostid):
         '''get all etag, installed packages from the storage
         
         Return: (etag, package_list)'''
@@ -91,7 +93,7 @@ class PackageSetHandler(object):
         try:
             etag = self.package_list[hostid]['ETag']
             package_list = self.package_list[hostid]['package_list']
-            logging.debug("Hit cache")
+            logging.debug("Hit cache for package list")
         except KeyError:
             self.package_list[hostid] = self._get_packagelist_from_store(hostid)
             etag = self.package_list[hostid]['ETag']
@@ -111,10 +113,10 @@ class PackageSetHandler(object):
         distant_hostid = self._get_hostid_from_context(distant_hostid, distant_hostname)
         
         logging.debug("Collecting all installed packages on this system")
-        local_package_list = set(self.get_packages(self.hosts.current_host['hostid']))
+        local_package_list = set(self.get_packages(self.hosts.current_host['hostid'], False))
         
         logging.debug("Collecting all installed packages on the other system")
-        distant_package_list = set(self.get_packages(distant_hostid))
+        distant_package_list = set(self.get_packages(distant_hostid, False))
 
         logging.debug("Comparing")
         packages_to_install = [x for x in local_package_list if x not in distant_package_list]
@@ -189,10 +191,10 @@ class PackageSetHandler(object):
         apt_cache = apt.Cache()
 
         # get list of all apps installed
-        installed_packages = set ()
+        installed_packages = {}
         for pkg in apt_cache:
             if pkg.is_installed:
-                installed_packages.add(pkg.name)
+                installed_packages[pkg.name] = {"auto": pkg.is_auto_installed}
 
         return installed_packages
 

@@ -39,12 +39,12 @@ class DirectConnect(object):
         '''update if current host show or can see inventory in GUI'''
         Hosts().set_share_inventory(share_inventory)
 
-    def get_packages(self, hostid, hostname):
+    def get_packages(self, hostid, hostname, only_manual):
         '''trigger getpackages handling'''
 
         try:
             self._ensurePackageSetHandler()
-            return self.PackageSetHandler().get_packages(hostid, hostname)
+            return self.PackageSetHandler().get_packages(hostid, hostname, only_manual)
         except HostError, e:
             print(e)
             sys.exit(1)
