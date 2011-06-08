@@ -28,9 +28,7 @@ from gettext import gettext as _
 
 from oneconf.hosts import Hosts, HostError
 from oneconf.distributor import get_distro
-from oneconf.distributor import ONECONF_CACHE_DIR
-
-ONECONF_HOST_PACKAGE = "packages"
+from oneconf.paths import ONECONF_CACHE_DIR, PACKAGE_LIST_FILENAME
 
 class PackageSetHandler(object):
     """
@@ -68,7 +66,7 @@ class PackageSetHandler(object):
             logging.debug("Package list need refresh")
             self.package_list[hostid]['ETag'] = etag
             self.package_list[hostid]['package_list'] = newpkg_list
-            with open(os.path.join(ONECONF_CACHE_DIR, hostid, "package_list"), 'w') as f:
+            with open(os.path.join(ONECONF_CACHE_DIR, hostid, PACKAGE_LIST_FILENAME), 'w') as f:
                 json.dump(self.package_list[hostid], f)
             logging.debug("Update done")
         else:
@@ -166,7 +164,7 @@ class PackageSetHandler(object):
 
         # try a first load on cache, in particular to get the ETag
         try:
-            with open(os.path.join(ONECONF_CACHE_DIR, hostid, "package_list"), 'r') as f:
+            with open(os.path.join(ONECONF_CACHE_DIR, hostid, PACKAGE_LIST_FILENAME), 'r') as f:
                 pkg_list = json.load(f)
                 etag = pkg_list['ETag']
         except IOError:

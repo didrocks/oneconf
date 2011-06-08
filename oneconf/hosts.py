@@ -26,8 +26,7 @@ import platform
 import gettext
 from gettext import gettext as _
 
-from oneconf.distributor import ONECONF_CACHE_DIR
-ONECONF_HOST_DATA = "host_data"
+from oneconf.paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME
 
 class HostError(Exception):
     def __init__(self, message):
@@ -58,7 +57,7 @@ class Hosts(object):
 
         self._host_file_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
         try:
-            with open(os.path.join(self._host_file_dir, ONECONF_HOST_DATA), 'r') as f:
+            with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'r') as f:
                 self.current_host = json.load(f)['host']
                 if hostname != self.current_host['hostname']:
                     self.current_host['hostname'] = hostname
@@ -78,7 +77,7 @@ class Hosts(object):
         # try a first load on cache, in particular to get the ETag
         if not etag:
             try:
-                with open("%s/other_hosts" % ONECONF_CACHE_DIR, 'r') as f:
+                with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
                     file_content = json.load(f)
                     other_hosts = file_content['hosts']
                     etag  = file_content['ETag']
@@ -102,7 +101,7 @@ class Hosts(object):
         
         if not os.path.isdir(self._host_file_dir):
             os.mkdir(self._host_file_dir)
-        with open(os.path.join(self._host_file_dir, ONECONF_HOST_DATA), 'w') as f:
+        with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'w') as f:
             json.dump({'ETag': etag, 'host': self.current_host}, f)
     
     
@@ -111,7 +110,7 @@ class Hosts(object):
 
         Return: hostname
 
-        can trigger HostError excpetion if no hostname found for this id
+        can trigger HostError exception if no hostname found for this id
         '''
         
         if hostid == self.current_host['hostid']:
