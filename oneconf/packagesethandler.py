@@ -23,8 +23,7 @@ import json
 import logging
 import os
 
-import gettext
-from gettext import gettext as _
+LOG = logging.getLogger(__name__)
 
 from oneconf.hosts import Hosts, HostError
 from oneconf.distributor import get_distro
@@ -52,10 +51,10 @@ class PackageSetHandler(object):
 
         hostid = self.hosts.current_host['hostid']
         
-        logging.debug("Updating package list")
+        LOG.debug("Updating package list")
         newpkg_list = self._computepackagelist()
         
-        logging.debug("Creating the etag")
+        LOG.debug("Creating the etag")
         etag = hashlib.sha224(str(newpkg_list)).hexdigest()
         
         if not hostid in self.package_list:
@@ -63,20 +62,20 @@ class PackageSetHandler(object):
             (self.package_list[hostid]['ETag'], self.package_list[hostid]['package_list']) = self._get_installed_packages_etag(hostid)
         
         if etag != self.package_list[hostid]['ETag']:
-            logging.debug("Package list need refresh")
+            LOG.debug("Package list need refresh")
             self.package_list[hostid]['ETag'] = etag
             self.package_list[hostid]['package_list'] = newpkg_list
             with open(os.path.join(ONECONF_CACHE_DIR, hostid, PACKAGE_LIST_FILENAME), 'w') as f:
                 json.dump(self.package_list[hostid], f)
-            logging.debug("Update done")
+            LOG.debug("Update done")
         else:
-            logging.debug("No refresh needed")
+            LOG.debug("No refresh needed")
     
     def get_packages(self, hostid=None, hostname=None, only_manual=False):        
         '''get all installed packages from the storage'''
         
         hostid = self._get_hostid_from_context(hostid, hostname)
-        logging.debug ("Request for package list for %s with only manual packages reduced scope to: %s", hostid, only_manual)
+        LOG.debug ("Request for package list for %s with only manual packages reduced scope to: %s", hostid, only_manual)
         package_list = self._get_installed_packages_etag(hostid)[1]
         if only_manual:
             package_list = [package_elem for package_elem in package_list if package_list[package_elem]["auto"] == False]
@@ -91,7 +90,7 @@ class PackageSetHandler(object):
         try:
             etag = self.package_list[hostid]['ETag']
             package_list = self.package_list[hostid]['package_list']
-            logging.debug("Hit cache for package list")
+            LOG.debug("Hit cache for package list")
         except KeyError:
             self.package_list[hostid] = self._get_packagelist_from_store(hostid)
             etag = self.package_list[hostid]['ETag']
@@ -110,13 +109,13 @@ class PackageSetHandler(object):
         
         distant_hostid = self._get_hostid_from_context(distant_hostid, distant_hostname)
         
-        logging.debug("Collecting all installed packages on this system")
+        LOG.debug("Collecting all installed packages on this system")
         local_package_list = set(self.get_packages(self.hosts.current_host['hostid'], False))
         
-        logging.debug("Collecting all installed packages on the other system")
+        LOG.debug("Collecting all installed packages on the other system")
         distant_package_list = set(self.get_packages(distant_hostid, False))
 
-        logging.debug("Comparing")
+        LOG.debug("Comparing")
         packages_to_install = [x for x in local_package_list if x not in distant_package_list]
         packages_to_remove = [x for x in distant_package_list if x not in local_package_list]
         
@@ -132,10 +131,10 @@ class PackageSetHandler(object):
         '''check if server storage has refreshed, invalidate caches if so'''
         new_sync = get_last_sync_date()
         if self.last_storage_sync != new_sync:
-            logging.debug('Invalide cache as storage has been synced')
+            LOG.debug('Invalide cache as storage has been synced')
             self.cache_pkg_storage = {}
             self.last_storage_sync = new_sync
-        logging.debug('same sync')
+        LOG.debug('same sync')
 
     def _get_hostid_from_context(self, hostid=None, hostname=None):
         '''get and check hostid
@@ -159,7 +158,7 @@ class PackageSetHandler(object):
     def _get_packagelist_from_store(self, hostid):
         '''load package list for every computer in cache'''
         
-        logging.debug('get package list from store for hostid: %s' % hostid)
+        LOG.debug('get package list from store for hostid: %s' % hostid)
         pkg_list = {'ETag': None, "package_list": set ()}
 
         # try a first load on cache, in particular to get the ETag
@@ -185,7 +184,7 @@ class PackageSetHandler(object):
         Return: installed_packages of all auto_installed packages for the current hostid
         '''
 
-        logging.debug ('Compute package list for current host')
+        LOG.debug ('Compute package list for current host')
         apt_cache = apt.Cache()
 
         # get list of all apps installed

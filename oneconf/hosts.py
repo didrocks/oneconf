@@ -26,6 +26,8 @@ import platform
 import gettext
 from gettext import gettext as _
 
+LOG = logging.getLogger(__name__)
+
 from oneconf.paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME
 
 class HostError(Exception):
@@ -95,7 +97,7 @@ class Hosts(object):
     def _save_current_host(self):
         '''Save current host on disk'''
         
-        logging.debug("Save current host to disk")
+        LOG.debug("Save current host to disk")
 
         etag = hashlib.sha224(str(self.current_host)).hexdigest()
         
@@ -129,7 +131,7 @@ class Hosts(object):
         can trigger HostError excpetion if no hostname found for this id
         '''
         
-        logging.debug("Get a hostname for %s", hostid)
+        LOG.debug("Get a hostname for %s", hostid)
         return self.gethost_by_id(hostid)['hostname']
         
 
@@ -142,7 +144,7 @@ class Hosts(object):
         or multiple hostid for this hostname
         '''
         
-        logging.debug("Get a hostid for %s", hostname)
+        LOG.debug("Get a hostid for %s", hostname)
 
         result_hostid = None
         if hostname == self.current_host['hostname']:
@@ -164,7 +166,7 @@ class Hosts(object):
 
         put in them as dict -> tuple for dbus connection'''
 
-        logging.debug("Request to compute an list of all hosts")
+        LOG.debug("Request to compute an list of all hosts")
         result = {self.current_host['hostid']: (True, self.current_host['hostname'], self.current_host['share_inventory'])}
         for hostid in self._other_hosts:
             result[hostid] = (False, self._other_hosts[hostid]['hostname'], True)
@@ -173,7 +175,7 @@ class Hosts(object):
     def set_share_inventory(self, share_inventory):
         '''Change if we share the current inventory to other hosts'''
 
-        logging.debug("Update current share_inventory state to %s" % share_inventory)
+        LOG.debug("Update current share_inventory state to %s" % share_inventory)
         self.current_host['share_inventory'] = share_inventory
         self._save_current_host()
         # TODO: update, and take the case into account once offline

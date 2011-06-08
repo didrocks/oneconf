@@ -25,6 +25,8 @@ from optparse import OptionParser
 import gettext
 from gettext import gettext as _
 
+LOG = logging.getLogger(__name__)
+
 from oneconf.version import *
 
 # add 10 secondes more than CHECK_CONNECT_STATE_DELAY in oneconfeventhandler
@@ -35,13 +37,13 @@ MIN_TIME_WITHOUT_ACTIVITY = 30
 def quit(loop, myservice):
     '''quit if no activity at least in MIN_TIME_WITHOUT_ACTIVITYs'''
     if myservice.activity:
-        logging.debug('Some recent activity, still alive for %ss'
+        LOG.debug('Some recent activity, still alive for %ss'
                       % MIN_TIME_WITHOUT_ACTIVITY)
         # TODO: check if server has new sync info and send a dbus signal there
         
         myservice.activity = False
         return True
-    logging.debug('No more activity, go to sleep')
+    LOG.debug('No more activity, go to sleep')
     loop.quit()
 
 if __name__ == '__main__':

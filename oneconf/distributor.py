@@ -24,6 +24,8 @@ import subprocess
 
 from gettext import gettext as _
 
+LOG = logging.getLogger(__name__)
+
 class UnimplementedError(Exception):
     pass
 
@@ -46,7 +48,7 @@ class Distro(object):
 def _get_distro():
     distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
                                  stdout=subprocess.PIPE).communicate()[0].strip()
-    logging.debug("get_distro: '%s'" % distro_id)
+    LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
     module =  __import__(distro_id, globals(), locals(), [], -1)
     # get the right class and instanciate it
