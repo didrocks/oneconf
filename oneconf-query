@@ -142,7 +142,7 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     if options.directaccess or options.debug:
-        LOG.debug("Direct call")
+        LOG.debug("Direct call: only take from cache")
         from oneconf.directconnect import DirectConnect
         oneconf = DirectConnect()
     else:
