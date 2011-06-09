@@ -17,7 +17,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 
-import apt
 import hashlib
 import json
 import logging
@@ -52,7 +51,7 @@ class PackageSetHandler(object):
         hostid = self.hosts.current_host['hostid']
         
         LOG.debug("Updating package list")
-        newpkg_list = self._computepackagelist()
+        newpkg_list = self.distro.compute_local_packagelist()
         
         LOG.debug("Creating the etag")
         etag = hashlib.sha224(str(newpkg_list)).hexdigest()
@@ -178,20 +177,4 @@ class PackageSetHandler(object):
         return pkg_list
         
 
-    def _computepackagelist(self, stored_pkg=None):
-        '''Introspect what's installed on this hostid
-
-        Return: installed_packages of all auto_installed packages for the current hostid
-        '''
-
-        LOG.debug ('Compute package list for current host')
-        apt_cache = apt.Cache()
-
-        # get list of all apps installed
-        installed_packages = {}
-        for pkg in apt_cache:
-            if pkg.is_installed:
-                installed_packages[pkg.name] = {"auto": pkg.is_auto_installed}
-
-        return installed_packages
 

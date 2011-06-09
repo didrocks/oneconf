@@ -16,17 +16,31 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+import apt
+import logging
+
+LOG = logging.getLogger(__name__)
+
 from oneconf.distributor import Distro
 
 
 class Ubuntu(Distro):
 
-    def get_distro_channel_name(self):
-        """ The name in the Release file """
-        return "Ubuntu"
 
-    def is_recommends_as_dep(self):
-        return True
+    def compute_local_packagelist(self):
+        '''Introspect what's installed on this hostid
 
+        Return: installed_packages list
+        '''
+        
+        LOG.debug ('Compute package list for current host')
+        apt_cache = apt.Cache()
 
+        # get list of all apps installed
+        installed_packages = {}
+        for pkg in apt_cache:
+            if pkg.is_installed:
+                installed_packages[pkg.name] = {"auto": pkg.is_auto_installed}
 
+        return installed_packages
+        

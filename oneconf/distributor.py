@@ -32,16 +32,12 @@ class UnimplementedError(Exception):
 
 class Distro(object):
     """ abstract base class for a distribution """
+        
+    def compute_local_packagelist(self):
+        '''Introspect what's installed on this hostid
 
-    def get_distro_channel_name(self):
-        """ The name of the main channel in the Release file (e.g. Ubuntu)"""
-        return "none"
-
-    def is_recommends_as_dep(self):
-        '''boolean if recommends considered as direct dependencies
-
-        You should return true if recommends are installed by default
-        Return: boolean'''
+        Return: installed_packages list
+        '''
         raise UnimplementedError
 
 
