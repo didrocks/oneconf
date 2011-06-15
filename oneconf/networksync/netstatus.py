@@ -74,7 +74,6 @@ class NetworkStatusWatcher(gobject.GObject):
 
     def __init__(self):
         gobject.GObject.__init__(self)
-        self.network_state = 0
         self.connected = False
         
         
@@ -90,8 +89,8 @@ class NetworkStatusWatcher(gobject.GObject):
             nm = bus.get_object('org.freedesktop.NetworkManager',
                                 '/org/freedesktop/NetworkManager')
             nm.connect_to_signal("StateChanged", self._on_connection_state_changed)
-            self.network_state = nm.state(dbus_interface='org.freedesktop.NetworkManager')
-            self._on_connection_state_changed(self.network_state)
+            network_state = nm.state(dbus_interface='org.freedesktop.NetworkManager')
+            self._on_connection_state_changed(network_state)
 
         except Exception as e:
             LOG.warn("failed to init network state watcher '%s'" % e)
@@ -101,19 +100,27 @@ class NetworkStatusWatcher(gobject.GObject):
     def _on_connection_state_changed(self, state):
         LOG.debug("network status changed to %i", state)
 
-        self.network_state = int(state)
-        if self.connected != self.is_connected():
-            self.connected = self.is_connected()
-            LOG.debug("Connectivity state changed to: %s", self.connected)
-            self.emit("changed", self.connected)
-        return
+        # this is to avoid transient state when we turn wifi on and nm tell "is connected" by default until checking
+        gobject.timeout_add_seconds(1, self._does_state_mean_connected, state)
+
+    def _ensure_new_connected_state(self, connected):
+        '''check if the connectivity state changed since last check
+
+        This is to avoid some transient state with nm flickering between connected and not connected'''
+
+        if self.connected == connected:
+            return
+
+        self.connected = connected
+        LOG.debug("Connectivity state changed to: %s", self.connected)
+        self.emit("changed", self.connected)
 
 
-    def is_connected(self):
-        """ get bool if we are connected """
+    def _does_state_mean_connected(self, network_state):
+        """ get bool if we the state means we are connected """
         
         # unkown because in doubt, just assume we have network
-        return self.network_state in self.NM_STATE_UNKNOWN_LIST + self.NM_STATE_CONNECTED_LIST
+        return network_state in self.NM_STATE_UNKNOWN_LIST + self.NM_STATE_CONNECTED_LIST
         
 
 if __name__ == '__main__':

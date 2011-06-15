@@ -50,13 +50,7 @@ class SyncHandler(gobject.GObject):
         self._netstate.connect("changed", self._network_state_changed)
         self._sso_login.connect("login-result", self._sso_login_result)
 
-
-    # TODO: both be replaced by a property
-    def get_can_sync(self):
-        '''simple helper stating if we can sync or not'''
-        return self._can_sync
-
-    def _compute_can_sync(self):
+    def _refresh_can_sync(self):
         '''compute current syncable state before asking for refresh the value'''
         if self.credential is None:
             new_can_sync = False
@@ -65,33 +59,24 @@ class SyncHandler(gobject.GObject):
                 new_can_sync = True
             else:
                 new_can_sync = False
-        # this is to avoid transient state when we turn wifi on and nm tell "is connected" by default until checking
-        gobject.timeout_add_seconds(1, self._refresh_can_sync, new_can_sync)
+
+        if self._can_sync == new_can_sync:
+            return
+
+        if self._can_sync:
+            self._process_sync()
 
     def _sso_login_result(self, sso_login, credential):
         self.credential = credential
-        self._compute_can_sync()
+        self._refresh_can_sync()
 
     def _network_state_changed(self, netstate, connected):
         if connected:
             # refresh credential as we are interested (this will call _compute_can_sync)
             self._sso_login.get_credential()
         else:
-            self._compute_can_sync()
-
-    def _refresh_can_sync(self, new_can_sync):
-        '''check if the state changed since last syncing process
-
-        This is to avoid some transient state with nm flickering between connected and not connected'''
-        if self._can_sync == new_can_sync:
-            return
-
-        self._can_sync = new_can_sync
-        if self._can_sync:
-            self._process_sync()
-            # TODO: add regular sync there (and remove if not can sync)
-            gobject.timeout_add_seconds(TIME_BEFORE_SYNCING, self.process_sync) 
-
+            self._refresh_can_sync()
+ 
     def _process_sync(self):
         '''start syncing what's needed if can sync'''
 
