@@ -101,13 +101,12 @@ class NetworkStatusWatcher(gobject.GObject):
         LOG.debug("network status changed to %i", state)
 
         # this is to avoid transient state when we turn wifi on and nm tell "is connected" by default until checking
-        gobject.timeout_add_seconds(1, self._does_state_mean_connected, state)
+        gobject.timeout_add_seconds(1, self._ensure_new_connected_state, self._does_state_mean_connected(state))
 
     def _ensure_new_connected_state(self, connected):
         '''check if the connectivity state changed since last check
 
         This is to avoid some transient state with nm flickering between connected and not connected'''
-
         if self.connected == connected:
             return
 

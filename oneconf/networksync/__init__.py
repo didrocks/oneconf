@@ -55,13 +55,11 @@ class SyncHandler(gobject.GObject):
         if self.credential is None:
             new_can_sync = False
         else:
-            if self.netstate.is_connected():
-                new_can_sync = True
-            else:
-                new_can_sync = False
+            new_can_sync = self._netstate.connected
 
         if self._can_sync == new_can_sync:
             return
+        self._can_sync = new_can_sync
 
         if self._can_sync:
             self._process_sync()

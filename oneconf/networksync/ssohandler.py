@@ -63,21 +63,21 @@ class LoginBackendDbusSSO(gobject.GObject):
         self.proxy.find_credentials(self.appname, '', reply_handler=NO_OP, error_handler=NO_OP)
 
     def _on_credentials_found(self, app_name, credentials):
-        LOG.debug("credential found")
         if app_name != self.appname:
             return
+        LOG.debug("credential found")
         self.emit("login-result", credentials)
 
     def _on_credentials_not_found(self, app_name):
-        LOG.debug("credential not found")
         if app_name != self.appname:
             return
+        LOG.debug("credential not found")
         self.emit("login-result", None)
     
     def _on_credentials_error(self, app_name, error):
-        LOG.error("credential erro")
         if app_name != self.appname:
             return
+        LOG.error("credential error")
         self.emit("login-result", None)
 
 
@@ -89,15 +89,18 @@ if __name__ == "__main__":
     DBusGMainLoop(set_as_default=True)
 
     login = LoginBackendDbusSSO()
-    login.get_credential()
 
     loop = gobject.MainLoop()
+    login.get_credential()
     
     def print_result(obj, foo):
         print foo
     
     login.connect("login-result", print_result)
     
+    # Only get "DEBUG:__main__:look for credential", no "credential found/not found" callback
+    gobject.timeout_add_seconds(10, login.get_credential)
+
     loop.run()
 
 
