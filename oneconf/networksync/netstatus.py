@@ -69,12 +69,13 @@ class NetworkStatusWatcher(gobject.GObject):
     
     __gsignals__ = {'changed':(gobject.SIGNAL_RUN_FIRST,
                                gobject.TYPE_NONE,
-                               (int,)),
+                               (bool,)),
                    }
 
     def __init__(self):
         gobject.GObject.__init__(self)
         self.network_state = 0
+        self.connected = False
         
         
         # check is ONECONF_NET_DISCONNECTED is in the environment variables
@@ -88,8 +89,9 @@ class NetworkStatusWatcher(gobject.GObject):
             bus = dbus.SystemBus()
             nm = bus.get_object('org.freedesktop.NetworkManager',
                                 '/org/freedesktop/NetworkManager')
-            self.network_state = nm.state(dbus_interface='org.freedesktop.NetworkManager')
             nm.connect_to_signal("StateChanged", self._on_connection_state_changed)
+            self.network_state = nm.state(dbus_interface='org.freedesktop.NetworkManager')
+            self._on_connection_state_changed(self.network_state)
 
         except Exception as e:
             LOG.warn("failed to init network state watcher '%s'" % e)
@@ -100,7 +102,10 @@ class NetworkStatusWatcher(gobject.GObject):
         LOG.debug("network status changed to %i", state)
 
         self.network_state = int(state)
-        self.emit("changed", self.network_state)
+        if self.connected != self.is_connected():
+            self.connected = self.is_connected()
+            LOG.debug("Connectivity state changed to: %s", self.connected)
+            self.emit("changed", self.connected)
         return
 
 
@@ -108,12 +113,9 @@ class NetworkStatusWatcher(gobject.GObject):
         """ get bool if we are connected """
         
         # unkown because in doubt, just assume we have network
-        result = self.network_state in self.NM_STATE_UNKNOWN_LIST + self.NM_STATE_CONNECTED_LIST
+        return self.network_state in self.NM_STATE_UNKNOWN_LIST + self.NM_STATE_CONNECTED_LIST
         
-        LOG.debug("check if we are connected: %s", result)
-        return result
 
-        
 if __name__ == '__main__':
 
     logging.basicConfig(level=logging.DEBUG)
@@ -123,11 +125,8 @@ if __name__ == '__main__':
     network = NetworkStatusWatcher()
     loop = gobject.MainLoop()
 
-    def print_state(new_network, new_state):
-        print "New state received is: %s" % new_state
-        print "Consequently, it is connected: %s" % new_network.is_connected()
-    print "initial connection state: %s" % network.is_connected()
-    
+    def print_state(new_network, connected):
+        print "Connectivity state: %s" % connected
     network.connect("changed", print_state)
     
     loop.run()
