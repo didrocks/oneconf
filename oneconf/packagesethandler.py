@@ -151,10 +151,14 @@ class PackageSetHandler(object):
         # load current content in cache
         try:
             with open(os.path.join(ONECONF_CACHE_DIR, hostid, PACKAGE_LIST_FILENAME), 'r') as f:
+                # can be none in corrupted null file
                 pkg_list = json.load(f)
-        except IOError:
-            LOG.warning ("no package list stored for hostid: %s" % hostid)
-            pkg_list = {'package_list': None}        
+        except (IOError, ValueError):
+            LOG.warning ("no valid package list stored for hostid: %s" % hostid)
+            pkg_list = None
+            
+        if pkg_list is None:
+            pkg_list = {'package_list': {}}
         
         return pkg_list['package_list']
         

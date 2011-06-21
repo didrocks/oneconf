@@ -50,14 +50,17 @@ class DbusHostsService(dbus.service.Object):
         from oneconf.hosts import Hosts, HostError
 
         self.hosts = Hosts()
-        self.PackageSetHandler = None
+        self._packageSetHandler = None
         self.activity = False
+        self.synchandler = None
         
-    def _ensurePackageSetHandler(self):
+    # TODO: can be a property
+    def get_packageSetHandler(self):
         '''Ensure we load the package set handler at the right time'''
-        if not self.PackageSetHandler:
+        if not self._packageSetHandler:
             from oneconf.packagesethandler import PackageSetHandler
-            self.PackageSetHandler = PackageSetHandler(self.hosts)
+            self._packageSetHandler = PackageSetHandler(self.hosts)
+        return self._packageSetHandler
 
     @dbus.service.method(HOSTS_INTERFACE)
     def get_all_hosts(self):
@@ -76,26 +79,22 @@ class DbusHostsService(dbus.service.Object):
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_packages(self, hostid, hostname, only_manual):
         self.activity = True
-        self._ensurePackageSetHandler()
-        return self.PackageSetHandler.get_packages(hostid, hostname, only_manual)
+        return none_to_null(self.get_packageSetHandler().get_packages(hostid, hostname, only_manual))
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def diff(self, hostid, hostname):
         self.activity = True
-        self._ensurePackageSetHandler()
-        return self.PackageSetHandler.diff(hostid, hostname)
+        return self.get_packageSetHandler().diff(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def update(self):
         self.activity = True
-        self._ensurePackageSetHandler()
-        self.PackageSetHandler.update()
+        self.get_packageSetHandler().update()
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def async_update(self):
         self.activity = True
-        _ensurePackageSetHandler()
-        glib.timeout_add_seconds(1, self.PackageSetHandler.update)
+        glib.timeout_add_seconds(1, self.get_packageSetHandler().update)
 
 class DbusConnect(object):
 

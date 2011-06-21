@@ -45,12 +45,35 @@ def quit(loop, myservice):
         return True
     LOG.debug('No more activity, go to sleep')
     loop.quit()
+    
+def createsynchandler(myservice, use_mock):
 
+    # create only on demand to avoid first sync/upload to delay first request
+    # this sync automatically as soon as network/sso is available
+    LOG.debug('Create a sync handler with infra')
+    infra = None
+    if use_mock:
+        from oneconf.networksync.infraclient import MockInfraClient
+        infra = MockInfraClient()
+    myservice.synchandler = SyncHandler(myservice.hosts, package_handler=myservice.get_packageSetHandler(), infraclient=infra)
+    gobject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, syncwithinfra, myservice)
+    return False
+    
+def syncwithinfra(myservice):
+
+    LOG.debug('Check a sync with infra')
+    # force now manual sync if possible (first one was tried by handler callback if can_sync)
+    if myservice.synchandler:
+        myservice.synchandler.process_sync()
+    return True
+    
 if __name__ == '__main__':
     usage = _("usage: %prog [options]")
     parser = OptionParser(version= "%prog " + VERSION, usage=usage)
     parser.add_option("--debug", action="store_true", dest="debug",
                       help=_("enable debug mode"))
+    parser.add_option("--mock", action="store_true", dest="mock",
+                      help=_("use the mock infrastructure"))
     (options, args) = parser.parse_args()
     # set verbosity
     if options.debug:
@@ -62,10 +85,12 @@ if __name__ == '__main__':
     import gobject
     from dbus.mainloop.glib import DBusGMainLoop
     from oneconf.dbusconnect import DbusHostsService
+    from oneconf.networksync import SyncHandler
 
     DBusGMainLoop(set_as_default=True)
     loop = gobject.MainLoop()
     myservice = DbusHostsService()
     gobject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, quit, loop, myservice)
+    gobject.timeout_add_seconds(10, createsynchandler, myservice, options.mock)
     loop.run()
 

@@ -28,9 +28,6 @@ from infraclient import InfraClient
 from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
-TIME_BEFORE_SYNCING = 60*5+10
-TIME_BEFORE_SYNCING = 60
-
 from paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PACKAGE_LIST_FILENAME
 
 LOG = logging.getLogger(__name__)
@@ -66,7 +63,7 @@ class SyncHandler(gobject.GObject):
         self._can_sync = new_can_sync
 
         if self._can_sync:
-            self._process_sync()
+            self.process_sync()
 
     def _sso_login_result(self, sso_login, credential):
         self.credential = credential
@@ -101,6 +98,8 @@ class SyncHandler(gobject.GObject):
                 return json.load(f)['ETag']
         except IOError:
             LOG.debug("No file found for %s", uri)
+        except (TypeError, ValueError), e:
+            LOG.warning("Invalid local file of %s: %s" % (uri, e))
             return None
 
     def _filename_to_requestid(self, filename):
@@ -112,30 +111,39 @@ class SyncHandler(gobject.GObject):
         
             return True if an sync processed, False otherwise'''
 
-        LOG.debug("Look for refresh %s" % local_filename)
-
         requestid = self._filename_to_requestid(local_filename)
-        distant_etag = self.infraclient.get_content(requestid, only_etag=True)
-        if distant_etag != self._get_local_file_etag(local_filename):
-            if self._save_local_file_update(local_filename, self.infraclient.get_content(requestid)):
-                LOG.debug("%s refreshed" % local_filename)
-                return True
+        LOG.debug("Look for refresh %s" % requestid)
+        try:
+            distant_etag = self.infraclient.get_content(requestid, only_etag=True)
+            print "foo"
+            if distant_etag != self._get_local_file_etag(local_filename):
+                print "bar"
+                if self._save_local_file_update(local_filename, self.infraclient.get_content(requestid)):
+                    LOG.debug("%s refreshed" % local_filename)
+                    return True
+        except ValueError, e:
+            LOG.warning("Got a ValueError while getting content related to %s: %s" % (requestid, e))
         return False
 
     def _check_and_push(self, local_filename):
         '''Meta function for request upload to distant infra'''
 
-        LOG.debug("Look to upload to infra from %s" % local_filename)
-
         requestid = self._filename_to_requestid(local_filename)
-        distant_etag = self.infraclient.get_content(requestid, only_etag=True)
-        if distant_etag != self._get_local_file_etag(local_filename):
-            with open(local_filename, 'r') as f:
-                self.infraclient.upload_content(requestid, json.load(f))
-                LOG.debug("infra refreshed from %s" % local_filename)
+        LOG.debug("Look to upload to infra from %s" % requestid)
 
-    def _process_sync(self):
-        '''start syncing what's needed if can sync'''
+        try:
+            distant_etag = self.infraclient.get_content(requestid, only_etag=True)
+            if distant_etag != self._get_local_file_etag(local_filename):
+                with open(local_filename, 'r') as f:
+                    self.infraclient.upload_content(requestid, json.load(f))
+                    LOG.debug("infra refreshed from %s" % local_filename)
+        except ValueError, e:
+            LOG.warning("Got a ValueError while getting content related to %s: %s" % (requestid, e))
+
+    def process_sync(self):
+        '''start syncing what's needed if can sync
+        
+        process sync can be either started directly, or when can_sync changed'''
 
         # if no more connection, don't try syncing in the main loop
         if not self._can_sync:
@@ -160,7 +168,7 @@ class SyncHandler(gobject.GObject):
                 # if already loaded, unload the package cache
                 if self.package_handler:
                     try:
-                        self.package_handler.package_list[hostid]['valid'] = False
+                       self.package_handler.package_list[hostid]['valid'] = False
                     except KeyError:
                         pass
                 # TODO: dbus signal for 'package list change, hostid'
