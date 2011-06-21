@@ -112,8 +112,8 @@ class PackageSetHandler(object):
         distant_package_list = set(self.get_packages(distant_hostid, False))
 
         LOG.debug("Comparing")
-        packages_to_install = [x for x in local_package_list if x not in distant_package_list]
-        packages_to_remove = [x for x in distant_package_list if x not in local_package_list]
+        packages_to_install = [x for x in distant_package_list if x not in local_package_list]
+        packages_to_remove = [x for x in local_package_list if x not in distant_package_list]
         
         # for Dbus which doesn't like empty list
         if not packages_to_install:
