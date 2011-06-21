@@ -18,15 +18,17 @@
 
 import dbus
 import dbus.service
-import glib
+import gobject
+import logging
 import sys
 
+LOG = logging.getLogger(__name__)
 
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 HOSTS_OBJECT_NAME = "/com/ubuntu/oneconf/HostsHandler"
 PACKAGE_SET_INTERFACE = "com.ubuntu.OneConf.HostsHandler.PackageSetHandler"
 HOSTS_INTERFACE = "com.ubuntu.OneConf.HostsHandler.Hosts"
-timeout=ONE_CONF_DBUS_TIMEOUT = 300
+ONE_CONF_DBUS_TIMEOUT = 300
 
 def none_to_null(var):
     '''return var in dbus compatible format'''
@@ -94,7 +96,15 @@ class DbusHostsService(dbus.service.Object):
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def async_update(self):
         self.activity = True
-        glib.timeout_add_seconds(1, self.get_packageSetHandler().update)
+        gobject.timeout_add_seconds(1, self.get_packageSetHandler().update)
+        
+    @dbus.service.signal(HOSTS_INTERFACE)
+    def hostlist_changed(self):
+        LOG.debug("Send host list changed dbus signal")
+
+    @dbus.service.signal(PACKAGE_SET_INTERFACE)
+    def packagelist_changed(self, hostid):
+        LOG.debug("Send package list changed dbus signal for hostid: %s" % hostid)
 
 class DbusConnect(object):
 

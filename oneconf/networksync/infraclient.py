@@ -68,7 +68,6 @@ class MockInfraClient(InfraClient):
         InfraClient()    
 
         self.infra_dir = os.path.join(os.path.dirname(__file__), 'mocklocalinfra')
-        print self.infra_dir
         
     def _url_to_file(self, url):
         '''reverse engineer, web url to infra local path for testing'''

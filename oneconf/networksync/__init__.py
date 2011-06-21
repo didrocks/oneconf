@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 class SyncHandler(gobject.GObject):
     '''Handle sync request with the server from the dbus service'''
 
-    def __init__(self, hosts, package_handler=None, infraclient=None):
+    def __init__(self, hosts, package_handler=None, infraclient=None, dbusemitter=None):
         gobject.GObject.__init__(self)
 
         self._netstate = NetworkStatusWatcher()
@@ -47,6 +47,10 @@ class SyncHandler(gobject.GObject):
         self.package_handler = package_handler
         if not self.infraclient:
             self.infraclient = InfraClient()
+        
+        if dbusemitter:
+            self.emit_new_hostlist = dbusemitter.hostlist_changed
+            self.emit_new_packagelist = dbusemitter.packagelist_changed
 
         self._netstate.connect("changed", self._network_state_changed)
         self._sso_login.connect("login-result", self._sso_login_result)
@@ -112,12 +116,10 @@ class SyncHandler(gobject.GObject):
             return True if an sync processed, False otherwise'''
 
         requestid = self._filename_to_requestid(local_filename)
-        LOG.debug("Look for refresh %s" % requestid)
+        LOG.debug("Check for refreshing %s from infra" % requestid)
         try:
             distant_etag = self.infraclient.get_content(requestid, only_etag=True)
-            print "foo"
             if distant_etag != self._get_local_file_etag(local_filename):
-                print "bar"
                 if self._save_local_file_update(local_filename, self.infraclient.get_content(requestid)):
                     LOG.debug("%s refreshed" % local_filename)
                     return True
@@ -129,7 +131,7 @@ class SyncHandler(gobject.GObject):
         '''Meta function for request upload to distant infra'''
 
         requestid = self._filename_to_requestid(local_filename)
-        LOG.debug("Look to upload to infra from %s" % requestid)
+        LOG.debug("Check for uploading %s to infra" % requestid)
 
         try:
             distant_etag = self.infraclient.get_content(requestid, only_etag=True)
@@ -139,6 +141,14 @@ class SyncHandler(gobject.GObject):
                     LOG.debug("infra refreshed from %s" % local_filename)
         except ValueError, e:
             LOG.warning("Got a ValueError while getting content related to %s: %s" % (requestid, e))
+            
+    def emit_new_hostlist(self):
+        '''this signal will be bound at init time'''
+        LOG.warning("emit_new_hostlist not bound to anything")
+        
+    def emit_new_packagelist(self, hostid):
+        '''this signal will be bound at init time'''
+        
 
     def process_sync(self):
         '''start syncing what's needed if can sync
@@ -151,12 +161,14 @@ class SyncHandler(gobject.GObject):
         LOG.debug("Start processing sync")
 
         current_hostid = self.hosts.current_host['hostid']
+        hostlist_changed = None
+        packagelist_changed = []
 
         # other hosts list
         other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
         if self._check_and_sync(other_host_filename):
             self.hosts.update_other_hosts()
-            # TODO: dbus signal for 'hosts_changed'
+            hostlist_changed = True
 
         # now refresh package list for every hosts (creating directory if needed)
         for hostid in self.hosts.other_hosts:
@@ -171,7 +183,7 @@ class SyncHandler(gobject.GObject):
                        self.package_handler.package_list[hostid]['valid'] = False
                     except KeyError:
                         pass
-                # TODO: dbus signal for 'package list change, hostid'
+                packagelist_changed.append(hostid)
 
         # now push current host
         current_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, HOST_DATA_FILENAME)
@@ -180,6 +192,12 @@ class SyncHandler(gobject.GObject):
         # and last but not least, local package list
         local_packagelist_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, PACKAGE_LIST_FILENAME)
         self._check_and_push(local_packagelist_filename)
+
+        # send dbus signal if needed events (just now so that we don't block on remaining operations)
+        if hostlist_changed:
+            self.emit_new_hostlist()
+        for hostid in packagelist_changed:
+            self.emit_new_packagelist(hostid)
 
         # continue syncing in the main loop
         return True
