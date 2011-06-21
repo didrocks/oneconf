@@ -22,13 +22,14 @@ import json
 import logging
 import os
 import platform
+import shutil
 
 import gettext
 from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
-from oneconf.paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME
+from paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PACKAGE_LIST_FILENAME
 
 class HostError(Exception):
     def __init__(self, message):
@@ -67,38 +68,30 @@ class Hosts(object):
         except IOError:
             self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False}
             self._save_current_host()
+        self.other_hosts = None
+        self.update_other_hosts()
 
-        (self._other_hosts_etag, self._other_hosts) = self._load_other_hosts()
+    def update_other_hosts(self):
+        new_other_hosts = self._load_other_hosts()
+        if self.other_hosts:
+            for old_host_id in self.other_hosts:
+                if old_host_id not in new_other_hosts:
+                    shutil.rmtree(os.path.join(ONECONF_CACHE_DIR, old_host_id))
+        self.other_hosts = new_other_hosts
 
-    def _load_other_hosts(self, previous_etag = None):
-        '''Load all other hosts from cache, eventually refreshed from the server (only available online)'''
+    def _load_other_hosts(self):
+        '''Load all other hosts from local store'''
 
-        other_hosts = {}
-        etag = previous_etag
-
-        # try a first load on cache, in particular to get the ETag
-        if not etag:
-            try:
-                with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
-                    file_content = json.load(f)
-                    other_hosts = file_content['hosts']
-                    etag  = file_content['ETag']
-            except IOError:
-                pass
-        
-        #TODO: FAKE for now, we will get the agregated list from the server (we need to check if we are offline first)
-        # check cache with ETag (file is {ETag: etag, hosts: {}}
-        
-        
-        # TODO: if cache is not valid, rewrite it
-
-        return (etag, other_hosts)
+        try:
+            with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
+                return json.load(f)["hosts"]
+        except IOError:
+            return {}
 
     def _save_current_host(self):
         '''Save current host on disk'''
         
         LOG.debug("Save current host to disk")
-
         etag = hashlib.sha224(str(self.current_host)).hexdigest()
         
         if not os.path.isdir(self._host_file_dir):
@@ -117,9 +110,8 @@ class Hosts(object):
         
         if hostid == self.current_host['hostid']:
             return self.current_host
-
         try:
-            return self._other_hosts[hostid]
+            return self.other_hosts[hostid]
         except KeyError:
             raise HostError(_("No hostname registered for this id"))
 
@@ -168,8 +160,8 @@ class Hosts(object):
 
         LOG.debug("Request to compute an list of all hosts")
         result = {self.current_host['hostid']: (True, self.current_host['hostname'], self.current_host['share_inventory'])}
-        for hostid in self._other_hosts:
-            result[hostid] = (False, self._other_hosts[hostid]['hostname'], True)
+        for hostid in self.other_hosts:
+            result[hostid] = (False, self.other_hosts[hostid]['hostname'], True)
         return result
 
     def set_share_inventory(self, share_inventory):
