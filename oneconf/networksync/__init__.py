@@ -102,21 +102,38 @@ class SyncHandler(gobject.GObject):
         except IOError:
             LOG.debug("No file found for %s", uri)
             return None
+
+    def _filename_to_requestid(self, filename):
+        '''sprint a filename to an requestid for infra'''
+        return '/'.join(filename.split(os.path.sep)[-2:])
             
-    def _check_and_sync_from_method(self, getter_method, local_filename, hostid_for_request):
+    def _check_and_sync(self, local_filename):
         '''Meta function for request sync from distant infra
         
-            return True if an updated processed, False otherwise'''
+            return True if an sync processed, False otherwise'''
 
-        LOG.debug("Look for refresh %s", local_filename)
+        LOG.debug("Look for refresh %s" % local_filename)
 
-        distant_etag = getter_method(hostid_for_request, only_etag=True)
+        requestid = self._filename_to_requestid(local_filename)
+        distant_etag = self.infraclient.get_content(requestid, only_etag=True)
         if distant_etag != self._get_local_file_etag(local_filename):
-            if self._save_local_file_update(local_filename, getter_method(hostid_for_request)):
+            if self._save_local_file_update(local_filename, self.infraclient.get_content(requestid)):
+                LOG.debug("%s refreshed" % local_filename)
                 return True
         return False
-            
- 
+
+    def _check_and_push(self, local_filename):
+        '''Meta function for request upload to distant infra'''
+
+        LOG.debug("Look to upload to infra from %s" % local_filename)
+
+        requestid = self._filename_to_requestid(local_filename)
+        distant_etag = self.infraclient.get_content(requestid, only_etag=True)
+        if distant_etag != self._get_local_file_etag(local_filename):
+            with open(local_filename, 'r') as f:
+                self.infraclient.upload_content(requestid, json.load(f))
+                LOG.debug("infra refreshed from %s" % local_filename)
+
     def _process_sync(self):
         '''start syncing what's needed if can sync'''
 
@@ -126,11 +143,10 @@ class SyncHandler(gobject.GObject):
         LOG.debug("Start processing sync")
 
         current_hostid = self.hosts.current_host['hostid']
-        infra = self.infraclient
 
         # other hosts list
         other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
-        if self._check_and_sync_from_method(infra.get_other_hosts, other_host_filename, current_hostid):
+        if self._check_and_sync(other_host_filename):
             self.hosts.update_other_hosts()
             # TODO: dbus signal for 'hosts_changed'
 
@@ -140,15 +156,22 @@ class SyncHandler(gobject.GObject):
             if not os.path.isdir(other_host_dir):
                 os.mkdir(other_host_dir)
             packagelist_filename = os.path.join(other_host_dir, PACKAGE_LIST_FILENAME)
-            if self._check_and_sync_from_method(infra.get_packages_for_host, packagelist_filename, hostid):
+            if self._check_and_sync(packagelist_filename):
                 # if already loaded, unload the package cache
-                if package_handler:
+                if self.package_handler:
                     try:
-                        package_handler.package_list[hostid]['valid'] = False
+                        self.package_handler.package_list[hostid]['valid'] = False
                     except KeyError:
                         pass
                 # TODO: dbus signal for 'package list change, hostid'
-            
+
+        # now push current host
+        current_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, HOST_DATA_FILENAME)
+        self._check_and_push(current_host_filename)
+        
+        # and last but not least, local package list
+        local_packagelist_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, PACKAGE_LIST_FILENAME)
+        self._check_and_push(local_packagelist_filename)
 
         # continue syncing in the main loop
         return True

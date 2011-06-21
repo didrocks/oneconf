@@ -43,26 +43,22 @@ class InfraClient:
     def _get_full_json_content(self, url):
         '''rest request to get the json content for an url'''
         
-    def get_other_hosts(self, current_hostid, only_etag=False):
-        '''get etag or file from other host'''
+    def _upload_content(self, url, content):
+        '''rest request to upload the json content to an url'''
         
-        url = '/'.join([URL_INFRA, current_hostid, OTHER_HOST_FILENAME])
-        return self._get_url_content_handler(url, only_etag)
-
-    def get_packages_for_host(self, hostid, only_etag=False):
-        '''get etag or file for package list for hostid'''
+    def get_content(self, requestid, only_etag=False):
+        '''get etag or content from the requestid'''
         
-        url = '/'.join([URL_INFRA, hostid, PACKAGE_LIST_FILENAME])
-        return self._get_url_content_handler(url, only_etag)
-        
-
-    def _get_url_content_handler(self, url, only_etag):
-        '''get the url content (etag or content)'''
-        
+        url = '/'.join([URL_INFRA, requestid])
         if only_etag:
             return self._get_etag(url)
         return self._get_full_json_content(url)
-
+ 
+    def upload_content(self, requestid, content):
+        '''upload content from requestid'''
+        
+        url = '/'.join([URL_INFRA, requestid])
+        self._upload_content(url, content)
         
         
 class MockInfraClient(InfraClient):
@@ -74,11 +70,11 @@ class MockInfraClient(InfraClient):
         self.infra_dir = os.path.join(os.getcwd(), 'mocklocalinfra')
         
     def _url_to_file(self, url):
-        '''reverse engineer, web url to local path for testing'''
+        '''reverse engineer, web url to infra local path for testing'''
         return os.path.join(self.infra_dir, os.path.sep.join(url.split("/")[-2:]))
     
     def _get_etag(self, url):
-        '''get distant etag from local files'''
+        '''get distant etag from infra files'''
 
         # of course, this makes no sense to get the full content to check the ETag, but we are mocking server behavior
         file_content = self._get_full_json_content(url)
@@ -87,11 +83,19 @@ class MockInfraClient(InfraClient):
         return None
             
     def _get_full_json_content(self, url):
-        '''get distant full file content from local file'''
+        '''get distant full file content from infra file'''
         try:
             with open(self._url_to_file(url), 'r') as f:
                 return json.load(f)
         except IOError:
             LOG.debug("No mock file found for %s", self._url_to_file(url))
             return None
+
+    def _upload_content(self, url, content):
+        '''write in the mock infra the file content'''
+        try:
+            with open(self._url_to_file(url), 'w') as f:
+                json.dump(content, f)
+        except IOError:
+            LOG.warning("Can't write in local mock infra: %s", self._url_to_file(url))
 
