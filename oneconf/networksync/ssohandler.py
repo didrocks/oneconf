@@ -98,8 +98,7 @@ if __name__ == "__main__":
     
     login.connect("login-result", print_result)
     
-    # Only get "DEBUG:__main__:look for credential", no "credential found/not found" callback
-    gobject.timeout_add_seconds(10, login.get_credential)
+    gobject.timeout_add_seconds(5, login.get_credential)
 
     loop.run()
 
