@@ -186,12 +186,16 @@ class SyncHandler(gobject.GObject):
                 packagelist_changed.append(hostid)
 
         # now push current host
-        current_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, HOST_DATA_FILENAME)
-        self._check_and_push(current_host_filename)
-        
-        # and last but not least, local package list
-        local_packagelist_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, PACKAGE_LIST_FILENAME)
-        self._check_and_push(local_packagelist_filename)
+        if self.hosts.current_host['share_inventory']:
+            current_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, HOST_DATA_FILENAME)
+            self._check_and_push(current_host_filename)
+            
+            # and last but not least, local package list
+            local_packagelist_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, PACKAGE_LIST_FILENAME)
+            self._check_and_push(local_packagelist_filename)
+        else:
+            LOG.debug("This hostid doesn't allow to share its inventory, no push to infra")
+
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)
         if hostlist_changed:

@@ -92,5 +92,6 @@ if __name__ == '__main__':
     myservice = DbusHostsService()
     gobject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, quit, loop, myservice)
     gobject.timeout_add_seconds(10, createsynchandler, myservice, options.mock)
+    LOG.debug("daemon up and running")
     loop.run()
 

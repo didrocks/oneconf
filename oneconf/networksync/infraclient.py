@@ -68,7 +68,9 @@ class MockInfraClient(InfraClient):
         InfraClient()    
 
         self.infra_dir = os.path.join(os.path.dirname(__file__), 'mocklocalinfra')
-        
+        if not os.path.exists(self.infra_dir):
+            os.mkdir(self.infra_dir)
+
     def _url_to_file(self, url):
         '''reverse engineer, web url to infra local path for testing'''
         return os.path.join(self.infra_dir, os.path.sep.join(url.split("/")[-2:]))
@@ -93,8 +95,14 @@ class MockInfraClient(InfraClient):
 
     def _upload_content(self, url, content):
         '''write in the mock infra the file content'''
+
+        dest_file = self._url_to_file(url)
+        parent_dir = os.path.dirname(dest_file)
+        if not os.path.exists(parent_dir):
+            os.mkdir(parent_dir)
+        
         try:
-            with open(self._url_to_file(url), 'w') as f:
+            with open(dest_file, 'w') as f:
                 json.dump(content, f)
         except IOError:
             LOG.warning("Can't write in local mock infra: %s", self._url_to_file(url))
