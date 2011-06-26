@@ -20,10 +20,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 import json
-
 import logging
-LOG = logging.getLogger(__name__)
 import os
+
+LOG = logging.getLogger(__name__)
 
 URL_INFRA = 'http://foo' + "/fake_user_id"
 
@@ -33,6 +33,7 @@ class InfraClient:
 
     '''Client for Online infrastructure'''
     
+    NOT_REGISTERED_REQUEST = 'notregistered'
     
     def __init__(self):
         pass
@@ -45,7 +46,10 @@ class InfraClient:
         
     def _upload_content(self, url, content):
         '''rest request to upload the json content to an url'''
-        
+
+    def _ensure_hostid_removed(self, url):
+        '''rest request to ensuring the hostid isn't in infra'''
+    
     def get_content(self, requestid, only_etag=False):
         '''get etag or content from the requestid'''
         
@@ -55,10 +59,13 @@ class InfraClient:
         return self._get_full_json_content(url)
  
     def upload_content(self, requestid, content):
-        '''upload content from requestid'''
+        '''upload content or ensure not registered from requestid'''
         
         url = '/'.join([URL_INFRA, requestid])
-        self._upload_content(url, content)
+        if url.split('/')[-1] == self.NOT_REGISTERED_REQUEST:
+            self._ensure_hostid_removed(url)
+        else:
+            self._upload_content(url, content)
         
         
 class MockInfraClient(InfraClient):
@@ -98,6 +105,7 @@ class MockInfraClient(InfraClient):
 
         dest_file = self._url_to_file(url)
         parent_dir = os.path.dirname(dest_file)
+
         if not os.path.exists(parent_dir):
             os.mkdir(parent_dir)
         
@@ -106,4 +114,17 @@ class MockInfraClient(InfraClient):
                 json.dump(content, f)
         except IOError:
             LOG.warning("Can't write in local mock infra: %s", self._url_to_file(url))
+
+    def _ensure_hostid_removed(self, url):
+        '''rest request to ensuring the hostid isn't in infra'''
+
+        dir_to_remove = os.path.dirname(self._url_to_file(url))
+
+        try:
+            # remove files but not directory (needed for "other_hosts")
+            os.remove(os.path.join(dir_to_remove, HOST_DATA_FILENAME))
+            os.remove(os.path.join(dir_to_remove, PACKAGE_LIST_FILENAME))
+            LOG.debug("Successfully removed hostid and package list file for: %s" % dir_to_remove)
+        except OSError:
+            pass # already removed
 

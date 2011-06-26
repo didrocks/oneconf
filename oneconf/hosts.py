@@ -85,7 +85,8 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
                 return json.load(f)["hosts"]
-        except IOError:
+        except (IOError, TypeError), e:
+            LOG.warning("Error in loading %s file: %s" % (OTHER_HOST_FILENAME, e))
             return {}
 
     def _save_current_host(self):

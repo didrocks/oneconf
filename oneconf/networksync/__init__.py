@@ -83,6 +83,10 @@ class SyncHandler(gobject.GObject):
     def _save_local_file_update(self, file_uri, content):
         '''Save local file in an atomatic transaction'''
         
+        if not content:
+            LOG.warning("Can't refresh %s to disk: content empty", file_uri)
+            return False
+
         LOG.debug("Saving updated %s to disk", file_uri)
         new_file = file_uri + '.new'
     
@@ -133,14 +137,18 @@ class SyncHandler(gobject.GObject):
         requestid = self._filename_to_requestid(local_filename)
         LOG.debug("Check for uploading %s to infra" % requestid)
 
-        try:
-            distant_etag = self.infraclient.get_content(requestid, only_etag=True)
-            if distant_etag != self._get_local_file_etag(local_filename):
-                with open(local_filename, 'r') as f:
-                    self.infraclient.upload_content(requestid, json.load(f))
-                    LOG.debug("infra refreshed from %s" % local_filename)
-        except ValueError, e:
-            LOG.warning("Got a ValueError while getting content related to %s: %s" % (requestid, e))
+        if requestid.split(os.path.sep)[-1] == self.infraclient.NOT_REGISTERED_REQUEST:
+            LOG.debug("Ensure that this hostid isn't on infra as it doesn't share its inventory")
+            self.infraclient.upload_content(requestid, None)
+        else:
+            try:
+                distant_etag = self.infraclient.get_content(requestid, only_etag=True)
+                if distant_etag != self._get_local_file_etag(local_filename):
+                    with open(local_filename, 'r') as f:
+                        self.infraclient.upload_content(requestid, json.load(f))
+                        LOG.debug("infra refreshed from %s" % local_filename)
+            except ValueError, e:
+                LOG.warning("Got a ValueError while getting content related to %s: %s" % (requestid, e))
             
     def emit_new_hostlist(self):
         '''this signal will be bound at init time'''
@@ -194,7 +202,7 @@ class SyncHandler(gobject.GObject):
             local_packagelist_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, PACKAGE_LIST_FILENAME)
             self._check_and_push(local_packagelist_filename)
         else:
-            LOG.debug("This hostid doesn't allow to share its inventory, no push to infra")
+            self._check_and_push(os.path.join(current_hostid, self.infraclient.NOT_REGISTERED_REQUEST))
 
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)

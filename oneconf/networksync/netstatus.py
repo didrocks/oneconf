@@ -81,8 +81,13 @@ class NetworkStatusWatcher(gobject.GObject):
         # if so force the network status to be disconnected
         if "ONECONF_NET_DISCONNECTED" in os.environ and \
             os.environ["ONECONF_NET_DISCONNECTED"] is not None:
-            NETWORK_STATE = self.NM_STATE_DISCONNECTED
+            self._on_connection_state_changed(self.NM_STATE_DISCONNECTED)
             LOG.warn('forced netstate into disconnected mode...')
+            return
+        if "ONECONF_NET_CONNECTED" in os.environ and \
+            os.environ["ONECONF_NET_CONNECTED"] is not None:
+            self._on_connection_state_changed(self.NM_STATE_CONNECTED_LOCAL)
+            LOG.warn('forced netstate into connected mode...')
             return
         try:
             bus = dbus.SystemBus()
@@ -94,7 +99,7 @@ class NetworkStatusWatcher(gobject.GObject):
 
         except Exception as e:
             LOG.warn("failed to init network state watcher '%s'" % e)
-            self.network_state = self.NM_STATE_UNKNOWN
+            self._on_connection_state_changed(self.NM_STATE_UNKNOWN)
 
 
     def _on_connection_state_changed(self, state):
