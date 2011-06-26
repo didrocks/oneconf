@@ -6,16 +6,13 @@ Build-Depends: debhelper (>= 7.0.50),
                gettext,
                intltool,
                python,
-               python-support,
                python-distutils-extra,
                python-setuptools,
 Maintainer: Didier Roche <didrocks@ubuntu.com>
 Standards-Version: 3.9.1
-XS-Python-Version: current
 
 Package: oneconf
 Architecture: all
-XB-Python-Version: ${python:Versions}
 Depends: ${misc:Depends},
          ${python:Depends},
          python-xapian,
