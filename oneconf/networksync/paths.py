@@ -24,4 +24,5 @@ ONECONF_CACHE_DIR = os.path.join(xdg.xdg_cache_home, "oneconf")
 PACKAGE_LIST_FILENAME = "package_list"
 OTHER_HOST_FILENAME = "other_hosts"
 HOST_DATA_FILENAME = "host"
+TEST_SETTINGS_DIR = "/home/didrocks/fake/"
 
