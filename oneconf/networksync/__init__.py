@@ -28,7 +28,7 @@ from infraclient import InfraClient
 from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
-from paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PACKAGE_LIST_FILENAME
+from paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PACKAGE_LIST_PREFIX
 
 LOG = logging.getLogger(__name__)
 
@@ -183,7 +183,7 @@ class SyncHandler(gobject.GObject):
             other_host_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
             if not os.path.isdir(other_host_dir):
                 os.mkdir(other_host_dir)
-            packagelist_filename = os.path.join(other_host_dir, PACKAGE_LIST_FILENAME)
+            packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid))
             if self._check_and_sync(packagelist_filename):
                 # if already loaded, unload the package cache
                 if self.package_handler:
@@ -199,7 +199,7 @@ class SyncHandler(gobject.GObject):
             self._check_and_push(current_host_filename)
             
             # and last but not least, local package list
-            local_packagelist_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, PACKAGE_LIST_FILENAME)
+            local_packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, current_hostid))
             self._check_and_push(local_packagelist_filename)
         else:
             self._check_and_push(os.path.join(current_hostid, self.infraclient.NOT_REGISTERED_REQUEST))

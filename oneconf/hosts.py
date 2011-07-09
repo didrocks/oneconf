@@ -24,12 +24,15 @@ import os
 import platform
 import shutil
 
+from gi.repository import Gio
+
 import gettext
 from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
-from paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PACKAGE_LIST_FILENAME
+from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
+                   LOGO_PREFIX, LOGO_BASE_FILENAME)
 
 class HostError(Exception):
     def __init__(self, message):
@@ -54,6 +57,7 @@ class Hosts(object):
 
         hostid = open('/var/lib/dbus/machine-id').read()[:-1]
         hostname = platform.node()
+        (logo_checksum, logo_path) = self._get_current_wallpaper_data()
         # faking this id for testing purpose
         #hostid = 'BBBBBB'
         #hostname = "foomachine"
@@ -61,17 +65,49 @@ class Hosts(object):
         self._host_file_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
         try:
             with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'r') as f:
-                self.current_host = json.load(f)['host']
+                self.current_host = json.load(f)
+                has_changed = False
                 if hostname != self.current_host['hostname']:
                     self.current_host['hostname'] = hostname
-                    self._save_current_host()
+                    has_changed = True
+                if logo_checksum != self.current_host['logo_checksum']:
+                    self.current_host['logo_checksum'] = logo_checksum
+                    self._create_logo(logo_path)
+                    has_changed = True
+            if has_changed:
+                self.save_current_host()
         except IOError:
-            self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False}
-            self._save_current_host()
+            self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False,
+                                 'logo_checksum': logo_checksum, 'package_checksum': None}
+            self._create_logo(logo_path)
+            self.save_current_host()
         self.other_hosts = None
         self.update_other_hosts()
 
+    def _get_current_wallpaper_data(self):
+        '''Get current wallpaper metadatas from store'''
+        settings = Gio.Settings.new("org.gnome.desktop.background")
+        file_path = settings.get_string("picture-uri").replace("file://", "")
+        try:
+            logo_checksum = "%s%f" % (hashlib.sha224(file_path).hexdigest(), os.stat(file_path).st_mtime)
+        except OSError:
+            logo_checksum = None
+            file_path = None
+        return (logo_checksum, file_path)
+
+    def _create_logo(self, wallpaper_path):
+        '''create a logo from a wallpaper'''
+        if not wallpaper_path:
+            return
+        from PIL import Image
+        im = Image.open(LOGO_BASE_FILENAME)
+        im2 = Image.open(wallpaper_path)
+        im3 = im2.resize((42, 26), Image.BICUBIC)
+        im.paste(im3, (3,3))
+        im.save(os.path.join(self._host_file_dir, "%s_%s.png" % (LOGO_PREFIX, self.current_host['hostid'])))
+
     def update_other_hosts(self):
+        '''Update all the other hosts from local store'''
         new_other_hosts = self._load_other_hosts()
         if self.other_hosts:
             for old_host_id in self.other_hosts:
@@ -84,21 +120,20 @@ class Hosts(object):
 
         try:
             with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
-                return json.load(f)["hosts"]
+                return json.load(f)
         except (IOError, TypeError), e:
             LOG.warning("Error in loading %s file: %s" % (OTHER_HOST_FILENAME, e))
             return {}
 
-    def _save_current_host(self):
+    def save_current_host(self):
         '''Save current host on disk'''
         
         LOG.debug("Save current host to disk")
-        etag = hashlib.sha224(str(self.current_host)).hexdigest()
         
         if not os.path.isdir(self._host_file_dir):
             os.mkdir(self._host_file_dir)
         with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'w') as f:
-            json.dump({'ETag': etag, 'host': self.current_host}, f)
+            json.dump(self.current_host, f)
     
     
     def gethost_by_id(self, hostid):
@@ -154,6 +189,10 @@ class Hosts(object):
             raise HostError(_("No hostid registered for this hostname"))
         return result_hostid
 
+    def get_currenthost_dir(self):
+        '''Get the oneconf current host directory'''
+        return self._host_file_dir
+
     def get_all_hosts(self):
         '''Return a dictionnary of all hosts
 
@@ -170,7 +209,7 @@ class Hosts(object):
 
         LOG.debug("Update current share_inventory state to %s" % share_inventory)
         self.current_host['share_inventory'] = share_inventory
-        self._save_current_host()
+        self.save_current_host()
         # TODO: update, and take the case into account once offline
 
 

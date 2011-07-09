@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 from oneconf.hosts import Hosts, HostError
 from oneconf.distributor import get_distro
-from oneconf.paths import ONECONF_CACHE_DIR, PACKAGE_LIST_FILENAME
+from oneconf.paths import ONECONF_CACHE_DIR, PACKAGE_LIST_PREFIX
 
 class PackageSetHandler(object):
     """
@@ -53,14 +53,17 @@ class PackageSetHandler(object):
         LOG.debug("Updating package list")
         newpkg_list = self.distro.compute_local_packagelist()
         
-        LOG.debug("Creating the etag")
-        etag = hashlib.sha224(str(newpkg_list)).hexdigest()
+        LOG.debug("Creating the checksum")
+        checksum = hashlib.sha224(str(newpkg_list)).hexdigest()
                 
         LOG.debug("Package list need refresh")
         self.package_list[hostid] = {'valid': True, 'package_list': newpkg_list}
-        with open(os.path.join(ONECONF_CACHE_DIR, hostid, PACKAGE_LIST_FILENAME), 'w') as f:
-            json.dump({'ETag': etag, 'package_list': self.package_list[hostid]['package_list']}, f)
-            LOG.debug("Update done")
+        with open(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)), 'w') as f:
+            json.dump(self.package_list[hostid]['package_list'], f)
+        if self.hosts.current_host['package_checksum'] != checksum:
+            self.hosts.current_host['package_checksum'] = checksum
+            self.hosts.save_current_host()
+        LOG.debug("Update done")
     
     def get_packages(self, hostid=None, hostname=None, only_manual=False):        
         '''get all installed packages from the storage'''
@@ -150,7 +153,7 @@ class PackageSetHandler(object):
 
         # load current content in cache
         try:
-            with open(os.path.join(ONECONF_CACHE_DIR, hostid, PACKAGE_LIST_FILENAME), 'r') as f:
+            with open(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)), 'r') as f:
                 # can be none in corrupted null file
                 pkg_list = json.load(f)
         except (IOError, ValueError):

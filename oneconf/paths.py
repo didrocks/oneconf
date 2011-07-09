@@ -21,7 +21,11 @@ import os
 from xdg import BaseDirectory as xdg
 
 ONECONF_CACHE_DIR = os.path.join(xdg.xdg_cache_home, "oneconf")
-PACKAGE_LIST_FILENAME = "package_list"
+PACKAGE_LIST_PREFIX = "package_list"
 OTHER_HOST_FILENAME = "other_hosts"
 HOST_DATA_FILENAME = "host"
+LOGO_PREFIX = "logo"
+# TODO: fix it
+LOGO_BASE_FILENAME = "/usr/share/oneconf/data/images/computer.png"
+TEST_SETTINGS_DIR = "/home/didrocks/fake/"
 
