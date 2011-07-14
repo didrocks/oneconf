@@ -106,6 +106,10 @@ class DbusHostsService(dbus.service.Object):
     def packagelist_changed(self, hostid):
         LOG.debug("Send package list changed dbus signal for hostid: %s" % hostid)
 
+    @dbus.service.signal(HOSTS_INTERFACE)
+    def logo_changed(self, hostid):
+        LOG.debug("Send package list changed dbus signal for hostid: %s" % hostid)
+
 class DbusConnect(object):
 
     """

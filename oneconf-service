@@ -53,8 +53,8 @@ def createsynchandler(myservice, use_mock):
     LOG.debug('Create a sync handler with infra')
     infra = None
     if use_mock:
-        from oneconf.networksync.infraclient import MockInfraClient
-        infra = MockInfraClient()
+        from oneconf.networksync.infraclient_fake import WebCatalogAPI
+        infra = WebCatalogAPI()
     myservice.synchandler = SyncHandler(myservice.hosts, package_handler=myservice.get_packageSetHandler(), infraclient=infra, dbusemitter=myservice)
     gobject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, syncwithinfra, myservice)
     return False

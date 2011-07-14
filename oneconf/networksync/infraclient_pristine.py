@@ -11,6 +11,7 @@ from piston_mini_client import (
     returns_json
     )
 from piston_mini_client.validators import validate_pattern, validate
+from piston_mini_client.failhandlers import APIError
 
 # These are factored out as constants for if you need to work against a
 # server that doesn't support both schemes (like http-only dev servers)
@@ -58,7 +59,7 @@ class WebCatalogAPI(PistonAPI):
     # FIXME: get [08/Jul/2011 15:34:51] "POST /cat/api/1.0/machine-logo/UUUUU/ooo/ HTTP/1.1" 400 11.
     # need autentification?
     @validate_pattern('machine_uuid', r'[-\w+]+')
-    @validate_pattern('logo_checksum', r'[-\w+]+')
+    @validate_pattern('logo_checksum', r'[-\w+]+\.[-\w+]+')
     @returns_json
     def update_machine_logo(self, machine_uuid, logo_checksum, logo_content):
         """update the logo for a machine."""
@@ -69,7 +70,10 @@ class WebCatalogAPI(PistonAPI):
     @returns_json
     def list_packages(self, machine_uuid):
         """List all packages for that machine"""
-        return self._get('list-packages/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        package_list = self._get('list-packages/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        if not package_list:
+            raise APIError('Package list invalid')
+        return package_list
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('packages_checksum', r'[-\w+]+')

@@ -41,8 +41,8 @@ class WebCatalogAPI(PistonAPI):
         super(WebCatalogAPI, self).__init__()
         self._fake_settings = FakeWebCatalogSettings(fake_settings_filename)
 
-    def machineuuid_exist(self, machine_uuid)
-    '''Generic method to check before doing an update operation that the machine_uuid exist in the host list'''
+    def machineuuid_exist(self, machine_uuid):
+        '''Generic method to check before doing an update operation that the machine_uuid exist in the host list'''
         return (machine_uuid in self._fake_settings.get_host_silo())
 
     @returns_json
@@ -109,7 +109,7 @@ class WebCatalogAPI(PistonAPI):
         return open(logo_path).read()
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
-    @validate_pattern('logo_checksum', r'[-\w+]+')
+    @validate_pattern('logo_checksum', r'[-\w+]+\.[-\w+]+')
     @returns_json
     def update_machine_logo(self, machine_uuid, logo_checksum, logo_content):
         if self._fake_settings.get_setting('update_machine_logo_error'):
@@ -133,7 +133,10 @@ class WebCatalogAPI(PistonAPI):
         packages = self._fake_settings.get_package_silo()
         if machine_uuid not in packages:
             raise APIError('Package list Not Found')
-        return simplejson.dumps(packages[machine_uuid])
+        package_list = packages[machine_uuid]
+        if not package_list:
+            raise APIError('Package list invalid')
+        return simplejson.dumps(package_list)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('package_checksum', r'[-\w+]+')

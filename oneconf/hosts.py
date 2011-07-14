@@ -22,7 +22,6 @@ import json
 import logging
 import os
 import platform
-import shutil
 
 from gi.repository import Gio
 
@@ -112,7 +111,8 @@ class Hosts(object):
         if self.other_hosts:
             for old_host_id in self.other_hosts:
                 if old_host_id not in new_other_hosts:
-                    shutil.rmtree(os.path.join(ONECONF_CACHE_DIR, old_host_id))
+                    os.remove(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)))
+                    os.remove(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s.png' % (LOGO_PREFIX, hostid)))
         self.other_hosts = new_other_hosts
 
     def _load_other_hosts(self):

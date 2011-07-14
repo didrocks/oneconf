@@ -24,11 +24,13 @@ import json
 import logging
 import os
 
-from infraclient import InfraClient
 from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
-from paths import ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PACKAGE_LIST_PREFIX
+from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
+                  PACKAGE_LIST_PREFIX, LOGO_PREFIX)
+
+from piston_mini_client.failhandlers import APIError
 
 LOG = logging.getLogger(__name__)
 
@@ -46,11 +48,13 @@ class SyncHandler(gobject.GObject):
         self.infraclient = infraclient
         self.package_handler = package_handler
         if not self.infraclient:
-            self.infraclient = InfraClient()
+            from infraclient_pristine import WebCatalogAPI
+            self.infraclient = WebCatalogAPI()
         
         if dbusemitter:
             self.emit_new_hostlist = dbusemitter.hostlist_changed
             self.emit_new_packagelist = dbusemitter.packagelist_changed
+            self.emit_new_logo = dbusemitter.logo_changed
 
         self._netstate.connect("changed", self._network_state_changed)
         self._sso_login.connect("login-result", self._sso_login_result)
@@ -98,65 +102,41 @@ class SyncHandler(gobject.GObject):
         except IOError:
             LOG.error("Can't save update file for %s", self._url_to_file(url))
             return False
-            
-    def _get_local_file_etag(self, uri):
-        '''Get local file etag from an uri'''
+
+    def check_if_refresh_needed(self, old_data, new_data, hostid, key):
+        '''Return if data dictionnary needs to be refreshed'''
+        need_refresh = False
+        LOG.debug("Check if %s needs to be refreshed for %s" % (key, hostid))
         try:
-            with open(uri, 'r') as f:
-                return json.load(f)['ETag']
-        except IOError:
-            LOG.debug("No file found for %s", uri)
-        except (TypeError, ValueError), e:
-            LOG.warning("Invalid local file of %s: %s" % (uri, e))
-            return None
+            if old_data[hostid]['%s_checksum' % key] != new_data[hostid]['%s_checksum' % key]:
+                need_refresh = True
+        except KeyError:
+            need_refresh = True
+        if need_refresh:
+            LOG.debug("Refresh needed")
+        return need_refresh
 
-    def _filename_to_requestid(self, filename):
-        '''sprint a filename to an requestid for infra'''
-        return '/'.join(filename.split(os.path.sep)[-2:])
-            
-    def _check_and_sync(self, local_filename):
-        '''Meta function for request sync from distant infra
-        
-            return True if an sync processed, False otherwise'''
+    def check_if_push_needed(self, local_data, distant_data, key):
+        '''Return if data dictionnary needs to be refreshed
 
-        requestid = self._filename_to_requestid(local_filename)
-        LOG.debug("Check for refreshing %s from infra" % requestid)
-        try:
-            distant_etag = self.infraclient.get_content(requestid, only_etag=True)
-            if distant_etag != self._get_local_file_etag(local_filename):
-                if self._save_local_file_update(local_filename, self.infraclient.get_content(requestid)):
-                    LOG.debug("%s refreshed" % local_filename)
-                    return True
-        except ValueError, e:
-            LOG.warning("Got a ValueError while getting content related to %s: %s" % (requestid, e))
-        return False
+            Contrary to refresh needed, we are sure that the host is registered'''
+        LOG.debug("Check if %s for current host need to be pushed to infra" % key)
+        need_push = (local_data['%s_checksum' % key] != distant_data['%s_checksum' % key])
+        if need_push:
+            LOG.debug("pushed needed")
+        return need_push
 
-    def _check_and_push(self, local_filename):
-        '''Meta function for request upload to distant infra'''
-
-        requestid = self._filename_to_requestid(local_filename)
-        LOG.debug("Check for uploading %s to infra" % requestid)
-
-        if requestid.split(os.path.sep)[-1] == self.infraclient.NOT_REGISTERED_REQUEST:
-            LOG.debug("Ensure that this hostid isn't on infra as it doesn't share its inventory")
-            self.infraclient.upload_content(requestid, None)
-        else:
-            try:
-                distant_etag = self.infraclient.get_content(requestid, only_etag=True)
-                if distant_etag != self._get_local_file_etag(local_filename):
-                    with open(local_filename, 'r') as f:
-                        self.infraclient.upload_content(requestid, json.load(f))
-                        LOG.debug("infra refreshed from %s" % local_filename)
-            except ValueError, e:
-                LOG.warning("Got a ValueError while getting content related to %s: %s" % (requestid, e))
-            
     def emit_new_hostlist(self):
         '''this signal will be bound at init time'''
         LOG.warning("emit_new_hostlist not bound to anything")
         
     def emit_new_packagelist(self, hostid):
         '''this signal will be bound at init time'''
-        
+        LOG.warning("emit_new_packagelist not bound to anything")
+
+    def emit_new_logo(self, hostid):
+        '''this signal will be bound at init time'''
+        LOG.warning("emit_new_logo not bound to anything")
 
     def process_sync(self):
         '''start syncing what's needed if can sync
@@ -168,41 +148,100 @@ class SyncHandler(gobject.GObject):
             return False
         LOG.debug("Start processing sync")
 
+        # Check server connection
+        if self.infraclient.server_status() != 'ok':
+            LOG.warning("WebClient server not available")
+            return True
+
         current_hostid = self.hosts.current_host['hostid']
+        old_hosts = self.hosts.other_hosts
         hostlist_changed = None
         packagelist_changed = []
+        logo_changed = []
 
-        # other hosts list
-        other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
-        if self._check_and_sync(other_host_filename):
-            self.hosts.update_other_hosts()
-            hostlist_changed = True
+        # Get all machines
+        full_hosts_list = self.infraclient.list_machines()
+        other_hosts = {}
+        for hostid in full_hosts_list:
+            if hostid != current_hostid:
+                other_hosts[hostid] = full_hosts_list[hostid]
 
-        # now refresh package list for every hosts (creating directory if needed)
-        for hostid in self.hosts.other_hosts:
-            other_host_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
-            if not os.path.isdir(other_host_dir):
-                os.mkdir(other_host_dir)
+        for hostid in other_hosts:
+            # now refresh packages list for every hosts
             packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid))
-            if self._check_and_sync(packagelist_filename):
-                # if already loaded, unload the package cache
-                if self.package_handler:
+            if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'package'):
+                try:
+                    new_package_list = self.infraclient.list_packages(machine_uuid=hostid)
+                    self._save_local_file_update(packagelist_filename, new_package_list)
+                    # if already loaded, unload the package cache
+                    if self.package_handler:
+                        try:
+                           self.package_handler.package_list[hostid]['valid'] = False
+                        except KeyError:
+                            pass
+                    packagelist_changed.append(hostid)
+                except APIError, e:
+                    LOG.warning ("Invalid data from server: %s", e)
                     try:
-                       self.package_handler.package_list[hostid]['valid'] = False
+                        old_checksum = old_hosts[hostid]['package_checksum']
                     except KeyError:
-                        pass
-                packagelist_changed.append(hostid)
+                        package_checksum = None
+                    other_hosts[hostid]['package_checksum'] = package_checksum
+
+            # refresh the logo for every hosts as well
+            if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'logo'):
+                try:
+                    logo_content = self.infraclient.get_machine_logo(machine_uuid=hostid)
+                    logo_file = open(os.path.join(self.hosts.get_currenthost_dir(), "%s_%s.png" % (LOGO_PREFIX, hostid)), 'wb+')
+                    logo_file.write(self.infraclient.get_machine_logo(machine_uuid=hostid))
+                    logo_file.close()
+                    logo_changed.append(hostid)
+                except APIError, e:
+                    LOG.warning ("Invalid data from server: %s", e)
+                    try:
+                        old_checksum = old_hosts[hostid]['logo_checksum']
+                    except KeyError:
+                        old_checksum = None
+                    other_hosts[hostid]['logo_checksum'] = old_checksum
+
+        # Now that the package list and logo are successfully downloaded, save
+        # the hosts metadata there. This removes as well the remaining package list and logo
+        if other_hosts != old_hosts:
+            other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
+            self._save_local_file_update(other_host_filename, other_hosts)
 
         # now push current host
-        if self.hosts.current_host['share_inventory']:
-            current_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, HOST_DATA_FILENAME)
-            self._check_and_push(current_host_filename)
-            
-            # and last but not least, local package list
-            local_packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, current_hostid))
-            self._check_and_push(local_packagelist_filename)
+        if not self.hosts.current_host['share_inventory']:
+            LOG.debug("Ensure that current host is not shared")
+            try:
+                self.infraclient.delete_machine(machine_uuid=current_hostid)
+            except APIError:
+                pass
         else:
-            self._check_and_push(os.path.join(current_hostid, self.infraclient.NOT_REGISTERED_REQUEST))
+            LOG.debug("Push current host to infra now")
+            # check if current host changed
+            try:
+                distant_current_host = full_hosts_list[current_hostid]
+                if self.hosts.current_host['hostname'] != distant_current_host['hostname']:
+                    self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
+                    LOG.debug ("Host data refreshed")
+            except KeyError:
+                self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
+                LOG.debug ("New host registered done")
+                distant_current_host = {'package_checksum': None, 'logo_checksum': None}
+            
+            # local package list
+            if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'package'):
+                local_packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, current_hostid))
+                with open(local_packagelist_filename, 'r') as f:
+                    self.infraclient.update_packages(machine_uuid=current_hostid, package_checksum=self.hosts.current_host['package_checksum'], package_list=json.load(f))
+                    LOG.debug ("refresh done")
+
+            # local logo
+            if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'logo'):
+                logo_file = open(os.path.join(self.hosts.get_currenthost_dir(), "%s_%s.png" % (LOGO_PREFIX, current_hostid))).read()
+                self.infraclient.update_machine_logo(machine_uuid=current_hostid, logo_checksum=self.hosts.current_host['logo_checksum'], logo_content=logo_file)
+                LOG.debug ("refresh done")
 
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)
@@ -210,6 +249,8 @@ class SyncHandler(gobject.GObject):
             self.emit_new_hostlist()
         for hostid in packagelist_changed:
             self.emit_new_packagelist(hostid)
+        for hostid in logo_changed:
+            self.emit_new_logo(hostid)
 
         # continue syncing in the main loop
         return True
@@ -221,9 +262,10 @@ if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)
     
     from hosts import Hosts
-    from infraclient import MockInfraClient
+    from infraclient_fake import WebCatalogAPI
 
-    sync_handler = SyncHandler(Hosts(), infraclient=MockInfraClient())
+    sync_handler = SyncHandler(Hosts(), infraclient=WebCatalogAPI())
+    gobject.timeout_add_seconds(20, sync_handler.process_sync) 
     loop = gobject.MainLoop()
 
     loop.run()
