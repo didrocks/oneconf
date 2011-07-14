@@ -60,8 +60,8 @@ class PackageSetHandler(object):
         self.package_list[hostid] = {'valid': True, 'package_list': newpkg_list}
         with open(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)), 'w') as f:
             json.dump(self.package_list[hostid]['package_list'], f)
-        if self.hosts.current_host['package_checksum'] != checksum:
-            self.hosts.current_host['package_checksum'] = checksum
+        if self.hosts.current_host['packages_checksum'] != checksum:
+            self.hosts.current_host['packages_checksum'] = checksum
             self.hosts.save_current_host()
         LOG.debug("Update done")
     

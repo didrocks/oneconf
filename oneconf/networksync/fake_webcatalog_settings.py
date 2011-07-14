@@ -40,8 +40,8 @@ class FakeWebCatalogSettings(object):
 
     # Default stored data
     _FAKE_SETTINGS['hosts_metadata'] = {
-        'AAAAA': {'hostname': 'aaaaa', 'logo_checksum': 'logoAAAAA', 'package_checksum': 'packageAAAAAA'},
-        'BBBBB': {'hostname': 'bbbbb', 'logo_checksum': 'logoBBBBB', 'package_checksum': 'packageBBBBBB'},}  
+        'AAAAA': {'hostname': 'aaaaa', 'logo_checksum': 'logoAAAAA', 'packages_checksum': 'packageAAAAAA'},
+        'BBBBB': {'hostname': 'bbbbb', 'logo_checksum': 'logoBBBBB', 'packages_checksum': 'packageBBBBBB'},}  
     _FAKE_SETTINGS['packages_metadata'] = {
         'AAAAA': {'kiki': {'auto': False}, 'unity': {'auto': False},
                   'libFoo': {'auto': True}, 'libFool': {'auto': True}},

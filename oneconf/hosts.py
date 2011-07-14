@@ -77,7 +77,7 @@ class Hosts(object):
                 self.save_current_host()
         except IOError:
             self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False,
-                                 'logo_checksum': logo_checksum, 'package_checksum': None}
+                                 'logo_checksum': logo_checksum, 'packages_checksum': None}
             self._create_logo(logo_path)
             self.save_current_host()
         self.other_hosts = None
@@ -113,6 +113,7 @@ class Hosts(object):
                 if old_host_id not in new_other_hosts:
                     os.remove(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)))
                     os.remove(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s.png' % (LOGO_PREFIX, hostid)))
+            # TODO: remove rather with regexp in case of crash during upgrade, do not keep cruft
         self.other_hosts = new_other_hosts
 
     def _load_other_hosts(self):

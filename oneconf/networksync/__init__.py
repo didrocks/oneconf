@@ -149,8 +149,12 @@ class SyncHandler(gobject.GObject):
         LOG.debug("Start processing sync")
 
         # Check server connection
-        if self.infraclient.server_status() != 'ok':
-            LOG.warning("WebClient server not available")
+        try:
+            if self.infraclient.server_status() != 'ok':
+                LOG.warning("WebClient server answering but not available")
+                return True
+        except APIError, e:
+            LOG.warning ("WebClient server error: %s", e)
             return True
 
         current_hostid = self.hosts.current_host['hostid']
@@ -169,7 +173,7 @@ class SyncHandler(gobject.GObject):
         for hostid in other_hosts:
             # now refresh packages list for every hosts
             packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid))
-            if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'package'):
+            if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'packages'):
                 try:
                     new_package_list = self.infraclient.list_packages(machine_uuid=hostid)
                     self._save_local_file_update(packagelist_filename, new_package_list)
@@ -183,10 +187,10 @@ class SyncHandler(gobject.GObject):
                 except APIError, e:
                     LOG.warning ("Invalid data from server: %s", e)
                     try:
-                        old_checksum = old_hosts[hostid]['package_checksum']
+                        old_checksum = old_hosts[hostid]['packages_checksum']
                     except KeyError:
-                        package_checksum = None
-                    other_hosts[hostid]['package_checksum'] = package_checksum
+                        packages_checksum = None
+                    other_hosts[hostid]['packages_checksum'] = packages_checksum
 
             # refresh the logo for every hosts as well
             if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'logo'):
@@ -206,7 +210,9 @@ class SyncHandler(gobject.GObject):
 
         # Now that the package list and logo are successfully downloaded, save
         # the hosts metadata there. This removes as well the remaining package list and logo
+        LOG.debug("Check if other hosts metadata needs to be refreshed")
         if other_hosts != old_hosts:
+            LOG.debug("Refresh needed")
             other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
             self._save_local_file_update(other_host_filename, other_hosts)
 
@@ -228,20 +234,26 @@ class SyncHandler(gobject.GObject):
             except KeyError:
                 self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
                 LOG.debug ("New host registered done")
-                distant_current_host = {'package_checksum': None, 'logo_checksum': None}
+                distant_current_host = {'packages_checksum': None, 'logo_checksum': None}
             
             # local package list
-            if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'package'):
+            if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'packages'):
                 local_packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, current_hostid))
                 with open(local_packagelist_filename, 'r') as f:
-                    self.infraclient.update_packages(machine_uuid=current_hostid, package_checksum=self.hosts.current_host['package_checksum'], package_list=json.load(f))
-                    LOG.debug ("refresh done")
-
+                    try:
+                        self.infraclient.update_packages(machine_uuid=current_hostid, packages_checksum=self.hosts.current_host['packages_checksum'], package_list=json.load(f))
+                        LOG.debug ("refresh done")
+                    except APIError, e:
+                        LOG.warning ("Erreur while pushing current package list: %s", e)
+                        
             # local logo
             if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'logo'):
                 logo_file = open(os.path.join(self.hosts.get_currenthost_dir(), "%s_%s.png" % (LOGO_PREFIX, current_hostid))).read()
-                self.infraclient.update_machine_logo(machine_uuid=current_hostid, logo_checksum=self.hosts.current_host['logo_checksum'], logo_content=logo_file)
-                LOG.debug ("refresh done")
+                try:
+                    self.infraclient.update_machine_logo(machine_uuid=current_hostid, logo_checksum=self.hosts.current_host['logo_checksum'], logo_content=logo_file)
+                    LOG.debug ("refresh done")
+                except APIError, e:
+                    LOG.warning ("Erreur while pushing current logo: %s", e)
 
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)

@@ -72,7 +72,7 @@ class WebCatalogAPI(PistonAPI):
         if self.machineuuid_exist(machine_uuid):
             hosts[machine_uuid]['hostname'] = hostname
         else:
-            hosts[machine_uuid] = {'hostname': hostname, 'logo_checksum': None, 'package_checksum': None}
+            hosts[machine_uuid] = {'hostname': hostname, 'logo_checksum': None, 'packages_checksum': None}
         return simplejson.dumps('Success')
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
@@ -139,9 +139,9 @@ class WebCatalogAPI(PistonAPI):
         return simplejson.dumps(package_list)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
-    @validate_pattern('package_checksum', r'[-\w+]+')
+    @validate_pattern('packages_checksum', r'[-\w+]+')
     @returns_json
-    def update_packages(self, machine_uuid, package_checksum, package_list):
+    def update_packages(self, machine_uuid, packages_checksum, package_list):
         if self._fake_settings.get_setting('update_packages_error'):
             raise APIError(self._exception_msg)
 
@@ -151,6 +151,6 @@ class WebCatalogAPI(PistonAPI):
         packages = self._fake_settings.get_package_silo()
         packages[machine_uuid] = package_list
         hosts = self._fake_settings.get_host_silo()
-        hosts[machine_uuid]['package_checksum'] = package_checksum
+        hosts[machine_uuid]['packages_checksum'] = packages_checksum
         return simplejson.dumps('Success')
 

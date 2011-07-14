@@ -80,6 +80,6 @@ class WebCatalogAPI(PistonAPI):
     @returns_json
     def update_packages(self, machine_uuid, packages_checksum, package_list):
         """update the package list for a machine."""
-        return self._post('update-packages/%s/%s/' % (machine_uuid, logo_checksum), data=package_list,
+        return self._post('update-packages/%s/%s/' % (machine_uuid, packages_checksum), data=package_list,
         scheme=PUBLIC_API_SCHEME)
 
