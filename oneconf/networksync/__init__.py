@@ -31,6 +31,7 @@ from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
                   PACKAGE_LIST_PREFIX, LOGO_PREFIX)
 
 from piston_mini_client.failhandlers import APIError
+from httplib2 import socket
 
 LOG = logging.getLogger(__name__)
 
@@ -153,7 +154,7 @@ class SyncHandler(gobject.GObject):
             if self.infraclient.server_status() != 'ok':
                 LOG.warning("WebClient server answering but not available")
                 return True
-        except APIError, e:
+        except (APIError, socket.error), e:
             LOG.warning ("WebClient server error: %s", e)
             return True
 
@@ -213,8 +214,10 @@ class SyncHandler(gobject.GObject):
         LOG.debug("Check if other hosts metadata needs to be refreshed")
         if other_hosts != old_hosts:
             LOG.debug("Refresh needed")
+            hostlist_changed = True
             other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
             self._save_local_file_update(other_host_filename, other_hosts)
+            self.hosts.update_other_hosts()
 
         # now push current host
         if not self.hosts.current_host['share_inventory']:

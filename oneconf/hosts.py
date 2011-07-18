@@ -31,7 +31,7 @@ from gettext import gettext as _
 LOG = logging.getLogger(__name__)
 
 from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
-                   LOGO_PREFIX, LOGO_BASE_FILENAME)
+                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME)
 
 class HostError(Exception):
     def __init__(self, message):
@@ -78,6 +78,8 @@ class Hosts(object):
         except IOError:
             self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False,
                                  'logo_checksum': logo_checksum, 'packages_checksum': None}
+            if not os.path.isdir(self._host_file_dir):
+                os.mkdir(self._host_file_dir)
             self._create_logo(logo_path)
             self.save_current_host()
         self.other_hosts = None
@@ -109,10 +111,16 @@ class Hosts(object):
         '''Update all the other hosts from local store'''
         new_other_hosts = self._load_other_hosts()
         if self.other_hosts:
-            for old_host_id in self.other_hosts:
-                if old_host_id not in new_other_hosts:
-                    os.remove(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)))
-                    os.remove(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s.png' % (LOGO_PREFIX, hostid)))
+            for old_hostid in self.other_hosts:
+                if old_hostid not in new_other_hosts:
+                    try:
+                        os.remove(os.path.join(self.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, old_hostid)))
+                    except OSError:
+                        pass
+                    try:
+                        os.remove(os.path.join(self.get_currenthost_dir(), '%s_%s.png' % (LOGO_PREFIX, old_hostid)))
+                    except OSError:
+                        pass
             # TODO: remove rather with regexp in case of crash during upgrade, do not keep cruft
         self.other_hosts = new_other_hosts
 
@@ -130,9 +138,6 @@ class Hosts(object):
         '''Save current host on disk'''
         
         LOG.debug("Save current host to disk")
-        
-        if not os.path.isdir(self._host_file_dir):
-            os.mkdir(self._host_file_dir)
         with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'w') as f:
             json.dump(self.current_host, f)
     
