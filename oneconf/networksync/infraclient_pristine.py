@@ -43,13 +43,13 @@ class WebCatalogAPI(PistonAPI):
     @returns_json
     def update_machine(self, machine_uuid, hostname):
         """Register or update an existing machine with new name."""
-        return self._get('update-machine/%s/%s/' % (machine_uuid, hostname), scheme=PUBLIC_API_SCHEME)
+        return self._put('update-machine/%s/' % machine_uuid, data="hostname=%s" % hostname, scheme=PUBLIC_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
     def delete_machine(self, machine_uuid):
         """Delete an existing machine."""
-        return self._get('delete-machine/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        return self._delete('delete-machine/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     def get_machine_logo(self, machine_uuid):

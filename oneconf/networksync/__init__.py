@@ -194,20 +194,21 @@ class SyncHandler(gobject.GObject):
                     other_hosts[hostid]['packages_checksum'] = packages_checksum
 
             # refresh the logo for every hosts as well
-            if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'logo'):
-                try:
-                    logo_content = self.infraclient.get_machine_logo(machine_uuid=hostid)
-                    logo_file = open(os.path.join(self.hosts.get_currenthost_dir(), "%s_%s.png" % (LOGO_PREFIX, hostid)), 'wb+')
-                    logo_file.write(self.infraclient.get_machine_logo(machine_uuid=hostid))
-                    logo_file.close()
-                    logo_changed.append(hostid)
-                except APIError, e:
-                    LOG.warning ("Invalid data from server: %s", e)
-                    try:
-                        old_checksum = old_hosts[hostid]['logo_checksum']
-                    except KeyError:
-                        old_checksum = None
-                    other_hosts[hostid]['logo_checksum'] = old_checksum
+            # WORKING but not wanted on the isd side for now
+            #if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'logo'):
+            #    try:
+            #        logo_content = self.infraclient.get_machine_logo(machine_uuid=hostid)
+            #        logo_file = open(os.path.join(self.hosts.get_currenthost_dir(), "%s_%s.png" % (LOGO_PREFIX, hostid)), 'wb+')
+            #        logo_file.write(self.infraclient.get_machine_logo(machine_uuid=hostid))
+            #        logo_file.close()
+            #        logo_changed.append(hostid)
+            #    except APIError, e:
+            #        LOG.warning ("Invalid data from server: %s", e)
+            #        try:
+            #            old_checksum = old_hosts[hostid]['logo_checksum']
+            #        except KeyError:
+            #            old_checksum = None
+            #        other_hosts[hostid]['logo_checksum'] = old_checksum
 
         # Now that the package list and logo are successfully downloaded, save
         # the hosts metadata there. This removes as well the remaining package list and logo
@@ -250,13 +251,14 @@ class SyncHandler(gobject.GObject):
                         LOG.warning ("Erreur while pushing current package list: %s", e)
                         
             # local logo
-            if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'logo'):
-                logo_file = open(os.path.join(self.hosts.get_currenthost_dir(), "%s_%s.png" % (LOGO_PREFIX, current_hostid))).read()
-                try:
-                    self.infraclient.update_machine_logo(machine_uuid=current_hostid, logo_checksum=self.hosts.current_host['logo_checksum'], logo_content=logo_file)
-                    LOG.debug ("refresh done")
-                except APIError, e:
-                    LOG.warning ("Erreur while pushing current logo: %s", e)
+            # WORKING but not wanted on the isd side for now
+            #if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'logo'):
+            #    logo_file = open(os.path.join(self.hosts.get_currenthost_dir(), "%s_%s.png" % (LOGO_PREFIX, current_hostid))).read()
+            #    try:
+            #        self.infraclient.update_machine_logo(machine_uuid=current_hostid, logo_checksum=self.hosts.current_host['logo_checksum'], logo_content=logo_file)
+            #        LOG.debug ("refresh done")
+            #    except APIError, e:
+            #        LOG.warning ("Erreur while pushing current logo: %s", e)
 
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)
