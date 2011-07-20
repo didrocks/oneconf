@@ -43,18 +43,18 @@ class WebCatalogAPI(PistonAPI):
     @returns_json
     def update_machine(self, machine_uuid, hostname):
         """Register or update an existing machine with new name."""
-        return self._put('update-machine/%s/' % machine_uuid, data="hostname=%s" % hostname, scheme=PUBLIC_API_SCHEME)
+        return self._post('machine/%s/' % machine_uuid, data="hostname=%s" % hostname, scheme=PUBLIC_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
     def delete_machine(self, machine_uuid):
         """Delete an existing machine."""
-        return self._delete('delete-machine/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        return self._delete('machine/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     def get_machine_logo(self, machine_uuid):
         """get the logo for a machine."""
-        return self._get('machine-logo/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        return self._get('logo/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
 
     # FIXME: get [08/Jul/2011 15:34:51] "POST /cat/api/1.0/machine-logo/UUUUU/ooo/ HTTP/1.1" 400 11.
     # need autentification?
@@ -63,14 +63,14 @@ class WebCatalogAPI(PistonAPI):
     @returns_json
     def update_machine_logo(self, machine_uuid, logo_checksum, logo_content):
         """update the logo for a machine."""
-        return self._post('machine-logo/%s/%s/' % (machine_uuid, logo_checksum), data=logo_content,
+        return self._post('logo/%s/%s/' % (machine_uuid, logo_checksum), data=logo_content,
         content_type='image/png', scheme=PUBLIC_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
     def list_packages(self, machine_uuid):
         """List all packages for that machine"""
-        package_list = self._get('list-packages/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        package_list = self._get('packages/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
         if not package_list:
             raise APIError('Package list invalid')
         return package_list
@@ -80,6 +80,8 @@ class WebCatalogAPI(PistonAPI):
     @returns_json
     def update_packages(self, machine_uuid, packages_checksum, package_list):
         """update the package list for a machine."""
-        return self._post('update-packages/%s/%s/' % (machine_uuid, packages_checksum), data=package_list,
-        scheme=PUBLIC_API_SCHEME)
+        
+        data_content = "package_list=%s&packages_checksum=%s" % (package_list, packages_checksum)
+        print data_content
+        return self._post('packages/%s/' % machine_uuid, data=data_content, scheme=PUBLIC_API_SCHEME)
 
