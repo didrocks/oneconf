@@ -110,6 +110,12 @@ class DbusHostsService(dbus.service.Object):
     def logo_changed(self, hostid):
         LOG.debug("Send package list changed dbus signal for hostid: %s" % hostid)
 
+    @dbus.service.method(HOSTS_INTERFACE)
+    def get_last_sync_date(self):
+        self.activity = True
+        return self.hosts.get_last_sync_date()
+
+
 class DbusConnect(object):
 
     """
@@ -167,4 +173,6 @@ class DbusConnect(object):
         '''trigger update handling'''
         self._get_package_handler_dbusobject().async_update()
     
-
+    def get_last_sync_date(self):
+        '''just send a kindly ping to retrieve the last sync date'''
+        return self._get_hosts_dbusobject().get_last_sync_date()

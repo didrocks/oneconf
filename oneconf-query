@@ -33,7 +33,7 @@ LOG = logging.getLogger(__name__)
 from oneconf.version import *
 
 SCOPE_NONE, SCOPE_ALL_PACKAGES, SCOPE_MANUAL_PACKAGES, SCOPE_HOSTS, SCOPE_HOST = range(5)
-ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_SHARE_INVENTORY = range(5)
+ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_SHARE_INVENTORY, ACTION_GET_LAST_SYNC = range(6)
 
 
 def print_packages(installed_pkg):
@@ -71,7 +71,7 @@ def err_scope():
     sys.exit(1)
 
 def err_action():
-    print _("you can't define --list, --diff, --update, --share-inventory")
+    print _("you can't define --list, --diff, --update, --share-inventory, --get-last-sync together.")
     sys.exit(1)
 
 def option_not_compatible(options, action):
@@ -90,6 +90,9 @@ if __name__ == '__main__':
     parser.add_option("-l", "--list", action="store_true",
                       dest="action_list",
                       help=_("List stored package (default for local hostid) or host lists"))
+    parser.add_option("--get-last-sync", action="store_true",
+                      dest="action_getlastsync",
+                      help=_("Get last sync date"))
     parser.add_option("-u", "--update", action="store_true",
                       dest="action_update",
                       help=_("update the package list in couchdb if host accepts updates"))
@@ -183,6 +186,10 @@ if __name__ == '__main__':
         if action != ACTION_NONE:
             err_action()
         action = ACTION_SHARE_INVENTORY
+    if options.action_getlastsync:
+        if action != ACTION_NONE:
+            err_action()
+        action = ACTION_GET_LAST_SYNC
     if action == ACTION_NONE:
         action = ACTION_LIST
 
@@ -240,6 +247,15 @@ if __name__ == '__main__':
             print _("You can't define --package, --host or --hosts " \
                     "when changing show inventory status")
         oneconf.set_share_inventory(options.share_inventory)
+
+    elif action == ACTION_GET_LAST_SYNC:
+        if options.hostid or options.hostname:
+            print _("You can't use hostid or hostname when changing show inventory status")
+            sys.exit(1)
+        if scope != SCOPE_NONE:
+            print _("You can't define --package, --host or --hosts " \
+                    "when changing show inventory status")
+        print oneconf.get_last_sync_date()
 
     sys.exit(0)
 

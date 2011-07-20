@@ -16,7 +16,7 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-
+import datetime
 import hashlib
 import json
 import logging
@@ -31,7 +31,7 @@ from gettext import gettext as _
 LOG = logging.getLogger(__name__)
 
 from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
-                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME)
+                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME)
 
 class HostError(Exception):
     def __init__(self, message):
@@ -218,4 +218,16 @@ class Hosts(object):
         self.save_current_host()
         # TODO: update, and take the case into account once offline
 
-
+    def get_last_sync_date(self):
+        '''Get last sync date, if already synced, with remote server'''
+        
+        LOG.debug("Getting last sync date with remove server")
+        try:
+            with open(os.path.join(self._host_file_dir, LAST_SYNC_DATE_FILENAME), 'r') as f:
+                content = json.load(f)
+                last_sync = content['last_sync']
+                #last_sync = datetime.datetime.fromtimestamp(content['last_sync']).strftime("%X %x")
+        except IOError:
+            last_sync = _("Was never synced")
+        return last_sync
+        

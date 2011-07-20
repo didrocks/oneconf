@@ -67,3 +67,8 @@ class DirectConnect(object):
         except HostError, e:
             print(e)
             sys.exit(1)
+            
+    def get_last_sync_date(self):
+        '''get last time the store was successfully synced'''
+        return Hosts().get_last_sync_date()
+        

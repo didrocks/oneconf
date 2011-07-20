@@ -23,12 +23,13 @@ import gobject
 import json
 import logging
 import os
+import time
 
 from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
 from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
-                  PACKAGE_LIST_PREFIX, LOGO_PREFIX)
+                  PACKAGE_LIST_PREFIX, LOGO_PREFIX, LAST_SYNC_DATE_FILENAME)
 
 from piston_mini_client.failhandlers import APIError
 from httplib2 import socket
@@ -86,7 +87,7 @@ class SyncHandler(gobject.GObject):
             self._refresh_can_sync()
 
     def _save_local_file_update(self, file_uri, content):
-        '''Save local file in an atomatic transaction'''
+        '''Save local file in an atomic transaction'''
         
         if not content:
             LOG.warning("Can't refresh %s to disk: content empty", file_uri)
@@ -260,6 +261,9 @@ class SyncHandler(gobject.GObject):
             #    except APIError, e:
             #        LOG.warning ("Erreur while pushing current logo: %s", e)
 
+        # write the last sync date
+        content = {"last_sync":  str(time.time())}
+        self._save_local_file_update(os.path.join(self.hosts.get_currenthost_dir(), LAST_SYNC_DATE_FILENAME), content)
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)
         if hostlist_changed:

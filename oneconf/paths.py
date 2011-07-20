@@ -26,6 +26,7 @@ PACKAGE_LIST_PREFIX = "package_list"
 OTHER_HOST_FILENAME = "other_hosts"
 HOST_DATA_FILENAME = "host"
 LOGO_PREFIX = "logo"
+LAST_SYNC_DATE_FILENAME = "last_sync"
 
 _datadir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 if not os.path.exists(_datadir):
