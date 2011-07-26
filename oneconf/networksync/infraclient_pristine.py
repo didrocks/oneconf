@@ -2,6 +2,7 @@
 webcatalog API, plus a few helper classes.
 """
 
+import ast
 from urllib import quote_plus
 from piston_mini_client import (
     PistonAPI,
@@ -33,17 +34,17 @@ class WebCatalogAPI(PistonAPI):
         """Check the state of the server, to see if everything's ok."""
         return self._get('server-status/', scheme=PUBLIC_API_SCHEME)
 
-    @returns_json
     def list_machines(self):
         """List all machine for the current user."""
-        return self._get('list-machines/', scheme=PUBLIC_API_SCHEME)
+        return ast.literal_eval(self._get('list-machines/', scheme=PUBLIC_API_SCHEME))
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('hostname', r'[-\w+]+')
     @returns_json
     def update_machine(self, machine_uuid, hostname):
         """Register or update an existing machine with new name."""
-        return self._post('machine/%s/' % machine_uuid, data="hostname=%s" % hostname, scheme=PUBLIC_API_SCHEME)
+        # fake logo_checksum for now
+        return self._post('machine/%s/' % machine_uuid, data='{"hostname": "%s", "logo_checksum": "a"}' % hostname, scheme=PUBLIC_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
@@ -56,8 +57,6 @@ class WebCatalogAPI(PistonAPI):
         """get the logo for a machine."""
         return self._get('logo/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
 
-    # FIXME: get [08/Jul/2011 15:34:51] "POST /cat/api/1.0/machine-logo/UUUUU/ooo/ HTTP/1.1" 400 11.
-    # need autentification?
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('logo_checksum', r'[-\w+]+\.[-\w+]+')
     @returns_json
@@ -81,7 +80,7 @@ class WebCatalogAPI(PistonAPI):
     def update_packages(self, machine_uuid, packages_checksum, package_list):
         """update the package list for a machine."""
         
-        data_content = "package_list=%s&packages_checksum=%s" % (package_list, packages_checksum)
-        print data_content
+        data_content = '{"package_list": "{\"foo\": {\"auto\": True}, \"bar\": {\"auto\": False}}", "packages_checksum": "abcd123"}'
+        data_content = '{"package_list": "%s", "packages_checksum": "%s"}' % (str(package_list).replace("'", '\\"'), packages_checksum)
         return self._post('packages/%s/' % machine_uuid, data=data_content, scheme=PUBLIC_API_SCHEME)
 

@@ -52,12 +52,18 @@ class WebCatalogAPI(PistonAPI):
             raise APIError(self._exception_msg)
         return simplejson.dumps('ok')
 
-    @returns_json
     @network_delay
     def list_machines(self):
         if self._fake_settings.get_setting('list_machines_error'):
             raise APIError(self._exception_msg)
-        return simplejson.dumps(self._fake_settings.get_setting('hosts_metadata'))
+        dict_of_hosts = self._fake_settings.get_setting('hosts_metadata')
+        # the server is returning a list
+        result = []
+        for hostid in dict_of_hosts:
+            machine = dict_of_hosts[hostid]
+            machine['uuid'] = hostid
+            result.append(machine)
+        return result
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('hostname', r'[-\w+]+')

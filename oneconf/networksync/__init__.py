@@ -168,9 +168,13 @@ class SyncHandler(gobject.GObject):
         # Get all machines
         full_hosts_list = self.infraclient.list_machines()
         other_hosts = {}
-        for hostid in full_hosts_list:
+        distant_current_host = {}
+        for machine in full_hosts_list:
+            hostid = machine.pop("uuid")
             if hostid != current_hostid:
-                other_hosts[hostid] = full_hosts_list[hostid]
+                other_hosts[hostid] = machine
+            else:
+                distant_current_host = machine
 
         for hostid in other_hosts:
             # now refresh packages list for every hosts
@@ -232,7 +236,6 @@ class SyncHandler(gobject.GObject):
             LOG.debug("Push current host to infra now")
             # check if current host changed
             try:
-                distant_current_host = full_hosts_list[current_hostid]
                 if self.hosts.current_host['hostname'] != distant_current_host['hostname']:
                     self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
                     LOG.debug ("Host data refreshed")
