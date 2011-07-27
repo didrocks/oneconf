@@ -44,7 +44,9 @@ class WebCatalogAPI(PistonAPI):
     def update_machine(self, machine_uuid, hostname):
         """Register or update an existing machine with new name."""
         # fake logo_checksum for now
-        return self._post('machine/%s/' % machine_uuid, data='{"hostname": "%s", "logo_checksum": "a"}' % hostname, scheme=PUBLIC_API_SCHEME)
+        data = {"hostname": hostname, "logo_checksum": "a"}
+        return self._post('machine/%s/' % machine_uuid, data=data,
+            scheme=PUBLIC_API_SCHEME, content_type='application/json')
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
@@ -80,7 +82,6 @@ class WebCatalogAPI(PistonAPI):
     def update_packages(self, machine_uuid, packages_checksum, package_list):
         """update the package list for a machine."""
         
-        data_content = '{"package_list": "{\"foo\": {\"auto\": True}, \"bar\": {\"auto\": False}}", "packages_checksum": "abcd123"}'
-        data_content = '{"package_list": "%s", "packages_checksum": "%s"}' % (str(package_list).replace("'", '\\"'), packages_checksum)
-        return self._post('packages/%s/' % machine_uuid, data=data_content, scheme=PUBLIC_API_SCHEME)
+        data_content = {"package_list": package_list, "packages_checksum": packages_checksum}
+        return self._post('packages/%s/' % machine_uuid, data=data_content, content_type='application/json', scheme=PUBLIC_API_SCHEME)
 

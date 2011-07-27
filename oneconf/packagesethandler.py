@@ -90,9 +90,8 @@ class PackageSetHandler(object):
                 need_reload = True
         except KeyError:
             need_reload = True
-            
+
         if need_reload:
-            
             self.package_list[hostid] = {'valid': True, 'package_list': self._get_packagelist_from_store(hostid)}
         return self.package_list[hostid]['package_list']
         
@@ -161,9 +160,8 @@ class PackageSetHandler(object):
             pkg_list = None
             
         if pkg_list is None:
-            pkg_list = {'package_list': {}}
-        
-        return pkg_list['package_list']
+            pkg_list = {}
+        return pkg_list
         
 
 

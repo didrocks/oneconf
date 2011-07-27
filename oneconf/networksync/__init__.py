@@ -121,9 +121,13 @@ class SyncHandler(gobject.GObject):
     def check_if_push_needed(self, local_data, distant_data, key):
         '''Return if data dictionnary needs to be refreshed
 
-            Contrary to refresh needed, we are sure that the host is registered'''
+            Contrary to refresh needed, we are sure that the host is registered.
+            However the local checksum can be null, telling that no refresh is needed'''
         LOG.debug("Check if %s for current host need to be pushed to infra" % key)
-        need_push = (local_data['%s_checksum' % key] != distant_data['%s_checksum' % key])
+        try:
+            need_push = (local_data['%s_checksum' % key] and (local_data['%s_checksum' % key] != distant_data['%s_checksum' % key]))
+        except KeyError:
+            need_push = True
         if need_push:
             LOG.debug("pushed needed")
         return need_push
@@ -247,11 +251,11 @@ class SyncHandler(gobject.GObject):
             # local package list
             if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'packages'):
                 local_packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, current_hostid))
-                with open(local_packagelist_filename, 'r') as f:
-                    try:
+                try:
+                    with open(local_packagelist_filename, 'r') as f:
                         self.infraclient.update_packages(machine_uuid=current_hostid, packages_checksum=self.hosts.current_host['packages_checksum'], package_list=json.load(f))
                         LOG.debug ("refresh done")
-                    except APIError, e:
+                except (APIError, IOError), e:
                         LOG.warning ("Erreur while pushing current package list: %s", e)
                         
             # local logo
