@@ -23,7 +23,7 @@ import logging
 import os
 import softwarecenter.plugin
 import sys
-from softwarecenter.view.widgets.animatedimage import AnimatedImage
+from softwarecenter.ui.gtk.widgets.animatedimage import AnimatedImage
 
 import gettext
 from gettext import gettext as _
@@ -33,7 +33,8 @@ from gettext import gettext as _
 oneconf_usr_dir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.insert(0, oneconf_usr_dir)
 from oneconf.dbusconnect import DbusConnect
-from oneconf.uscplugin import u1inventorydialog, oneconfeventhandler, oneconfpane
+#from oneconf.uscplugin import u1inventorydialog, oneconfeventhandler, oneconfpane
+from oneconf.uscplugin import u1inventorydialog, oneconfpane
 
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 
@@ -72,12 +73,13 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             pos += 1
         # initialize dbus binding
         self.oneconf = DbusConnect()
-        self.oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(self.oneconf)
+        #self.oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(self.oneconf)
+        self.oneconfeventhandler = None
         # refresh host list
         self._refreshing_hosts = False
         # Connect the signal and then only ask for checking the inventory
-        self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
-        self.oneconfeventhandler.check_inventory()
+        #self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
+        #self.oneconfeventhandler.check_inventory()
 
     def show_manageui1inventory(self, menuitem):
         """build and show the u1 login window"""

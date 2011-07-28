@@ -32,10 +32,10 @@ from gettext import gettext as _
 
 from softwarecenter.enums import *
 
-from softwarecenter.view.appview import AppView, AppStore, AppViewFilter
-from softwarecenter.models.appstore import AppStore
+from softwarecenter.ui.gtk.appview import AppView, AppStore, AppViewFilter
+from softwarecenter.ui.gtk.models.appstore import AppStore
 from softwarecenter.distro import get_distro
-from softwarecenter.view.softwarepane import SoftwarePane, wait_for_apt_cache_ready
+from softwarecenter.ui.gtk.softwarepane import SoftwarePane, wait_for_apt_cache_ready
 
 # TODO:
 # - add hide/show apps

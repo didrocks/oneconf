@@ -23,7 +23,7 @@ import logging
 import gettext
 from gettext import gettext as _
 
-import oneconfeventhandler
+#import oneconfeventhandler
 import os
 import subprocess
 
@@ -51,9 +51,9 @@ class U1InventoryDialog(object):
         self.oneconfeventhandler = oneconfeventhandler
         self.refresh() # force first refresh (can speedup if already oneconfeventhandler)
 
-        oneconfeventhandler.connect('inventory-refreshed', self.refresh)
-        if oneconfeventhandler and not oneconfeventhandler.login:
-            oneconfeventhandler.check_connect_state()
+        #oneconfeventhandler.connect('inventory-refreshed', self.refresh)
+        #if oneconfeventhandler and not oneconfeventhandler.login:
+        #    oneconfeventhandler.check_connect_state()
         if parent:
             self.dialog_u1login.set_transient_for(parent)
         self.parent = parent
@@ -69,8 +69,8 @@ class U1InventoryDialog(object):
         # prevent some hanging up: changing the set_active state triggers an ascync
         # refresh of u1 host list and then, can blow up the results
         self.no_refresh = True
-        if not logger:
-            logger = self.oneconfeventhandler
+        #if not logger:
+        #    logger = self.oneconfeventhandler
         if logger.login:
             logging.debug("ask for refreshing login state with login as %s" % logger.login)
             self.button_sign_in.hide()
@@ -117,11 +117,13 @@ class U1InventoryDialog(object):
         subprocess.Popen(['ubuntuone-preferences'])
 
     def show_others_toogle(self, widget):
+        pass
         if not self.no_refresh:
             self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=True)
             self.oneconfeventhandler.check_connect_state() # refresh hostid list        
 
     def show_inventory_toogle(self, widget):
+        pass
         if not self.no_refresh:
             self.oneconfeventhandler.oneconf.set_show_inventory(widget.get_active(), others=False)
             self.oneconfeventhandler.check_connect_state() # refresh hostid list
@@ -136,7 +138,9 @@ if __name__ == "__main__":
     # oneconf handler
     from oneconf.dbusconnect import DbusConnect
     oneconf = DbusConnect()
-    oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(oneconf)
+    #oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(oneconf)
+    oneconfeventhandler = None
+
 
     # gui
     u1logindialog = U1InventoryDialog('../../data', oneconfeventhandler, parent=None)
