@@ -82,7 +82,7 @@ class OneConfPane(SoftwarePane):
 
     def init_view(self):
         if not self.view_initialized:
-            self.show_appview_spinner(init=True)
+            self.show_appview_spinner(spinner_text=_("Getting OneConf data"), init=True)
             
             while gtk.events_pending():
                 gtk.main_iteration()
@@ -246,7 +246,7 @@ class OneConfPane(SoftwarePane):
 
         # We area really evil because we like it! There are two spinners:
         # the main one (the traditional software-center spinner view) for "building"
-        # the ui, and a child one for 
+        # the ui, and a child one without removing the top toolbar
         if not self.apps_search_term:
             self.action_bar.clear()
         if init:            
@@ -302,10 +302,6 @@ class OneConfPane(SoftwarePane):
         self.refresh_selection_bar()
         self.refreshing = False
         return False
-
-    def is_applist_view_showing(self):
-        # FIXME: actually make this useful
-        return True
         
     def on_search_terms_changed(self, widget, new_text):
         """callback when the search entry widget changes"""
@@ -359,7 +355,12 @@ class OneConfPane(SoftwarePane):
         """callback when an app is selected"""
         logging.debug("on_application_selected: '%s'" % app)
         self.current_appview_selection = app
-
+        
+    @wait_for_apt_cache_ready
+    def on_application_activated(self, appview, app):
+        super(OneConfPane, self).on_application_activated(appview, app)
+        self.update_show_hide_nonapps()
+        
     def display_search(self):
         self.navigation_bar.remove_id(NavButtons.DETAILS)
         self.notebook.set_current_page(self.PAGE_APPLIST)
@@ -395,6 +396,14 @@ class OneConfPane(SoftwarePane):
     def is_category_view_showing(self):
         # there is no category view in the OneConf pane
         return False
+        
+    def is_applist_view_showing(self):
+        """Return True if we are in the applist view """
+        return self.notebook.get_current_page() == self.PAGE_APPLIST
+        
+    def is_app_details_view_showing(self):
+        """Return True if we are in the app_details view """
+        return self.notebook.get_current_page() == self.PAGE_APP_DETAILS
         
     def _hide_nonapp_pkgs(self):
         # override to never show apps visible
