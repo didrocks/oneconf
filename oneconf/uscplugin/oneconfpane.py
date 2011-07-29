@@ -30,15 +30,16 @@ import xapian
 
 from gettext import gettext as _
 
-from softwarecenter.enums import *
+
+from softwarecenter.enums import NavButtons, DEFAULT_SEARCH_LIMIT
 
 from softwarecenter.ui.gtk.appview import AppView, AppStore, AppViewFilter
 from softwarecenter.ui.gtk.models.appstore import AppStore
 from softwarecenter.distro import get_distro
+from softwarecenter.ui.gtk.widgets.spinner import SpinnerView
 from softwarecenter.ui.gtk.softwarepane import SoftwarePane, wait_for_apt_cache_ready
 
 # TODO:
-# - add hide/show apps
 # - change the way to count and search in OneConfFilter() (have benefits, like search refresh)
 
 class OneConfPane(SoftwarePane):
@@ -48,6 +49,10 @@ class OneConfPane(SoftwarePane):
     (PAGE_APPLIST,
      PAGE_APP_DETAILS) = range(2)
 
+    (PAGE_CHILD_APPLIST,
+     PAGE_CHILD_SPINNER) = range(2)
+     
+
     def __init__(self, 
                  cache,
                  history,
@@ -55,50 +60,66 @@ class OneConfPane(SoftwarePane):
                  distro, 
                  icons, 
                  datadir,
-                 oneconfeventhandler,
-                 compared_with_hostid):
+                 oneconf,
+                 hostid,
+                 hostname):
         # parent
         SoftwarePane.__init__(self, cache, db, distro, icons, datadir)
-        self.hostname = ''
-        self.pane_name = ''
+        self.hostname = hostname
+        self.pane_name = hostname
         self.search_terms = ""
-        self.compared_with_hostid = compared_with_hostid
+        self.hostid = hostid
         self.current_appview_selection = None
         self.apps_filter = None
         self.nonapps_visible = AppStore.NONAPPS_NEVER_VISIBLE
         self.refreshing = False
-
         # OneConf stuff there
-        self.oneconfeventhandler = oneconfeventhandler
-        oneconfeventhandler.connect('inventory-refreshed', self._on_inventory_change)
+        self.oneconf = oneconf
+        #oneconfeventhandler.connect('inventory-refreshed', self._on_inventory_change)
 
         # Backend installation
         self.backend.connect("transaction-finished", self._on_transaction_finished)
 
     def init_view(self):
         if not self.view_initialized:
-            self.show_appview_spinner()
+            self.show_appview_spinner(init=True)
+            
+            while gtk.events_pending():
+                gtk.main_iteration()
+
+            # open the cache since we are initializing the UI for the first time    
+            gobject.idle_add(self.cache.open)
+            
             super(OneConfPane, self).init_view()
             self._build_ui()
             self.view_initialized = True
-            self.force_refresh()
+            #self.hide_appview_spinner(init=True)
+            # dummy call to force async refresh
+            self._on_transaction_finished(None, True, 0)
 
     def _build_ui(self):
 
         self.navigation_bar.set_size_request(26, -1)
-        self.notebook.append_page(self.box_app_list, gtk.Label(NAV_BUTTON_ID_LIST))
-        # details
-        self.notebook.append_page(self.scroll_details, gtk.Label(NAV_BUTTON_ID_DETAILS))
+
+        self.app_list_notebook = gtk.Notebook()
+        self.app_list_notebook.set_show_tabs(False)
+        self.app_list_notebook.set_show_border(False)
+
+        self.main_app_list_page = gtk.VBox()
+        self.app_list_notebook.append_page(self.box_app_list, gtk.Label("list"))
+        self.child_spinner_view = SpinnerView()
+        self.app_list_notebook.append_page(self.child_spinner_view, gtk.Label("child spinner"))
+        self.child_spinner_view.show_all()
+        
+        self.notebook.append_page(self.main_app_list_page, gtk.Label("app list"))
+        self.notebook.append_page(self.scroll_details, gtk.Label("details"))
         self.scroll_details.show()
 
         self.embeeded_title_bar = gtk.HBox()
         self.toolbar = gtk.Toolbar()
         self.toolbar.show()
         self.toolbar.set_style(gtk.TOOLBAR_TEXT)
-        self.box_app_list.pack_start(self.embeeded_title_bar, expand=False)
-        self.embeeded_title_bar.pack_start(self.toolbar, expand=True)
-        self.box_app_list.reorder_child(self.embeeded_title_bar, 1)
-
+                
         additional_pkg_action = gtk.RadioAction('additional_pkg', None, None, None, self.ADDITIONAL_PKG)
         additional_pkg_action.connect('changed', self.change_current_mode)
         additional_pkg_button = additional_pkg_action.create_tool_item()
@@ -115,7 +136,11 @@ class OneConfPane(SoftwarePane):
         self.act_on_store_button.connect('clicked', self._act_on_current_appstore)
         self.act_on_store_button.show()
         
-        self.box_app_list.show_all()
+        self.embeeded_title_bar.pack_start(self.toolbar, expand=True)
+        self.main_app_list_page.pack_start(self.embeeded_title_bar, expand=False)
+        self.main_app_list_page.pack_start(self.app_list_notebook, expand=True)
+        
+        self.main_app_list_page.show_all()
 
     def _act_on_current_appstore(self, widget):
         '''
@@ -125,49 +150,37 @@ class OneConfPane(SoftwarePane):
         appnames = []
         iconnames = []
         appstore = self.app_view.get_model()
-        for app in appstore.existing_apps:
-            pkgnames.append(app.pkgname)
-            appnames.append(app.appname)
-            # add iconnames
-            doc = self.db.get_xapian_document(app.appname, app.pkgname)
-            iconnames.append(self.db.get_iconname(doc))
+        for match in appstore.matches:
+            pkgnames.append(self.db.get_pkgname(match.document))
+            appnames.append(self.db.get_appname(match.document))
+            iconnames.append(self.db.get_iconname(match.document))
         if self.apps_filter.current_mode == self.ADDITIONAL_PKG:
             self.backend.install_multiple(pkgnames, appnames, iconnames)
         else:
             self.backend.remove_multiple(pkgnames, appnames, iconnames)
-
-    def force_refresh(self):
-        """dummy call to force async refresh"""
-        self._on_transaction_finished(None, True, 0)
-
+            
     def _on_transaction_finished(self, backend, success, time=5):
         # refresh inventory with delay and threaded (to avoid waiting if an oneconf update is in progress)
         if success:
-            gobject.timeout_add_seconds(time, Thread(target=self._on_inventory_change, args=(self.oneconfeventhandler,)).start)
+            gobject.timeout_add_seconds(time, Thread(target=self._on_inventory_change, args=()).start)
 
-    def _on_inventory_change(self, oneconfeventhandler):
+    def _on_inventory_change(self):
         
         # only make oneconf calls once initialized
         if not self.view_initialized:
             return
-        try:
-            current, hostname, show_inventory, show_others = oneconfeventhandler.u1hosts[self.compared_with_hostid]
-        except KeyError:
-            logging.warning("Host not yet registered")
-            return
+
         # create first filter
         if not self.apps_filter:
             self.apps_filter = OneConfFilter(self.db, self.cache, set(), set(), self.nonapps_visible)
-        self.hostname = hostname
-        self.pane_name = hostname
-        (additional_pkg, missing_pkg) = oneconfeventhandler.oneconf.diff_selection(self.compared_with_hostid, '', True)
+        (additional_pkg, missing_pkg) = self.oneconf.diff(self.hostid, '')
         self.apps_filter.additional_pkglist = set(additional_pkg)
         self.apps_filter.removed_pkglist = set(missing_pkg)
         self._append_refresh_apps()
 
     def _append_refresh_apps(self):
         """thread hammer protector for asking refresh of apps in pane"""
-        gobject.timeout_add(1, self.refresh_apps)
+        gobject.timeout_add(0, self.refresh_apps)
 
     def refresh_selection_bar(self):
         if self.nonapps_visible == AppStore.NONAPPS_ALWAYS_VISIBLE:
@@ -177,19 +190,21 @@ class OneConfPane(SoftwarePane):
             number_additional_pkg = len(self.apps_filter.additional_apps_pkg)
             number_removed_pkg = len(self.apps_filter.removed_apps_pkg)
 
-        # FIXME: use positive language, use ngettext
-        if number_additional_pkg > 1:
-            msg_additional_pkg = _('%s new items that are on the remove computer') % number_additional_pkg
-            msg_add_act_on_store = _("Install those %s items") % number_additional_pkg
-        else:
-            msg_additional_pkg = _('%s item that isn\'t on that computer') % number_additional_pkg
-            msg_add_act_on_store = _("Install this item")
-        if number_removed_pkg > 1:
-            msg_removed_pkg = _('%s items that aren\'t on the remote computer') % number_removed_pkg
-            msg_remove_act_on_store = _("Remove those %s items") % number_removed_pkg
-        else:
-            msg_removed_pkg = _('%s item that isn\'t on the remote computer') % number_removed_pkg
-            msg_remove_act_on_store = _("Remove this item")
+        use_plural = (number_additional_pkg > 1) and number_additional_pkg or 1 # hack around ngettext considering 0 is plural
+        msg_additional_pkg = gettext.ngettext("%(amount)s missing item",
+                                    "%(amount)s missing items",
+                                    use_plural) % { 'amount' : number_additional_pkg, }
+        msg_add_act_on_store = gettext.ngettext("Install this item",
+                                    "Install those %(amount)s items",
+                                    use_plural) % { 'amount' : number_additional_pkg, }  
+        use_plural = (number_removed_pkg > 1) and number_removed_pkg or 1 # hack around ngettext considering 0 is plural
+        msg_removed_pkg =  gettext.ngettext("%(amount)s additional item",
+                                    "%(amount)s additional items",
+                                    use_plural) % { 'amount' : number_removed_pkg, }                                                
+        msg_remove_act_on_store =  gettext.ngettext("Remove this item",
+                                    "Remove those %(amount)s items",
+                                    use_plural) % { 'amount' : number_removed_pkg, }            
+
         self.additional_pkg_action.set_label(msg_additional_pkg)
         self.removed_pkg_action.set_label(msg_removed_pkg)
         if self.apps_filter.current_mode == self.ADDITIONAL_PKG:
@@ -215,7 +230,7 @@ class OneConfPane(SoftwarePane):
 
     def _show_installed_overview(self):
         " helper that goes back to the overview page "
-        self.navigation_bar.remove_id(NAV_BUTTON_ID_DETAILS)
+        self.navigation_bar.remove_id(NavButtons.DETAILS)
         self.notebook.set_current_page(self.PAGE_APPLIST)
         self.toolbar.show()
         self.searchentry.show()
@@ -224,7 +239,45 @@ class OneConfPane(SoftwarePane):
         # remove the details and clear the search
         self.searchentry.clear()
         self.apps_search_term = ""
-        self.navigation_bar.remove_id(NAV_BUTTON_ID_SEARCH)
+        self.navigation_bar.remove_id(NavButtons.SEARCH)
+
+    def show_appview_spinner(self, spinner_text=None, init=False):
+        """ display the spinner in the appview panel """
+
+        # We area really evil because we like it! There are two spinners:
+        # the main one (the traditional software-center spinner view) for "building"
+        # the ui, and a child one for 
+        if not self.apps_search_term:
+            self.action_bar.clear()
+        if init:            
+            self.spinner_view.stop()
+            if spinner_text:
+                self.spinner_view.set_text(spinner_text)
+            self.spinner_notebook.set_current_page(self.PAGE_SPINNER)
+        else:
+            self.child_spinner_view.stop()
+            if spinner_text:
+                self.child_spinner_view.set_text(spinner_text)
+            self.app_list_notebook.set_current_page(self.PAGE_CHILD_SPINNER)
+        # "mask" the spinner view momentarily to prevent it from flashing into
+        # view in the case of short delays where it isn't actually needed
+        gobject.timeout_add(100, self._unmask_appview_spinner, init)
+
+    def _unmask_appview_spinner(self, init=False):
+        if init:
+            self.spinner_view.start()
+        else:
+            self.child_spinner_view.start()
+
+    def hide_appview_spinner(self):
+        """ hide the spinner and display the appview in the panel """
+        if self.spinner_notebook.get_current_page() != self.PAGE_APPVIEW:
+            self.spinner_view.stop()
+            self.spinner_view.set_text()
+            self.spinner_notebook.set_current_page(self.PAGE_APPVIEW)
+        self.child_spinner_view.stop()
+        self.child_spinner_view.set_text()
+        self.app_list_notebook.set_current_page(self.PAGE_CHILD_APPLIST)
 
     @wait_for_apt_cache_ready
     def refresh_apps(self):
@@ -308,7 +361,7 @@ class OneConfPane(SoftwarePane):
         self.current_appview_selection = app
 
     def display_search(self):
-        self.navigation_bar.remove_id(NAV_BUTTON_ID_DETAILS)
+        self.navigation_bar.remove_id(NavButtons.DETAILS)
         self.notebook.set_current_page(self.PAGE_APPLIST)
         model = self.app_view.get_model()
         if model:
@@ -399,10 +452,9 @@ class OneConfFilter(xapian.MatchDecider):
         #        self.additional_pkglist == other.additional_pkglist and
         #        self.removed_pkglist == other.removed_pkglist)
         # FIXME: EVILHACK
-        # let be evil for now and reforce all the reference. This bad hack can be removed once:
-        # 1. __call__ doesn't need the filtering to be performed again for counting the number of package both side (so a one-only tree will be needed)
-        # 2. we create a new signal other than "inventory-refreshed" to first check if the list of host is different or if something really happened
-        # Note: evil here mean "as in maverick" case as there was not this kind of filter :)
+        # let be evil for now and reforce all the reference. This bad hack can be removed once
+        # __call__ doesn't need the filtering to be performed again for counting the number of package both side (so a one-only tree will be needed)
+        # Note: evil here mean "as in maverick-natty-oneiric" case as there was not this kind of filter :)
         return False
     def __ne__(self, other):
         return not self.__eq__(other)

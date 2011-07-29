@@ -32,8 +32,6 @@ from oneconf.version import *
 # add 10 secondes more than CHECK_CONNECT_STATE_DELAY in oneconfeventhandler
 # to get it up while USC is running (there is a ping every CHECK_CONNECT_STATE_DELAY)
 MIN_TIME_WITHOUT_ACTIVITY = 60*5+10
-#MIN_TIME_WITHOUT_ACTIVITY = 30+10
-MIN_TIME_WITHOUT_ACTIVITY = 30
 def quit(loop, myservice):
     '''quit if no activity at least in MIN_TIME_WITHOUT_ACTIVITYs'''
     if myservice.activity:

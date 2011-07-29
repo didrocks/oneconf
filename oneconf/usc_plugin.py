@@ -51,10 +51,6 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             self.datadir = ONECONF_DATADIR
         logging.debug("oneconf datadir: %s", self.datadir)
 
-        # FIXME: workaround for imperfect apps.py
-        #self.app.view_switcher.apps_filter = None
-        self.view_switchers_oneconf_hostid = set()
-
         # add menu item
         self.u1logindialog = None
         #self.menuitem_saveinventory = gtk.MenuItem(_("Save Inventory…"))
@@ -73,20 +69,20 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             pos += 1
         # initialize dbus binding
         self.oneconf = DbusConnect()
-        #self.oneconfeventhandler = oneconfeventhandler.OneConfEventHandler(self.oneconf)
-        self.oneconfeventhandler = None
+        self.already_registered_hostids = []
         # refresh host list
         self._refreshing_hosts = False
         # Connect the signal and then only ask for checking the inventory
         #self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
         #self.oneconfeventhandler.check_inventory()
+        self.refresh_hosts()
 
     def show_manageui1inventory(self, menuitem):
         """build and show the u1 login window"""
         u1logindialog = u1inventorydialog.U1InventoryDialog(self.datadir, self.oneconfeventhandler, parent=self.app.window_main)
         u1logindialog.show()
 
-    def refresh_hosts(self, loginhandler):
+    def refresh_hosts(self):
         """refresh hosts list in the panel view"""
         logging.debug('oneconf: refresh hosts')
 
@@ -104,25 +100,23 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
 
         new_elem = {}
 
-        for hostid in self.oneconfeventhandler.u1hosts:
-            current, name, show_inventory, show_others = self.oneconfeventhandler.u1hosts[hostid]
-            if not current and show_inventory:
-                new_elem[hostid] = name
-            if current and not show_others:
-                return # TODO: need to continue
+        all_hosts = self.oneconf.get_all_hosts()
+        for hostid in all_hosts:
+            current, hostname, share_inventory = all_hosts[hostid]
+            if not hostid in self.already_registered_hostids and not current:
+                new_elem[hostid] = hostname
 
         for current_hostid in new_elem:
-            if current_hostid not in self.view_switchers_oneconf_hostid:
-                current_pane = oneconfpane.OneConfPane(self.app.cache, None, self.app.db, 'Ubuntu', self.app.icons, self.app.datadir, self.oneconfeventhandler, current_hostid)
-                self.app.view_manager.register(current_pane, current_hostid)
-                # FIXME: portme
-                #current_pane.app_view.connect("application-request-action", self.app.on_application_request_action)
-                icon = AnimatedImage(view_switcher.icons.load_icon("computer", model.ICON_SIZE, 0))
-                current_iter = model.insert_after(None, previous_iter, [icon, new_elem[current_hostid], current_hostid, channel, None])
-                previous_iter = current_iter
-                self.view_switchers_oneconf_hostid.add(current_hostid)
-                # show the pane and its content once it's added to the notebook
-                current_pane.show_all()
+            current_pane = oneconfpane.OneConfPane(self.app.cache, None, self.app.db, 'Ubuntu', self.app.icons, self.app.datadir, self.oneconf, current_hostid, new_elem[current_hostid])
+            self.app.view_manager.register(current_pane, current_hostid)
+            # FIXME: portme
+            #current_pane.app_view.connect("application-request-action", self.app.on_application_request_action)
+            icon = AnimatedImage(view_switcher.icons.load_icon("computer", model.ICON_SIZE, 0))
+            current_iter = model.insert_after(None, previous_iter, [icon, new_elem[current_hostid], current_hostid, channel, None])
+            previous_iter = current_iter
+            self.already_registered_hostids.append(current_hostid)
+            # show the pane and its content once it's added to the notebook
+            current_pane.show_all()
                 
         self._refreshing_hosts = False
 
