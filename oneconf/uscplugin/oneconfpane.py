@@ -75,7 +75,7 @@ class OneConfPane(SoftwarePane):
         self.refreshing = False
         # OneConf stuff there
         self.oneconf = oneconf
-        #oneconfeventhandler.connect('inventory-refreshed', self._on_inventory_change)
+        self.oneconf.hosts_dbus_object.connect_to_signal('packagelist_changed', self._on_store_packagelist_changed)
 
         # Backend installation
         self.backend.connect("transaction-finished", self._on_transaction_finished)
@@ -163,6 +163,11 @@ class OneConfPane(SoftwarePane):
         # refresh inventory with delay and threaded (to avoid waiting if an oneconf update is in progress)
         if success:
             gobject.timeout_add_seconds(time, Thread(target=self._on_inventory_change, args=()).start)
+
+    def _on_store_packagelist_changed(self, hostid):
+        '''trigger a packagelist inventory change signal if current hostid is concerned'''
+        if hostid == self.hostid:
+            self._on_inventory_change()
 
     def _on_inventory_change(self):
         

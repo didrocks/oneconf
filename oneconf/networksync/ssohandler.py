@@ -66,6 +66,7 @@ class LoginBackendDbusSSO(gobject.GObject):
         if app_name != self.appname:
             return
         LOG.debug("credential found")
+        print credentials
         self.emit("login-result", credentials)
 
     def _on_credentials_not_found(self, app_name):

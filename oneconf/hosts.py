@@ -213,10 +213,11 @@ class Hosts(object):
     def set_share_inventory(self, share_inventory):
         '''Change if we share the current inventory to other hosts'''
 
+        if self.current_host['share_inventory'] == share_inventory:
+            return
         LOG.debug("Update current share_inventory state to %s" % share_inventory)
         self.current_host['share_inventory'] = share_inventory
         self.save_current_host()
-        # TODO: update, and take the case into account once offline
 
     def get_last_sync_date(self):
         '''Get last sync date, if already synced, with remote server'''

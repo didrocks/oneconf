@@ -33,8 +33,8 @@ from gettext import gettext as _
 oneconf_usr_dir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.insert(0, oneconf_usr_dir)
 from oneconf.dbusconnect import DbusConnect
-#from oneconf.uscplugin import u1inventorydialog, oneconfeventhandler, oneconfpane
-from oneconf.uscplugin import u1inventorydialog, oneconfpane
+from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
+from oneconf.uscplugin import oneconfinventorydialog, oneconfpane
 
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 
@@ -52,35 +52,47 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
         logging.debug("oneconf datadir: %s", self.datadir)
 
         # add menu item
-        self.u1logindialog = None
-        #self.menuitem_saveinventory = gtk.MenuItem(_("Save Inventory…"))
-        self.menuitem_manageu1inventory = gtk.MenuItem(_("Inventory on Ubuntu One…"))
-        self.menuitem_manageu1inventory.connect_object("activate", self.show_manageui1inventory, None)
+        self.oneconfdialog = None
+        self.latest_oneconf_sync = None
+        self.menuitem_manageoneconfinventory = gtk.MenuItem(_("OneConf inventory…"))
+        self.menuitem_manageoneconfinventory.connect_object("activate", self.show_manageoneconfinventory, None)
         # maybe a placeholder for plugins would be better, isn't?
         pos = 0
         for menu in self.app.menu1.get_children():
             if menu == self.app.menuitem_close:        
-                #self.app.menu1.insert(self.menuitem_saveinventory, pos)
-                #self.app.menu1.insert(self.menuitem_manageu1inventory, pos+1)
-                #self.app.menu1.insert(gtk.SeparatorMenuItem(), pos+2)
-                self.app.menu1.insert(self.menuitem_manageu1inventory, pos)
+                self.app.menu1.insert(self.menuitem_manageoneconfinventory, pos)
                 self.app.menu1.insert(gtk.SeparatorMenuItem(), pos+1)
                 break
             pos += 1
         # initialize dbus binding
         self.oneconf = DbusConnect()
+        self.oneconf.hosts_dbus_object.connect_to_signal("hostlist_changed",
+                                                         self.refresh_hosts)
         self.already_registered_hostids = []
+        self.is_current_registered = False
         # refresh host list
         self._refreshing_hosts = False
-        # Connect the signal and then only ask for checking the inventory
-        #self.oneconfeventhandler.connect('inventory-refreshed', self.refresh_hosts)
-        #self.oneconfeventhandler.check_inventory()
+        gobject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, self.get_latest_oneconf_sync)
         self.refresh_hosts()
+        self.get_latest_oneconf_sync()
 
-    def show_manageui1inventory(self, menuitem):
-        """build and show the u1 login window"""
-        u1logindialog = u1inventorydialog.U1InventoryDialog(self.datadir, self.oneconfeventhandler, parent=self.app.window_main)
-        u1logindialog.show()
+    def show_manageoneconfinventory(self, menuitem):
+        """build and show the login window"""
+        if not self.oneconfdialog:
+            self.oneconfdialog = oneconfinventorydialog.OneConfInventoryDialog(self.datadir, self.oneconf, parent=self.app.window_main)
+            self.oneconfdialog.register_nb_hosts(self.already_registered_hostids, self.is_current_registered)
+            self.oneconfdialog.set_latest_oneconf_sync(self.latest_oneconf_sync)
+        self.oneconfdialog.show()
+ 
+    def get_latest_oneconf_sync(self):
+        '''Get latest sync state in OneConf.
+        
+        This function is also the "ping" letting OneConf service alive'''
+        logging.debug("get latest sync state")        
+        self.latest_oneconf_sync = self.oneconf.get_last_sync_date()
+        if self.oneconfdialog:
+            self.oneconfdialog.set_latest_oneconf_sync(self.latest_oneconf_sync)
+        return True
 
     def refresh_hosts(self):
         """refresh hosts list in the panel view"""
@@ -105,6 +117,8 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             current, hostname, share_inventory = all_hosts[hostid]
             if not hostid in self.already_registered_hostids and not current:
                 new_elem[hostid] = hostname
+            if current:
+                self.is_current_registered = share_inventory
 
         for current_hostid in new_elem:
             current_pane = oneconfpane.OneConfPane(self.app.cache, None, self.app.db, 'Ubuntu', self.app.icons, self.app.datadir, self.oneconf, current_hostid, new_elem[current_hostid])
@@ -119,4 +133,7 @@ class OneConfPlugin(softwarecenter.plugin.Plugin):
             current_pane.show_all()
                 
         self._refreshing_hosts = False
+        
+        if self.oneconfdialog:
+            self.oneconfdialog.register_nb_hosts(self.already_registered_hostids, self.is_current_registered)
 

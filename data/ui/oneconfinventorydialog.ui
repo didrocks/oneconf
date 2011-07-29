@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="2.16"/>
-  <!-- interface-naming-policy project-wide -->
-  <object class="GtkWindow" id="dialog_u1login">
+  <object class="GtkWindow" id="dialog_oneconflogin">
+    <property name="width_request">450</property>
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Inventory on Ubuntu One</property>
+    <property name="title" translatable="yes">OneConf inventory</property>
+    <property name="resizable">False</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
     <child>
@@ -25,7 +26,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="xalign">0</property>
-                <property name="label" translatable="yes">With multiple Ubuntu computers, you can use Ubuntu One to compare the software installed on each.</property>
+                <property name="label" translatable="yes">With multiple Ubuntu computers, you can use OneConf to compare the software installed on each.</property>
                 <property name="justify">fill</property>
                 <property name="wrap">True</property>
                 <attributes>
@@ -54,6 +55,8 @@
             </child>
             <child>
               <object class="GtkFrame" id="frame1">
+                <property name="height_request">35</property>
+                <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label_xalign">0</property>
                 <property name="label_yalign">0</property>
@@ -67,7 +70,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
-                          <object class="GtkLabel" id="label_u1_status">
+                          <object class="GtkLabel" id="label_sso_status">
                             <property name="width_request">300</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
@@ -80,28 +83,12 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="button_manage_u1">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="padding">7</property>
-                            <property name="pack_type">end</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkButton" id="button_sign_in">
-                            <property name="label" translatable="yes">Sign in…</property>
+                            <property name="label" translatable="yes">Sign in or join Ubuntu sso…</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="use_action_appearance">False</property>
-                            <signal name="clicked" handler="sign_in" swapped="no"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -121,7 +108,6 @@
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="padding">10</property>
                 <property name="position">2</property>
               </packing>
             </child>
@@ -132,7 +118,7 @@
                 <property name="n_rows">2</property>
                 <property name="n_columns">2</property>
                 <child>
-                  <object class="GtkCheckButton" id="check_show_inventory">
+                  <object class="GtkCheckButton" id="check_share_inventory">
                     <property name="label" translatable="yes">Share this computer’s inventory</property>
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
@@ -140,28 +126,11 @@
                     <property name="receives_default">False</property>
                     <property name="use_action_appearance">False</property>
                     <property name="draw_indicator">True</property>
-                    <signal name="toggled" handler="show_inventory_toogle" swapped="no"/>
+                    <signal name="toggled" handler="share_inventory_toogle" swapped="no"/>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkCheckButton" id="check_show_others">
-                    <property name="label" translatable="yes">Show inventories from other computers</property>
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">False</property>
-                    <property name="use_action_appearance">False</property>
-                    <property name="active">True</property>
-                    <property name="draw_indicator">True</property>
-                    <signal name="toggled" handler="show_others_toogle" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="top_attach">1</property>
-                    <property name="bottom_attach">2</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="label_sync_u1_date">
+                  <object class="GtkLabel" id="label_latest_sync_date">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="xalign">0</property>
@@ -169,8 +138,8 @@
 </property>
                   </object>
                   <packing>
-                    <property name="left_attach">1</property>
-                    <property name="right_attach">2</property>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
                   </packing>
                 </child>
                 <child>
@@ -187,6 +156,9 @@
                     <property name="top_attach">1</property>
                     <property name="bottom_attach">2</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
               </object>
               <packing>
