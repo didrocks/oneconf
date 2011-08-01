@@ -36,7 +36,7 @@ class WebCatalogAPI(PistonAPI):
 
     def list_machines(self):
         """List all machine for the current user."""
-        return ast.literal_eval(self._get('list-machines/', scheme=PUBLIC_API_SCHEME))
+        return ast.literal_eval(self._get('list-machines/', scheme=AUTHENTICATED_API_SCHEME))
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('hostname', r'[-\w+]+')
@@ -46,18 +46,18 @@ class WebCatalogAPI(PistonAPI):
         # fake logo_checksum for now
         data = {"hostname": hostname, "logo_checksum": "a"}
         return self._post('machine/%s/' % machine_uuid, data=data,
-            scheme=PUBLIC_API_SCHEME, content_type='application/json')
+            scheme=AUTHENTICATED_API_SCHEME, content_type='application/json')
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
     def delete_machine(self, machine_uuid):
         """Delete an existing machine."""
-        return self._delete('machine/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        return self._delete('machine/%s/' % machine_uuid, scheme=AUTHENTICATED_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     def get_machine_logo(self, machine_uuid):
         """get the logo for a machine."""
-        return self._get('logo/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        return self._get('logo/%s/' % machine_uuid, scheme=AUTHENTICATED_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('logo_checksum', r'[-\w+]+\.[-\w+]+')
@@ -65,13 +65,13 @@ class WebCatalogAPI(PistonAPI):
     def update_machine_logo(self, machine_uuid, logo_checksum, logo_content):
         """update the logo for a machine."""
         return self._post('logo/%s/%s/' % (machine_uuid, logo_checksum), data=logo_content,
-        content_type='image/png', scheme=PUBLIC_API_SCHEME)
+        content_type='image/png', scheme=AUTHENTICATED_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
     def list_packages(self, machine_uuid):
         """List all packages for that machine"""
-        package_list = self._get('packages/%s/' % machine_uuid, scheme=PUBLIC_API_SCHEME)
+        package_list = self._get('packages/%s/' % machine_uuid, scheme=AUTHENTICATED_API_SCHEME)
         if not package_list:
             raise APIError('Package list invalid')
         return package_list
@@ -83,5 +83,5 @@ class WebCatalogAPI(PistonAPI):
         """update the package list for a machine."""
         
         data_content = {"package_list": package_list, "packages_checksum": packages_checksum}
-        return self._post('packages/%s/' % machine_uuid, data=data_content, content_type='application/json', scheme=PUBLIC_API_SCHEME)
+        return self._post('packages/%s/' % machine_uuid, data=data_content, content_type='application/json', scheme=AUTHENTICATED_API_SCHEME)
 

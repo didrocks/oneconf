@@ -148,7 +148,7 @@ class SyncHandler(gobject.GObject):
         '''start syncing what's needed if can sync
         
         process sync can be either started directly, or when can_sync changed'''
-        self.emit_new_packagelist('FFFF')
+        
         # if no more connection, don't try syncing in the main loop
         if not self._can_sync:
             return False

@@ -163,7 +163,7 @@ class OneConfInventoryDialog(object):
                 msg = _("Last sync yesterday %s") % last_sync.strftime('%H:%M')
             else:
                 msg = _("Last sync %s") % last_sync.strftime('%Y-%m-%d  %H:%M')                    
-        except TypeError:
+        except (TypeError, ValueError), e:
             msg = _("Was never synced successfully")
         self.label_latest_sync_date.set_label(msg)
 
