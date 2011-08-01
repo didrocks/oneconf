@@ -6,8 +6,6 @@ Build-Depends: debhelper (>= 7.0.50),
                gettext,
                intltool,
                python,
-               python-distutils-extra,
-               python-setuptools,
 Maintainer: Didier Roche <didrocks@ubuntu.com>
 Standards-Version: 3.9.1
 
@@ -15,17 +13,14 @@ Package: oneconf
 Architecture: all
 Depends: ${misc:Depends},
          ${python:Depends},
-         python-xapian,
          python-dbus,
          python-oauth,
          python-gobject,
          python-apt,
          python-gtk2,
-         python-gnomekeyring,
          ubuntu-sso-client,
-Recommends: software-center (>= 2.1.6),
+Recommends: software-center (>= 4.1.10),
             update-notifier (>= 0.103),
-            python-ubuntuone-client,
 Description: synchronize your configuration data over the network
  OneConf provides the ability to sync your computer's configuration data over
  the network.
