@@ -6,6 +6,7 @@ Build-Depends: debhelper (>= 7.0.50),
                gettext,
                intltool,
                python,
+               python-distutils-extra,
 Maintainer: Didier Roche <didrocks@ubuntu.com>
 Standards-Version: 3.9.1
 
@@ -19,6 +20,7 @@ Depends: ${misc:Depends},
          python-apt,
          python-gtk2,
          ubuntu-sso-client,
+         python-piston-mini-client (>= 0.3+bzr32-0ubuntu1),
 Recommends: software-center (>= 4.1.10),
             update-notifier (>= 0.103),
 Description: synchronize your configuration data over the network
