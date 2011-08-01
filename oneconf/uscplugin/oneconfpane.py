@@ -352,6 +352,7 @@ class OneConfPane(SoftwarePane):
         """callback when the navigation button with id 'details' is clicked"""
         if not pathbar.get_active():
             return
+        self.action_bar.clear()
         self.toolbar.hide()
         self.notebook.set_current_page(self.PAGE_APP_DETAILS)
         self.searchentry.hide()
