@@ -1,0 +1,249 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-08-01 13:20+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: .././oneconf-service:74 .././oneconf-query:84
+#, c-format
+msgid "usage: %prog [options]"
+msgstr ""
+
+#: .././oneconf-service:77
+msgid "enable debug mode"
+msgstr ""
+
+#: .././oneconf-service:79
+msgid "use the mock infrastructure"
+msgstr ""
+
+#: .././oneconf-query:70
+msgid "you can't define --all-packages, --manual-packages or --hosts together."
+msgstr ""
+
+#: .././oneconf-query:74
+msgid ""
+"you can't define --list, --diff, --update, --share-inventory, --get-last-"
+"sync together."
+msgstr ""
+
+#: .././oneconf-query:78
+#, c-format
+msgid "%s isn't compatible with %s"
+msgstr ""
+
+#: .././oneconf-query:88
+msgid ""
+"Current diff between this machine and another provided by hostname/hostid"
+msgstr ""
+
+#: .././oneconf-query:92
+msgid "List stored package (default for local hostid) or host lists"
+msgstr ""
+
+#: .././oneconf-query:95
+msgid "Get last sync date"
+msgstr ""
+
+#: .././oneconf-query:98
+msgid "update the package list in couchdb if host accepts updates"
+msgstr ""
+
+#: .././oneconf-query:100
+msgid "enable debug mode (use --direct)"
+msgstr ""
+
+#: .././oneconf-query:102
+msgid "don't use dbus for the request"
+msgstr ""
+
+#: .././oneconf-query:107
+msgid "get all installed packages from storage"
+msgstr ""
+
+#: .././oneconf-query:110
+msgid "get only manual installed packages from storage"
+msgstr ""
+
+#: .././oneconf-query:113
+msgid "all available hosts from storage (only with list)"
+msgstr ""
+
+#: .././oneconf-query:116
+msgid "This host (only with list)"
+msgstr ""
+
+#: .././oneconf-query:122 .././oneconf-query:124
+msgid "specify target host"
+msgstr ""
+
+#: .././oneconf-query:130
+msgid "share this inventory on the web"
+msgstr ""
+
+#: .././oneconf-query:134
+msgid "hide this inventory on the web"
+msgstr ""
+
+#: .././oneconf-query:197
+msgid "hostid and hostname can't be provided together"
+msgstr ""
+
+#: .././oneconf-query:202
+msgid "You can't use hostid or hostname when updating"
+msgstr ""
+
+#: .././oneconf-query:205
+msgid "You can't define --package, --host or --hosts when updating"
+msgstr ""
+
+#: .././oneconf-query:226
+msgid "You have to provide either hostid or hostname for getting a diff"
+msgstr ""
+
+#: .././oneconf-query:244 .././oneconf-query:253
+msgid "You can't use hostid or hostname when changing show inventory status"
+msgstr ""
+
+#: .././oneconf-query:247 .././oneconf-query:256
+msgid ""
+"You can't define --package, --host or --hosts when changing show inventory "
+"status"
+msgstr ""
+
+#: .././oneconf/hosts.py:158
+msgid "No hostname registered for this id"
+msgstr ""
+
+#: .././oneconf/hosts.py:191
+msgid ""
+"Multiple hostid registered for this hostname. Use --list --host to get the "
+"hostid and use the --hostid option."
+msgstr ""
+
+#: .././oneconf/hosts.py:195
+msgid "No hostid registered for this hostname"
+msgstr ""
+
+#: .././oneconf/hosts.py:232
+msgid "Was never synced"
+msgstr ""
+
+#: .././oneconf/usc_plugin.py:57
+msgid "OneConf inventory…"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:65
+msgid ""
+"To share your content with others computer you own you need to sign in to a "
+"Ubuntu Single Sign-On account."
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:119
+#, python-format
+msgid "Signed in as %s"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:122
+msgid "You are not signed in."
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:124
+msgid "Sign in or join Ubuntu sso…"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:139
+#, python-format
+msgid "%(amount)s host registered"
+msgid_plural "%(amount)s hosts registered"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:143
+msgid "No host registered"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:161
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:165
+#, python-format
+msgid "Last sync %s"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:163
+#, python-format
+msgid "Last sync yesterday %s"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfinventorydialog.py:167
+msgid "Was never synced successfully"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfpane.py:85
+msgid "Getting OneConf data"
+msgstr ""
+
+#. hack around ngettext considering 0 is plural
+#: .././oneconf/uscplugin/oneconfpane.py:199
+#, python-format
+msgid "%(amount)s missing item"
+msgid_plural "%(amount)s missing items"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .././oneconf/uscplugin/oneconfpane.py:202
+#, python-format
+msgid "Install this item"
+msgid_plural "Install those %(amount)s items"
+msgstr[0] ""
+msgstr[1] ""
+
+#. hack around ngettext considering 0 is plural
+#: .././oneconf/uscplugin/oneconfpane.py:206
+#, python-format
+msgid "%(amount)s additional item"
+msgid_plural "%(amount)s additional items"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .././oneconf/uscplugin/oneconfpane.py:209
+#, python-format
+msgid "Remove this item"
+msgid_plural "Remove those %(amount)s items"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .././oneconf/uscplugin/oneconfpane.py:388
+#, python-format
+msgid "%(amount)s matching item"
+msgid_plural "%(amount)s matching items"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .././oneconf/uscplugin/oneconfpane.py:392
+#, python-format
+msgid "%(amount)s item installed"
+msgid_plural "%(amount)s items installed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .././oneconf/uscplugin/oneconfpane.py:560
+msgid "Sorry, can not open the software database"
+msgstr ""
+
+#: .././oneconf/uscplugin/oneconfpane.py:561
+msgid "Please re-install the 'software-center' package."
+msgstr ""
