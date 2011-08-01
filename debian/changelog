@@ -5,6 +5,7 @@ oneconf (0.2) UNRELEASED; urgency=low
     - deps on ubuntu-sso-client now
     - transition to dh_python2
     - remove other deprecated deps
+    - bump Standards-Version
 
  -- Didier Roche <didrocks@ubuntu.com>  Mon, 01 Aug 2011 10:56:15 +0200
 
