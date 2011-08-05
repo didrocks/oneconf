@@ -258,27 +258,21 @@ class Hosts(object):
             hostid = self.get_hostid_from_context(hostid, hostname)
             # do not update if there is already this pending change is already registered
             pending_change_scheduled = self.get_hostid_pending_change(hostid, 'share_inventory')
-            host_to_change = self.other_hosts[hostid]
             if pending_change_scheduled != None:
                 if share_inventory == pending_change_scheduled:
-                    return
-            # no change in progress, check current value
-            else:
-                if host_to_change['share_inventory'] == share_inventory:
                     return
 
             save_function = self.add_hostid_pending_change
             arg = {hostid: {'share_inventory': share_inventory}}
             msg = "Update share_inventory state for %s to %s" % (hostid, share_inventory)
         else:
-            host_to_change = self.current_host
             save_function = self.save_current_host
             arg = None
             msg = "Update current share_inventory state to %s" % share_inventory
-            if host_to_change['share_inventory'] == share_inventory:
+            if self.current_host['share_inventory'] == share_inventory:
                 return
+            self.current_host['share_inventory'] = share_inventory
         LOG.debug(msg)
-        host_to_change['share_inventory'] = share_inventory
         save_function(arg)
 
     def get_last_sync_date(self):

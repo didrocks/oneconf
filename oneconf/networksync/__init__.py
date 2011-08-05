@@ -28,7 +28,7 @@ import time
 from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
-from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
+from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LAST_SYNC_DATE_FILENAME)
 
 from piston_mini_client.failhandlers import APIError
@@ -162,6 +162,38 @@ class SyncHandler(gobject.GObject):
         except (APIError, socket.error), e:
             LOG.warning ("WebClient server error: %s", e)
             return True
+
+        # Try to do every other hosts pending changes first (we will get fresh
+        # data then)
+        try:
+            pending_upload_filename = os.path.join(self.hosts.get_currenthost_dir(), PENDING_UPLOAD_FILENAME)
+            with open(pending_upload_filename, 'r') as f:
+                pending_changes = json.load(f)
+            for hostid in pending_changes.keys():
+                # now do action depending on what needs to be refreshed
+                try:
+                    # we can only remove distant machines for now, not register new ones
+                    try:
+                        if not pending_changes[hostid].pop('share_inventory'):
+                            LOG.debug("Removing machine %s requested as a pending change" % hostid)
+                            self.infraclient.delete_machine(machine_uuid=hostid)
+                    except APIError:
+                        pass
+                except KeyError:
+                    pass
+                # after all changes, is hostid still relevant?
+                if not pending_changes[hostid]:
+                    pending_changes.pop(hostid)
+            # no more change, remove the file
+            if not pending_changes:
+                LOG.debug("No more pending changes remaining, removing the file")
+                os.remove(pending_upload_filename)
+            # update the remaining tasks
+            else:
+                with open(pending_upload_filename, 'w') as f:
+                    json.dump(pending_changes, f)
+        except IOError:
+            pass
 
         current_hostid = self.hosts.current_host['hostid']
         old_hosts = self.hosts.other_hosts
