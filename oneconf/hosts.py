@@ -54,12 +54,15 @@ class Hosts(object):
         if not os.path.isdir(ONECONF_CACHE_DIR):
             os.mkdir(ONECONF_CACHE_DIR)
 
-        hostid = open('/var/lib/dbus/machine-id').read()[:-1]
-        hostname = platform.node()
         (logo_checksum, logo_path) = self._get_current_wallpaper_data()
-        # faking this id for testing purpose
-        #hostid = 'BBBBBB'
-        #hostname = "foomachine"
+        
+        try:
+            # faking this id for testing purpose. Format is hostid:hostname
+            hostid, hostname = os.environ["ONECONF_HOST"].split(':')
+            LOG.debug ("Fake current hostid to %s and hostname to %s" % (hostid, hostname))
+        except KeyError:
+            hostid = open('/var/lib/dbus/machine-id').read()[:-1]
+            hostname = platform.node()
 
         self._host_file_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
         try:
