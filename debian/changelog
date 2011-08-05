@@ -1,4 +1,4 @@
-oneconf (0.2.1) UNRELEASED; urgency=low
+oneconf (0.2.1) natty; urgency=low
 
   * New release:
     - get the toolbar hiding when in detail view. Thanks Gary Lasker
@@ -12,7 +12,7 @@ oneconf (0.2.1) UNRELEASED; urgency=low
       a pending file until next connexion to the server. Add some
       safeguards for corner cases
 
- -- Didier Roche <didrocks@ubuntu.com>  Fri, 05 Aug 2011 17:44:05 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 05 Aug 2011 17:46:41 +0200
 
 oneconf (0.2) oneiric; urgency=low
 
