@@ -161,6 +161,13 @@ class PackageSetHandler(object):
             
         if pkg_list is None:
             pkg_list = {}
+            # there is no way that no package is installed in current host
+            # At least, there is oneconf ;) Ask for refresh
+            if hostid == self.hosts.current_host['hostid']:
+                LOG.debug ("Processing first update for current host")
+                self.update()
+                pkg_list = self.package_list[hostid]['package_list']
+                
         return pkg_list
         
 
