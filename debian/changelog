@@ -1,3 +1,19 @@
+oneconf (0.2.1) UNRELEASED; urgency=low
+
+  * New release:
+    - get the toolbar hiding when in detail view. Thanks Gary Lasker
+    - compute an update the first time if current host list necessary
+      and no update done
+    - add translation support and generate template
+    - provide the ONECONF_HOST environment variable to define a fake
+      hostid and hostname for testing purpose
+    - enable remotely to set some pending state for other hosts,
+      like hide inventory. The effect isn't immediate and is queued in
+      a pending file until next connexion to the server. Add some
+      safeguards for corner cases
+
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 05 Aug 2011 17:44:05 +0200
+
 oneconf (0.2) oneiric; urgency=low
 
   * New release:
