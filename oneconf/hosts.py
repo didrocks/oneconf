@@ -30,7 +30,7 @@ from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
-from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME,
+from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
                    PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME)
 
 class HostError(Exception):
@@ -137,13 +137,43 @@ class Hosts(object):
             LOG.warning("Error in loading %s file: %s" % (OTHER_HOST_FILENAME, e))
             return {}
 
-    def save_current_host(self):
+    def save_current_host(self, arg=None):
         '''Save current host on disk'''
         
         LOG.debug("Save current host to disk")
         with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'w') as f:
             json.dump(self.current_host, f)
-    
+
+    def add_hostid_pending_change(self, change):
+        '''Pend a scheduled change for another host on disk
+
+        change has a {hostid: {key: value, key2: value2}} format'''
+        
+        LOG.debug("Pend a change for another host on disk")
+        try:
+            with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
+                pending_changes = json.load(f)
+        except IOError:
+            pending_changes = {}
+
+        # merge existing changes with new ones
+        for hostid in change:
+            if not hostid in pending_changes:
+                pending_changes[hostid] = {}
+            pending_changes[hostid].update(change[hostid])
+
+        with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'w') as f:
+            json.dump(pending_changes, f)
+
+    def get_hostid_pending_change(self, hostid, attribute):
+        '''Get the status if a pending change is in progress for an host
+
+        Return None if nothing in progress'''
+        try:
+            with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
+                return json.load(f)[hostid][attribute]
+        except IOError, KeyError:
+            return None
     
     def gethost_by_id(self, hostid):
         '''Get host dictionnary by id
@@ -159,20 +189,9 @@ class Hosts(object):
             return self.other_hosts[hostid]
         except KeyError:
             raise HostError(_("No hostname registered for this id"))
-
-    def gethostname_by_id(self, hostid):
-        '''Get hostname by id
-
-        Return: hostname
-
-        can trigger HostError excpetion if no hostname found for this id
-        '''
-        
-        LOG.debug("Get a hostname for %s", hostid)
-        return self.gethost_by_id(hostid)['hostname']
         
 
-    def gethostid_by_name(self, hostname):
+    def _gethostid_by_name(self, hostname):
         '''Get hostid by hostname
 
         Return: hostid
@@ -186,8 +205,8 @@ class Hosts(object):
         result_hostid = None
         if hostname == self.current_host['hostname']:
             result_hostid = self.current_host['hostid']
-        for hostid in self._other_hosts:
-            if hostname == self._other_hosts[hostid]['hostname']:
+        for hostid in self.other_hosts:
+            if hostname == self.other_hosts[hostid]['hostname']:
                 if not result_hostid:
                     result_hostid = hostid
                 else:
@@ -197,6 +216,25 @@ class Hosts(object):
         if not result_hostid:
             raise HostError(_("No hostid registered for this hostname"))
         return result_hostid
+
+
+    def get_hostid_from_context(self, hostid=None, hostname=None):
+        '''get and check hostid
+
+        if hostid and hostname are none, hostid is the current one
+        Return: the corresponding hostid, raise an error if multiple hostid
+                for an hostname
+        '''
+
+        if not hostid and not hostname:
+            hostid = self.current_host['hostid']
+        if hostid:
+            # just checking if it exists
+            self.gethost_by_id(hostid)
+            hostid = hostid
+        else:
+            hostid = self._gethostid_by_name(hostname) 
+        return hostid
 
     def get_currenthost_dir(self):
         '''Get the oneconf current host directory'''
@@ -213,14 +251,35 @@ class Hosts(object):
             result[hostid] = (False, self.other_hosts[hostid]['hostname'], True)
         return result
 
-    def set_share_inventory(self, share_inventory):
+    def set_share_inventory(self, share_inventory, hostid=None, hostname=None):
         '''Change if we share the current inventory to other hosts'''
 
-        if self.current_host['share_inventory'] == share_inventory:
-            return
-        LOG.debug("Update current share_inventory state to %s" % share_inventory)
-        self.current_host['share_inventory'] = share_inventory
-        self.save_current_host()
+        if hostid or hostname:
+            hostid = self.get_hostid_from_context(hostid, hostname)
+            # do not update if there is already this pending change is already registered
+            pending_change_scheduled = self.get_hostid_pending_change(hostid, 'share_inventory')
+            host_to_change = self.other_hosts[hostid]
+            if pending_change_scheduled != None:
+                if share_inventory == pending_change_scheduled:
+                    return
+            # no change in progress, check current value
+            else:
+                if host_to_change['share_inventory'] == share_inventory:
+                    return
+
+            save_function = self.add_hostid_pending_change
+            arg = {hostid: {'share_inventory': share_inventory}}
+            msg = "Update share_inventory state for %s to %s" % (hostid, share_inventory)
+        else:
+            host_to_change = self.current_host
+            save_function = self.save_current_host
+            arg = None
+            msg = "Update current share_inventory state to %s" % share_inventory
+            if host_to_change['share_inventory'] == share_inventory:
+                return
+        LOG.debug(msg)
+        host_to_change['share_inventory'] = share_inventory
+        save_function(arg)
 
     def get_last_sync_date(self):
         '''Get last sync date, if already synced, with remote server'''

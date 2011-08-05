@@ -68,7 +68,7 @@ class PackageSetHandler(object):
     def get_packages(self, hostid=None, hostname=None, only_manual=False):        
         '''get all installed packages from the storage'''
         
-        hostid = self._get_hostid_from_context(hostid, hostname)
+        hostid = self.hosts.get_hostid_from_context(hostid, hostname)
         LOG.debug ("Request for package list for %s with only manual packages reduced scope to: %s", hostid, only_manual)
         package_list = self._get_installed_packages(hostid)
         if only_manual:
@@ -105,7 +105,7 @@ class PackageSetHandler(object):
                  packages_to_remove (packages in local hostid not in distant_hostid))
         '''
         
-        distant_hostid = self._get_hostid_from_context(distant_hostid, distant_hostname)
+        distant_hostid = self.hosts.get_hostid_from_context(distant_hostid, distant_hostname)
         
         LOG.debug("Collecting all installed packages on this system")
         local_package_list = set(self.get_packages(self.hosts.current_host['hostid'], False))
@@ -124,25 +124,6 @@ class PackageSetHandler(object):
             packages_to_remove = ''
         
         return(packages_to_install, packages_to_remove)
-        
-
-    def _get_hostid_from_context(self, hostid=None, hostname=None):
-        '''get and check hostid
-
-        if hostid and hostname are none, hostid is the current one
-        Return: the corresponding hostid, raise an error if multiple hostid
-                for an hostname
-        '''
-
-        if not hostid and not hostname:
-            hostid = self.hosts.current_host['hostid']
-        if hostid:
-            # just checking it exists
-            self.hosts.gethost_by_id(hostid)
-            hostid = hostid
-        else:
-            hostid = self.hosts.gethostid_by_name(hostname) 
-        return hostid
         
         
     def _get_packagelist_from_store(self, hostid):

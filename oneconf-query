@@ -240,13 +240,10 @@ if __name__ == '__main__':
         print_packages_diff(packages_to_install, packages_to_remove)
 
     elif action == ACTION_SHARE_INVENTORY:
-        if options.hostid or options.hostname:
-            print _("You can't use hostid or hostname when changing show inventory status")
-            sys.exit(1)
         if scope != SCOPE_NONE:
             print _("You can't define --package, --host or --hosts " \
                     "when changing show inventory status")
-        oneconf.set_share_inventory(options.share_inventory)
+        oneconf.set_share_inventory(options.share_inventory, options.hostid, options.hostname)
 
     elif action == ACTION_GET_LAST_SYNC:
         if options.hostid or options.hostname:

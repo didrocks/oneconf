@@ -24,6 +24,7 @@ ONECONF_DATADIR = '/usr/share/oneconf/data'
 ONECONF_CACHE_DIR = os.path.join(xdg.xdg_cache_home, "oneconf")
 PACKAGE_LIST_PREFIX = "package_list"
 OTHER_HOST_FILENAME = "other_hosts"
+PENDING_UPLOAD_FILENAME = "pending_upload"
 HOST_DATA_FILENAME = "host"
 LOGO_PREFIX = "logo"
 LAST_SYNC_DATE_FILENAME = "last_sync"

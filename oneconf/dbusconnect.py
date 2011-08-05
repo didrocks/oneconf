@@ -70,13 +70,13 @@ class DbusHostsService(dbus.service.Object):
         return self.hosts.get_all_hosts()
 
     @dbus.service.method(HOSTS_INTERFACE)
-    def set_share_inventory(self, share_inventory):
+    def set_share_inventory(self, share_inventory, hostid, hostname):
         self.activity = True
         if share_inventory: # map to boolean to avoid difference in dbus call and direct
             share_inventory = True
         else:
             share_inventory = False
-        return self.hosts.set_share_inventory(share_inventory)
+        return self.hosts.set_share_inventory(share_inventory, hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_packages(self, hostid, hostname, only_manual):
@@ -140,9 +140,9 @@ class DbusConnect(object):
         '''get a dictionnary of all available hosts'''
         return self._get_hosts_dbusobject().get_all_hosts()
 
-    def set_share_inventory(self, share_inventory):
-        '''update if we share the current inventory on the server'''
-        self._get_hosts_dbusobject().set_share_inventory(share_inventory)
+    def set_share_inventory(self, share_inventory, hostid, hostname):
+        '''update if we share the chosen host inventory on the server'''
+        self._get_hosts_dbusobject().set_share_inventory(share_inventory, hostid, hostname)
 
     def get_packages(self, hostid, hostname, only_manual):
         '''trigger getpackages handling'''
