@@ -1,4 +1,4 @@
-oneconf (0.2.1) natty; urgency=low
+oneconf (0.2.1) oneiric; urgency=low
 
   * New release:
     - get the toolbar hiding when in detail view. Thanks Gary Lasker
