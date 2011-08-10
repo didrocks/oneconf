@@ -1,3 +1,10 @@
+oneconf (0.2.2) UNRELEASED; urgency=low
+
+  * New release:
+    - adapt the usc plugin to latest share_inventory API
+
+ -- Didier Roche <didrocks@ubuntu.com>  Wed, 10 Aug 2011 16:28:38 +0200
+
 oneconf (0.2.1) oneiric; urgency=low
 
   * New release:

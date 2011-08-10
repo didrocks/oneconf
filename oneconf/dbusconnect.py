@@ -140,7 +140,7 @@ class DbusConnect(object):
         '''get a dictionnary of all available hosts'''
         return self._get_hosts_dbusobject().get_all_hosts()
 
-    def set_share_inventory(self, share_inventory, hostid, hostname):
+    def set_share_inventory(self, share_inventory, hostid='', hostname=''):
         '''update if we share the chosen host inventory on the server'''
         self._get_hosts_dbusobject().set_share_inventory(share_inventory, hostid, hostname)
 
