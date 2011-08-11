@@ -1,4 +1,4 @@
-oneconf (0.2.3) UNRELEASED; urgency=low
+oneconf (0.2.3) oneiric; urgency=low
 
   * New release:
     - ensure only one OneConf service can run at a time
