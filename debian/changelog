@@ -1,3 +1,11 @@
+oneconf (0.2.3) UNRELEASED; urgency=low
+
+  * New release:
+    - ensure only one OneConf service can run at a time
+    - enable asking for the service to stop
+
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 11 Aug 2011 17:49:12 +0200
+
 oneconf (0.2.2) oneiric; urgency=low
 
   * New release:
