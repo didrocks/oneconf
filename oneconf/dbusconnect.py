@@ -27,7 +27,8 @@ from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
-ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
+from oneconf.enums import ONECONF_SERVICE_NAME
+
 HOSTS_OBJECT_NAME = "/com/ubuntu/oneconf/HostsHandler"
 PACKAGE_SET_INTERFACE = "com.ubuntu.OneConf.HostsHandler.PackageSetHandler"
 HOSTS_INTERFACE = "com.ubuntu.OneConf.HostsHandler.Hosts"
