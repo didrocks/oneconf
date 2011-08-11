@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     DBusGMainLoop(set_as_default=True)
     loop = gobject.MainLoop()
-    myservice = DbusHostsService()
+    myservice = DbusHostsService(loop)
     gobject.timeout_add_seconds(10, createcheckforquit, loop, myservice)
     gobject.timeout_add_seconds(20, createsynchandler, myservice, options.mock)
     LOG.debug("daemon up and running")

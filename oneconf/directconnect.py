@@ -16,6 +16,9 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+import gettext
+from gettext import gettext as _
+
 from oneconf.hosts import Hosts, HostError
 
 import sys
@@ -75,4 +78,8 @@ class DirectConnect(object):
     def get_last_sync_date(self):
         '''get last time the store was successfully synced'''
         return Hosts().get_last_sync_date()
-        
+    
+    def stop_service(self):
+        '''kindly ask the oneconf service to stop (not relevant for a direct mode)'''
+        print _("Nothing done: in direct mode, there is no communication with the service")
+        sys.exit(1)

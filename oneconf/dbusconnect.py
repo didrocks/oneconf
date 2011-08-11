@@ -22,6 +22,9 @@ import gobject
 import logging
 import sys
 
+import gettext
+from gettext import gettext as _
+
 LOG = logging.getLogger(__name__)
 
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
@@ -42,19 +45,19 @@ class DbusHostsService(dbus.service.Object):
     Dbus service, daemon side
     """
 
-    def __init__(self):
+    def __init__(self, loop):
         '''registration over dbus'''
         bus_name = dbus.service.BusName(ONECONF_SERVICE_NAME,
                                         bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name, HOSTS_OBJECT_NAME)
-        # Only import oneconf module now (and so load desktopcouch and such)
-        # in the server side
+        # Only import oneconf module now for only getting it on server side
         from oneconf.hosts import Hosts, HostError
 
         self.hosts = Hosts()
         self._packageSetHandler = None
         self.activity = False
         self.synchandler = None
+        self.loop = loop
         
     # TODO: can be a property
     def get_packageSetHandler(self):
@@ -115,6 +118,11 @@ class DbusHostsService(dbus.service.Object):
         self.activity = True
         return self.hosts.get_last_sync_date()
 
+    @dbus.service.method(HOSTS_INTERFACE)
+    def stop_service(self):
+        LOG.debug("Request for stopping OneConf service")
+        self.loop.quit()
+        return True
 
 class DbusConnect(object):
 
@@ -177,3 +185,10 @@ class DbusConnect(object):
         '''just send a kindly ping to retrieve the last sync date'''
         return self._get_hosts_dbusobject().get_last_sync_date()
         
+    def stop_service(self):
+        '''kindly ask the oneconf service to stop'''
+        try:
+            self._get_hosts_dbusobject().stop_service()
+        except dbus.exceptions.DBusException, e:
+            print _("Wasn't able to request stopping the service: %s" % e)
+            sys.exit(1)
