@@ -1,8 +1,8 @@
-oneconf (0.2.4) UNRELEASED; urgency=low
+oneconf (0.2.4) oneiric; urgency=low
 
   * Don't crash on invalid images (LP: #824844)
 
- -- Didier Roche <didrocks@ubuntu.com>  Fri, 12 Aug 2011 08:07:06 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 12 Aug 2011 08:16:05 +0200
 
 oneconf (0.2.3) oneiric; urgency=low
 
