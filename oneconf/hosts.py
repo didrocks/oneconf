@@ -73,8 +73,8 @@ class Hosts(object):
                     self.current_host['hostname'] = hostname
                     has_changed = True
                 if logo_checksum != self.current_host['logo_checksum']:
-                    self.current_host['logo_checksum'] = logo_checksum
-                    self._create_logo(logo_path)
+                    if (self._create_logo(logo_path)):
+                        self.current_host['logo_checksum'] = logo_checksum
                     has_changed = True
             if has_changed:
                 self.save_current_host()
@@ -83,7 +83,8 @@ class Hosts(object):
                                  'logo_checksum': logo_checksum, 'packages_checksum': None}
             if not os.path.isdir(self._host_file_dir):
                 os.mkdir(self._host_file_dir)
-            self._create_logo(logo_path)
+            if not (self._create_logo(logo_path)):
+                self.current_host['logo_checksum'] = None
             self.save_current_host()
         self.other_hosts = None
         self.update_other_hosts()
@@ -100,15 +101,22 @@ class Hosts(object):
         return (logo_checksum, file_path)
 
     def _create_logo(self, wallpaper_path):
-        '''create a logo from a wallpaper'''
+        '''create a logo from a wallpaper
+        
+        return True if succeeded'''
         if not wallpaper_path:
-            return
+            return False
         from PIL import Image
-        im = Image.open(LOGO_BASE_FILENAME)
-        im2 = Image.open(wallpaper_path)
-        im3 = im2.resize((42, 26), Image.BICUBIC)
-        im.paste(im3, (3,3))
-        im.save(os.path.join(self._host_file_dir, "%s_%s.png" % (LOGO_PREFIX, self.current_host['hostid'])))
+        try:
+            im = Image.open(LOGO_BASE_FILENAME)
+            im2 = Image.open(wallpaper_path)
+            im3 = im2.resize((42, 26), Image.BICUBIC)
+            im.paste(im3, (3,3))
+            im.save(os.path.join(self._host_file_dir, "%s_%s.png" % (LOGO_PREFIX, self.current_host['hostid'])))
+            return True
+        except IOError, e:
+            LOG.warning ("Cant create logo for %s: %s" % (wallpaper_path, e))
+            return False
 
     def update_other_hosts(self):
         '''Update all the other hosts from local store'''
