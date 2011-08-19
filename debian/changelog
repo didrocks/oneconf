@@ -1,11 +1,11 @@
-oneconf (0.2.5) UNRELEASED; urgency=low
+oneconf (0.2.5) oneiric; urgency=low
 
   * oneconf/hosts.py: Don't use gi.repository.Gio, as we are using static
     bindings here still (gtk, gobject, etc.); call "gsettings" instead. This
     can be put back once the GUI etc. gets ported to GI, and we switch to the
     ported software-center. (LP: #829186)
 
- -- Martin Pitt <martin.pitt@ubuntu.com>  Fri, 19 Aug 2011 07:20:02 +0200
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Fri, 19 Aug 2011 07:21:32 +0200
 
 oneconf (0.2.4) oneiric; urgency=low
 
