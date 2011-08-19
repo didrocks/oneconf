@@ -22,8 +22,7 @@ import json
 import logging
 import os
 import platform
-
-from gi.repository import Gio
+import subprocess
 
 import gettext
 from gettext import gettext as _
@@ -91,8 +90,12 @@ class Hosts(object):
 
     def _get_current_wallpaper_data(self):
         '''Get current wallpaper metadatas from store'''
-        settings = Gio.Settings.new("org.gnome.desktop.background")
-        file_path = settings.get_string("picture-uri").replace("file://", "")
+        #settings = Gio.Settings.new("org.gnome.desktop.background")
+        #file_path = settings.get_string("picture-uri").replace("file://", "")
+        #don't use gi.repository.Gio as long as we use static gtk/gobject/etc. bindings
+        gsettings = subprocess.Popen(['gsettings', 'get', 'org.gnome.desktop.background', 'picture-uri'],
+            stdout=subprocess.PIPE)
+        file_path = gsettings.communicate()[0]
         try:
             logo_checksum = "%s%f" % (hashlib.sha224(file_path).hexdigest(), os.stat(file_path).st_mtime)
         except OSError:
