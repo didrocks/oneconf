@@ -99,13 +99,14 @@ if __name__ == '__main__':
     try:
         if ONECONF_SERVICE_NAME in dbus.SessionBus().list_names():
             error_message =_("An OneConf service is already running, shut it down with oneconf-query --stop")
+        else:
+            myservice = DbusHostsService(loop)
     except DBusException, e:
         error_message = e
     if error_message:
         print error_message
         sys.exit(1)
 
-    myservice = DbusHostsService(loop)
     GObject.timeout_add_seconds(10, createcheckforquit, loop, myservice)
     GObject.timeout_add_seconds(20, createsynchandler, myservice, options.mock)
     LOG.debug("daemon up and running")
