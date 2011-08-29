@@ -101,7 +101,7 @@ if __name__ == '__main__':
             error_message =_("An OneConf service is already running, shut it down with oneconf-query --stop")
         else:
             myservice = DbusHostsService(loop)
-    except DBusException, e:
+    except dbus.DBusException, e:
         error_message = e
     if error_message:
         print error_message

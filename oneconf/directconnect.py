@@ -74,6 +74,10 @@ class DirectConnect(object):
         except HostError, e:
             print(e)
             sys.exit(1)
+
+    def async_update(self):
+        '''only used in fallback mode: no async notion for direct connexion'''
+        self.update()
             
     def get_last_sync_date(self):
         '''get last time the store was successfully synced'''

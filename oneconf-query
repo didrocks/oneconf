@@ -155,8 +155,14 @@ if __name__ == '__main__':
         oneconf = DirectConnect()
     else:
         LOG.debug("Using dbus")
-        from oneconf.dbusconnect import DbusConnect
-        oneconf = DbusConnect()
+        try:
+            from dbus import DBusException
+            from oneconf.dbusconnect import DbusConnect
+            oneconf = DbusConnect()
+        except DBusException, e:
+            LOG.critical("Can't connect to dbus: %s, fallback to direct connexion as a fallback:" % e)
+            from oneconf.directconnect import DirectConnect
+            oneconf = DirectConnect()
 
     # store_const doesn't handle conflicts, so use manual triage
     scope = SCOPE_NONE
