@@ -95,8 +95,14 @@ if __name__ == '__main__':
     loop = GObject.MainLoop()
     
     # only OneConf service at a time
-    if ONECONF_SERVICE_NAME in dbus.SessionBus().list_names():
-        print _("An OneConf service is already running, shut it down with oneconf-query --stop")
+    error_message = None
+    try:
+        if ONECONF_SERVICE_NAME in dbus.SessionBus().list_names():
+            error_message =_("An OneConf service is already running, shut it down with oneconf-query --stop")
+    except DBusException, e:
+        error_message = e
+    if error_message:
+        print error_message
         sys.exit(1)
 
     myservice = DbusHostsService(loop)
