@@ -22,7 +22,7 @@
 
 import dbus
 import gettext
-import gobject
+from gi.repository import GObject
 import logging
 
 from gettext import gettext as _
@@ -33,13 +33,13 @@ NO_OP = lambda *args, **kwargs: None
 
 LOG = logging.getLogger(__name__)
 
-class LoginBackendDbusSSO(gobject.GObject):
+class LoginBackendDbusSSO(GObject.GObject):
 
 
     __gsignals__ = {
-        "login-result" : (gobject.SIGNAL_RUN_LAST,
-                          gobject.TYPE_NONE,
-                          (gobject.TYPE_PYOBJECT,),
+        "login-result" : (GObject.SIGNAL_RUN_LAST,
+                          GObject.TYPE_NONE,
+                          (GObject.TYPE_PYOBJECT,),
                          ),
         }
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     login = LoginBackendDbusSSO()
 
-    loop = gobject.MainLoop()
+    loop = GObject.MainLoop()
     login.get_credential()
     
     def print_result(obj, foo):
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     
     login.connect("login-result", print_result)
     
-    gobject.timeout_add_seconds(5, login.get_credential)
+    GObject.timeout_add_seconds(5, login.get_credential)
 
     loop.run()
 

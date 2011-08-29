@@ -23,14 +23,14 @@
 
 
 import dbus
-import gobject
+from gi.repository import GObject
 import logging
 import os
 
 LOG = logging.getLogger(__name__)
 
 
-class NetworkStatusWatcher(gobject.GObject):
+class NetworkStatusWatcher(GObject.GObject):
     """ simple watcher which notifys subscribers to network events..."""
     
     # enums for network manager status
@@ -67,13 +67,13 @@ class NetworkStatusWatcher(gobject.GObject):
     NM_STATE_DISCONNECTED_LIST  = [NM_STATE_DISCONNECTED_OLD,
                                    NM_STATE_DISCONNECTED]
     
-    __gsignals__ = {'changed':(gobject.SIGNAL_RUN_FIRST,
-                               gobject.TYPE_NONE,
+    __gsignals__ = {'changed':(GObject.SIGNAL_RUN_FIRST,
+                               GObject.TYPE_NONE,
                                (bool,)),
                    }
 
     def __init__(self):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
         self.connected = False
         
         
@@ -106,7 +106,7 @@ class NetworkStatusWatcher(gobject.GObject):
         LOG.debug("network status changed to %i", state)
 
         # this is to avoid transient state when we turn wifi on and nm tell "is connected" by default until checking
-        gobject.timeout_add_seconds(1, self._ensure_new_connected_state, self._does_state_mean_connected(state))
+        GObject.timeout_add_seconds(1, self._ensure_new_connected_state, self._does_state_mean_connected(state))
 
     def _ensure_new_connected_state(self, connected):
         '''check if the connectivity state changed since last check
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     from dbus.mainloop.glib import DBusGMainLoop
     DBusGMainLoop(set_as_default=True)
     network = NetworkStatusWatcher()
-    loop = gobject.MainLoop()
+    loop = GObject.MainLoop()
 
     def print_state(new_network, connected):
         print "Connectivity state: %s" % connected

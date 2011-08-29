@@ -47,7 +47,7 @@ def createcheckforquit(loop, myservice):
     # This function add 10 secondes more than in the software-center oneconf plugins
     # after starting up to keep the service up when USC is running
     # (there is a ping every MIN_TIME_WITHOUT_ACTIVITY - 10)
-    gobject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, quit, loop, myservice)
+    GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, quit, loop, myservice)
     return False
     
 def createsynchandler(myservice, use_mock):
@@ -60,7 +60,7 @@ def createsynchandler(myservice, use_mock):
         from oneconf.networksync.infraclient_fake import WebCatalogAPI
         infra = WebCatalogAPI()
     myservice.synchandler = SyncHandler(myservice.hosts, package_handler=myservice.get_packageSetHandler(), infraclient=infra, dbusemitter=myservice)
-    gobject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, syncwithinfra, myservice)
+    GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, syncwithinfra, myservice)
     return False
     
 def syncwithinfra(myservice):
@@ -86,13 +86,13 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     # do import only now (otherwise, the import of dbus change level of debug)
-    import gobject
+    from gi.repository import GObject
     from dbus.mainloop.glib import DBusGMainLoop
     from oneconf.dbusconnect import DbusHostsService
     from oneconf.networksync import SyncHandler
 
     DBusGMainLoop(set_as_default=True)
-    loop = gobject.MainLoop()
+    loop = GObject.MainLoop()
     
     # only OneConf service at a time
     if ONECONF_SERVICE_NAME in dbus.SessionBus().list_names():
@@ -100,8 +100,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     myservice = DbusHostsService(loop)
-    gobject.timeout_add_seconds(10, createcheckforquit, loop, myservice)
-    gobject.timeout_add_seconds(20, createsynchandler, myservice, options.mock)
+    GObject.timeout_add_seconds(10, createcheckforquit, loop, myservice)
+    GObject.timeout_add_seconds(20, createsynchandler, myservice, options.mock)
     LOG.debug("daemon up and running")
     loop.run()
 

@@ -19,7 +19,7 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import gobject
+from gi.repository import GObject
 import json
 import logging
 import os
@@ -36,11 +36,11 @@ from httplib2 import socket
 
 LOG = logging.getLogger(__name__)
 
-class SyncHandler(gobject.GObject):
+class SyncHandler(GObject.GObject):
     '''Handle sync request with the server from the dbus service'''
 
     def __init__(self, hosts, package_handler=None, infraclient=None, dbusemitter=None):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self._netstate = NetworkStatusWatcher()
         self._sso_login = LoginBackendDbusSSO()
@@ -325,7 +325,7 @@ if __name__ == '__main__':
     from infraclient_fake import WebCatalogAPI
 
     sync_handler = SyncHandler(Hosts(), infraclient=WebCatalogAPI())
-    gobject.timeout_add_seconds(20, sync_handler.process_sync) 
-    loop = gobject.MainLoop()
+    GObject.timeout_add_seconds(20, sync_handler.process_sync) 
+    loop = GObject.MainLoop()
 
     loop.run()
