@@ -159,8 +159,8 @@ class SyncHandler(gobject.GObject):
             if self.infraclient.server_status() != 'ok':
                 LOG.warning("WebClient server answering but not available")
                 return True
-        except (APIError, socket.error), e:
-            LOG.warning ("WebClient server error: %s", e)
+        except (APIError, socket.error, ValueError), e:
+            LOG.warning ("WebClient server answer error: %s", e)
             return True
 
         # Try to do every other hosts pending changes first (we will get fresh
