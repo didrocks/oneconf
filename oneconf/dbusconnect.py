@@ -32,7 +32,7 @@ from oneconf.enums import ONECONF_SERVICE_NAME
 HOSTS_OBJECT_NAME = "/com/ubuntu/oneconf/HostsHandler"
 PACKAGE_SET_INTERFACE = "com.ubuntu.OneConf.HostsHandler.PackageSetHandler"
 HOSTS_INTERFACE = "com.ubuntu.OneConf.HostsHandler.Hosts"
-ONE_CONF_DBUS_TIMEOUT = 300
+ONECONF_DBUS_TIMEOUT = 300
 
 def none_to_null(var):
     '''return var in dbus compatible format'''
@@ -151,7 +151,9 @@ class DbusConnect(object):
 
     def set_share_inventory(self, share_inventory, hostid='', hostname=''):
         '''update if we share the chosen host inventory on the server'''
-        self._get_hosts_dbusobject().set_share_inventory(share_inventory, hostid, hostname)
+        self._get_hosts_dbusobject().set_share_inventory(share_inventory,
+                                                         hostid, hostname,
+                                                         timeout=ONECONF_DBUS_TIMEOUT)
 
     def get_packages(self, hostid, hostname, only_manual):
         '''trigger getpackages handling'''
@@ -169,14 +171,14 @@ class DbusConnect(object):
         try:
             return self._get_package_handler_dbusobject().diff(hostid,
                                                             hostname,
-                                                            timeout=ONE_CONF_DBUS_TIMEOUT)
+                                                            timeout=ONECONF_DBUS_TIMEOUT)
         except dbus.exceptions.DBusException,e:
             print(e)
             sys.exit(1)
 
     def update(self):
         '''trigger update handling'''
-        self._get_package_handler_dbusobject().update(timeout=ONE_CONF_DBUS_TIMEOUT)
+        self._get_package_handler_dbusobject().update(timeout=ONECONF_DBUS_TIMEOUT)
 
     def async_update(self):
         '''trigger update handling'''
@@ -184,7 +186,7 @@ class DbusConnect(object):
     
     def get_last_sync_date(self):
         '''just send a kindly ping to retrieve the last sync date'''
-        return self._get_hosts_dbusobject().get_last_sync_date()
+        return self._get_hosts_dbusobject().get_last_sync_date(timeout=ONECONF_DBUS_TIMEOUT)
         
     def stop_service(self):
         '''kindly ask the oneconf service to stop'''
