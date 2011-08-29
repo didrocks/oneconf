@@ -33,8 +33,8 @@ LOG = logging.getLogger(__name__)
 from oneconf.version import *
 
 SCOPE_NONE, SCOPE_ALL_PACKAGES, SCOPE_MANUAL_PACKAGES, SCOPE_HOSTS, SCOPE_HOST = range(5)
-(ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_SHARE_INVENTORY,
- ACTION_GET_LAST_SYNC, ACTION_STOP_SERVICE) = range(7)
+(ACTION_NONE, ACTION_LIST, ACTION_DIFF, ACTION_UPDATE, ACTION_ASYNC_UPDATE,
+ACTION_SHARE_INVENTORY, ACTION_GET_LAST_SYNC, ACTION_STOP_SERVICE) = range(8)
 
 
 def print_packages(installed_pkg):
@@ -72,7 +72,7 @@ def err_scope():
     sys.exit(1)
 
 def err_action():
-    print _("you can't define --list, --diff, --update, --share-inventory, --stop, --get-last-sync together.")
+    print _("you can't define --list, --diff, --update, --async-update, --share-inventory, --stop, --get-last-sync together.")
     sys.exit(1)
 
 def option_not_compatible(options, action):
@@ -94,9 +94,11 @@ if __name__ == '__main__':
     parser.add_option("--get-last-sync", action="store_true",
                       dest="action_getlastsync",
                       help=_("Get last sync date"))
-    parser.add_option("-u", "--update", action="store_true",
-                      dest="action_update",
-                      help=_("update the package list in store if host accepts updates"))
+    parser.add_option("-u", "--update", action="store_true", dest="action_update",
+                      help=_("Update the package list in store"))
+    parser.add_option("--async-update", action="store_true",
+                      dest="action_async_update",
+                      help=_("Perform async update of the package list in store"))
     parser.add_option("--stop", action="store_true", dest="action_stopservice",
                       help=_("Stop oneconf service"))
     parser.add_option("--debug", action="store_true", dest="debug",
@@ -185,6 +187,10 @@ if __name__ == '__main__':
         if action != ACTION_NONE:
             err_action()
         action = ACTION_UPDATE
+    if options.action_async_update:
+        if action != ACTION_NONE:
+            err_action()
+        action = ACTION_ASYNC_UPDATE
     if options.share_inventory is not None: # True and False both used
         if action != ACTION_NONE:
             err_action()
@@ -213,6 +219,16 @@ if __name__ == '__main__':
                     "when updating")
             sys.exit(1)
         oneconf.update()
+
+    elif action == ACTION_ASYNC_UPDATE:
+        if options.hostid or options.hostname:
+            print _("You can't use hostid or hostname when updating")
+            sys.exit(1)
+        if scope != SCOPE_NONE:
+            print _("You can't define --package, --host or --hosts " \
+                    "when updating")
+            sys.exit(1)
+        oneconf.async_update()
 
     elif action == ACTION_LIST:
         if scope == SCOPE_NONE:
