@@ -20,4 +20,4 @@
 ./oneconf/uscplugin/__init__.py
 ./oneconf/uscplugin/oneconfinventorydialog.py
 ./oneconf/uscplugin/oneconfpane.py
-./data/ui/oneconfinventorydialog.ui
+[type: gettext/glade]./data/ui/oneconfinventorydialog.ui
