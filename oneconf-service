@@ -104,7 +104,7 @@ if __name__ == '__main__':
     except dbus.DBusException, e:
         error_message = e
     if error_message:
-        print error_message
+        LOG.critical(error_message)
         sys.exit(1)
 
     GObject.timeout_add_seconds(10, createcheckforquit, loop, myservice)
