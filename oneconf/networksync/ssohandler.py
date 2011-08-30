@@ -49,18 +49,31 @@ class LoginBackendDbusSSO(GObject.GObject):
         # use USC credential
         #self.appname = _("Ubuntu Software Center Store")
         self.appname = "Ubuntu Software Center"
-        bus = dbus.SessionBus()
-        self.proxy = bus.get_object('com.ubuntu.sso', '/com/ubuntu/sso/credentials')
-        self.proxy.connect_to_signal("CredentialsFound",
-                                     self._on_credentials_found)
-        self.proxy.connect_to_signal("CredentialsNotFound",
-                                     self._on_credentials_not_found)
-        self.proxy.connect_to_signal("CredentialsError",
-                                     self._on_credentials_error)
+        self.bus = dbus.SessionBus()
+        
+        # try it in a spawn/retry process to avoid ubuntu sso login issues
+        self.proxy = None
+        GObject.timeout_add_seconds(5, self._get_sso_proxy)
+        
 
-    def get_credential(self):
-        LOG.debug("look for credential")
-        self.proxy.find_credentials(self.appname, '', reply_handler=NO_OP, error_handler=NO_OP)
+    def _get_sso_proxy(self):
+        '''avoid crashing if ubuntu sso doesn't answer, which seems common'''
+        
+        LOG.debug("Try to get a proxy")
+        try:
+            self.proxy = self.bus.get_object('com.ubuntu.sso', '/com/ubuntu/sso/credentials')
+            self.proxy.connect_to_signal("CredentialsFound",
+                                         self._on_credentials_found)
+            self.proxy.connect_to_signal("CredentialsNotFound",
+                                         self._on_credentials_not_found)
+            self.proxy.connect_to_signal("CredentialsError",
+                                         self._on_credentials_error)
+            LOG.debug("look for credential")
+            self.proxy.find_credentials(self.appname, '', reply_handler=NO_OP, error_handler=NO_OP)
+        except dbus.DBusException, e:
+            LOG.debug("No reply from ubuntu sso: %s" % e)
+            return True # try again
+        return False
 
     def _on_credentials_found(self, app_name, credentials):
         if app_name != self.appname:
@@ -97,8 +110,6 @@ if __name__ == "__main__":
         print foo
     
     login.connect("login-result", print_result)
-    
-    GObject.timeout_add_seconds(5, login.get_credential)
 
     loop.run()
 

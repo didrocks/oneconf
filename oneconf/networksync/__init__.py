@@ -43,7 +43,6 @@ class SyncHandler(GObject.GObject):
         GObject.GObject.__init__(self)
 
         self._netstate = NetworkStatusWatcher()
-        self._sso_login = LoginBackendDbusSSO()
         self._can_sync = False
         self.credential = None
         self.hosts = hosts
@@ -59,7 +58,7 @@ class SyncHandler(GObject.GObject):
             self.emit_new_logo = dbusemitter.logo_changed
 
         self._netstate.connect("changed", self._network_state_changed)
-        self._sso_login.connect("login-result", self._sso_login_result)
+        
 
     def _refresh_can_sync(self):
         '''compute current syncable state before asking for refresh the value'''
@@ -82,7 +81,8 @@ class SyncHandler(GObject.GObject):
     def _network_state_changed(self, netstate, connected):
         if connected:
             # refresh credential as we are interested (this will call _compute_can_sync)
-            self._sso_login.get_credential()
+            self._sso_login = LoginBackendDbusSSO()
+            self._sso_login.connect("login-result", self._sso_login_result)
         else:
             self._refresh_can_sync()
 
