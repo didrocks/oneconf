@@ -285,7 +285,7 @@ class Hosts(object):
     def get_last_sync_date(self):
         '''Get last sync date, if already synced, with remote server'''
         
-        LOG.debug("Getting last sync date with remove server")
+        LOG.debug("Getting last sync date with remote server")
         try:
             with open(os.path.join(self._host_file_dir, LAST_SYNC_DATE_FILENAME), 'r') as f:
                 content = json.load(f)
