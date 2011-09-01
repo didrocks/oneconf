@@ -1,3 +1,23 @@
+oneconf (0.2.6) UNRELEASED; urgency=low
+
+  * New release:
+    - Remove the uscplugins bits, now in software center for the gtk3 version
+      (LP: #838623)
+    - Fix oneconf-service crashed with OSError in _execute_child(): [Errno 2]
+      No such file or directory (LP: #829570)
+    - Fix oneconf-query/service crashed with DBusException in __new__()
+      (LP: #824771, #832029)
+    - Fix misc oneconf-query/service crashed with DBusException in
+      call_blocking(): (LP: #824789, #826687, #831651, #834394)
+    - Translation improvements (LP: #828897)
+    - Protect against oneconf-service crashed with ValueError in raw_decode():
+      No JSON object could be decoded (LP: #829260)
+  * debian/rules:
+    - install now oneconf in the python public library directory. Needed as now
+      access directly from software center.
+
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 01 Sep 2011 10:31:48 +0200
+
 oneconf (0.2.5) oneiric; urgency=low
 
   * oneconf/hosts.py: Don't use gi.repository.Gio, as we are using static

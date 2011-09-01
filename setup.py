@@ -36,7 +36,6 @@ setup(name="oneconf", version=VERSION,
                "misc/oneconf-update",
                ],
       packages = ['oneconf',
-                  'oneconf.uscplugin',
                   'oneconf.networksync',
                  ],
       data_files=[
