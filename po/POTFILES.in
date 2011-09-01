@@ -16,8 +16,3 @@
 ./oneconf/networksync/fake_webcatalog_settings.py
 ./oneconf/networksync/netstatus.py
 ./oneconf/networksync/ssohandler.py
-./oneconf/usc_plugin.py
-./oneconf/uscplugin/__init__.py
-./oneconf/uscplugin/oneconfinventorydialog.py
-./oneconf/uscplugin/oneconfpane.py
-[type: gettext/glade]./data/ui/oneconfinventorydialog.ui
