@@ -1,4 +1,4 @@
-oneconf (0.2.6) UNRELEASED; urgency=low
+oneconf (0.2.6) oneiric; urgency=low
 
   * New release:
     - Remove the uscplugins bits, now in software center for the gtk3 version
@@ -16,7 +16,7 @@ oneconf (0.2.6) UNRELEASED; urgency=low
     - install now oneconf in the python public library directory. Needed as now
       access directly from software center.
 
- -- Didier Roche <didrocks@ubuntu.com>  Thu, 01 Sep 2011 10:31:48 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 01 Sep 2011 17:36:22 +0200
 
 oneconf (0.2.5) oneiric; urgency=low
 
