@@ -39,8 +39,6 @@ setup(name="oneconf", version=VERSION,
                   'oneconf.networksync',
                  ],
       data_files=[
-                  ('share/oneconf/data/ui/',
-                   glob.glob("data/ui/*.ui")),
                   ('share/oneconf/data/images/',
                    glob.glob("data/images/*.png")),
                   ('share/dbus-1/services/',
