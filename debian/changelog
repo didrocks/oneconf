@@ -1,10 +1,10 @@
-oneconf (0.2.6.1) UNRELEASED; urgency=low
+oneconf (0.2.6.1) oneiric; urgency=low
 
   * debian/control:
     - add missing python-imaging dependency (LP: #839288)
     - recommends gtk3 version of software-center
 
- -- Didier Roche <didrocks@ubuntu.com>  Mon, 05 Sep 2011 09:24:26 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Mon, 05 Sep 2011 09:26:11 +0200
 
 oneconf (0.2.6) oneiric; urgency=low
 
