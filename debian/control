@@ -21,7 +21,8 @@ Depends: ${misc:Depends},
          python-gtk2,
          ubuntu-sso-client,
          python-piston-mini-client (>= 0.3+bzr32-0ubuntu1),
-Recommends: software-center (>= 4.1.10),
+         python-imaging,
+Recommends: software-center (>= 4.1.21),
             update-notifier (>= 0.103),
 Description: synchronize your configuration data over the network
  OneConf provides the ability to sync your computer's configuration data over
