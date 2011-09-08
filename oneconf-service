@@ -72,12 +72,12 @@ def syncwithinfra(myservice):
     return True
     
 if __name__ == '__main__':
-    usage = _("usage: %prog [options]")
+    usage = _("Usage: %prog [options]")
     parser = OptionParser(version= "%prog " + VERSION, usage=usage)
     parser.add_option("--debug", action="store_true", dest="debug",
-                      help=_("enable debug mode"))
+                      help=_("Enable debug mode."))
     parser.add_option("--mock", action="store_true", dest="mock",
-                      help=_("use the mock infrastructure"))
+                      help=_("Use the mock infrastructure."))
     (options, args) = parser.parse_args()
     # set verbosity
     if options.debug:
