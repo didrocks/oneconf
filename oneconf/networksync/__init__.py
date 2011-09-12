@@ -50,7 +50,9 @@ class SyncHandler(GObject.GObject):
         self.package_handler = package_handler
         if not self.infraclient:
             from infraclient_pristine import WebCatalogAPI
-            self.infraclient = WebCatalogAPI()
+            from oneconf.distributor import get_distro
+            service_root = get_distro().ONECONF_SERVER
+            self.infraclient = WebCatalogAPI(service_root=service_root)
         
         if dbusemitter:
             self.emit_new_hostlist = dbusemitter.hostlist_changed
