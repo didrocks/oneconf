@@ -48,11 +48,6 @@ class SyncHandler(GObject.GObject):
         self.hosts = hosts
         self.infraclient = infraclient
         self.package_handler = package_handler
-        if not self.infraclient:
-            from infraclient_pristine import WebCatalogAPI
-            from oneconf.distributor import get_distro
-            service_root = get_distro().ONECONF_SERVER
-            self.infraclient = WebCatalogAPI(service_root=service_root)
         
         if dbusemitter:
             self.emit_new_hostlist = dbusemitter.hostlist_changed
@@ -78,6 +73,19 @@ class SyncHandler(GObject.GObject):
 
     def _sso_login_result(self, sso_login, credential):
         self.credential = credential
+        # Prepare the authenticated infraclient
+        if not self.infraclient:
+            from piston_mini_client.auth import OAuthAuthorizer
+            from infraclient_pristine import WebCatalogAPI
+            from oneconf.distributor import get_distro
+            service_root = get_distro().ONECONF_SERVER
+            authorizer = OAuthAuthorizer(token_key=credential['token'],
+                token_secret=credential['token_secret'],
+                consumer_key=credential['consumer_key'],
+                consumer_secret=credential['consumer_secret'],
+                oauth_realm='Ubuntu Web Catalog')
+            self.infraclient = WebCatalogAPI(service_root=service_root,
+                                             auth=authorizer)
         self._refresh_can_sync()
 
     def _network_state_changed(self, netstate, connected):
@@ -152,7 +160,7 @@ class SyncHandler(GObject.GObject):
         process sync can be either started directly, or when can_sync changed'''
         
         # if no more connection, don't try syncing in the main loop
-        if not self._can_sync:
+        if not self._can_sync or not self.infraclient:
             return False
         LOG.debug("Start processing sync")
 

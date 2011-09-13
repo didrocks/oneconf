@@ -11,7 +11,11 @@ from piston_mini_client import (
     returns,
     returns_json
     )
-from piston_mini_client.validators import validate_pattern, validate
+from piston_mini_client.validators import (
+    oauth_protected,
+    validate,
+    validate_pattern,
+    )
 from piston_mini_client.failhandlers import APIError
 
 # These are factored out as constants for if you need to work against a
@@ -26,7 +30,8 @@ class WebCatalogAPI(PistonAPI):
     localhost:8000 so you probably want to at least pass in the
     ``service_root`` constructor argument.
     """
-    default_service_root = 'http://localhost:8000/cat/api/1.0'
+#    default_service_root = 'http://localhost:8000/cat/api/1.0'
+    default_service_root = 'https://apps.staging.ubuntu.com/cat/api/1.0'
     default_content_type = 'application/x-www-form-urlencoded'
 
     @returns_json
@@ -34,6 +39,7 @@ class WebCatalogAPI(PistonAPI):
         """Check the state of the server, to see if everything's ok."""
         return self._get('server-status/', scheme=PUBLIC_API_SCHEME)
 
+    @oauth_protected
     def list_machines(self):
         """List all machine for the current user."""
         return ast.literal_eval(self._get('list-machines/', scheme=AUTHENTICATED_API_SCHEME))
@@ -41,6 +47,7 @@ class WebCatalogAPI(PistonAPI):
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('hostname', r'[-\w+]+')
     @returns_json
+    @oauth_protected
     def update_machine(self, machine_uuid, hostname):
         """Register or update an existing machine with new name."""
         # fake logo_checksum for now
@@ -50,11 +57,13 @@ class WebCatalogAPI(PistonAPI):
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
+    @oauth_protected
     def delete_machine(self, machine_uuid):
         """Delete an existing machine."""
         return self._delete('machine/%s/' % machine_uuid, scheme=AUTHENTICATED_API_SCHEME)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
+    @oauth_protected
     def get_machine_logo(self, machine_uuid):
         """get the logo for a machine."""
         return self._get('logo/%s/' % machine_uuid, scheme=AUTHENTICATED_API_SCHEME)
@@ -62,6 +71,7 @@ class WebCatalogAPI(PistonAPI):
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('logo_checksum', r'[-\w+]+\.[-\w+]+')
     @returns_json
+    @oauth_protected
     def update_machine_logo(self, machine_uuid, logo_checksum, logo_content):
         """update the logo for a machine."""
         return self._post('logo/%s/%s/' % (machine_uuid, logo_checksum), data=logo_content,
@@ -69,6 +79,7 @@ class WebCatalogAPI(PistonAPI):
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
+    @oauth_protected
     def list_packages(self, machine_uuid):
         """List all packages for that machine"""
         package_list = self._get('packages/%s/' % machine_uuid, scheme=AUTHENTICATED_API_SCHEME)
@@ -79,6 +90,7 @@ class WebCatalogAPI(PistonAPI):
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('packages_checksum', r'[-\w+]+')
     @returns_json
+    @oauth_protected
     def update_packages(self, machine_uuid, packages_checksum, package_list):
         """update the package list for a machine."""
         
