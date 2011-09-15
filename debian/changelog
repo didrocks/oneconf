@@ -1,8 +1,8 @@
-oneconf (0.2.6.2) UNRELEASED; urgency=low
+oneconf (0.2.6.2) oneiric; urgency=low
 
   * Prepare synchronization for once the servers will be opened
 
- -- Didier Roche <didrocks@ubuntu.com>  Thu, 15 Sep 2011 12:49:15 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 15 Sep 2011 18:31:04 +0200
 
 oneconf (0.2.6.1) oneiric; urgency=low
 
