@@ -26,7 +26,7 @@ from oneconf.distributor import Distro
 
 class Ubuntu(Distro):
 
-    ONECONF_SERVER = "https://apps.staging.ubuntu.com/cat/api/1.0"
+    ONECONF_SERVER = "https://apps.ubuntu.com/cat/api/1.0"
 
     def compute_local_packagelist(self):
         '''Introspect what's installed on this hostid
