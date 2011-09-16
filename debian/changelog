@@ -1,3 +1,10 @@
+oneconf (0.2.6.3) UNRELEASED; urgency=low
+
+  * Fix no logging result not handled error (LP: #851551)
+  * 
+
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 16 Sep 2011 08:02:29 +0200
+
 oneconf (0.2.6.2) oneiric; urgency=low
 
   * Prepare synchronization for once the servers will be opened

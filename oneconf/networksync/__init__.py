@@ -72,6 +72,8 @@ class SyncHandler(GObject.GObject):
             self.process_sync()
 
     def _sso_login_result(self, sso_login, credential):
+        if not credential:
+            return
         self.credential = credential
         # Prepare the authenticated infraclient
         if not self.infraclient:
@@ -83,7 +85,7 @@ class SyncHandler(GObject.GObject):
                 token_secret=credential['token_secret'],
                 consumer_key=credential['consumer_key'],
                 consumer_secret=credential['consumer_secret'],
-                oauth_realm='Ubuntu Web Catalog')
+                oauth_realm='Ubuntu Software Center')
             self.infraclient = WebCatalogAPI(service_root=service_root,
                                              auth=authorizer)
         self._refresh_can_sync()
