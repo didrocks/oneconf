@@ -1,7 +1,7 @@
 oneconf (0.2.6.3) UNRELEASED; urgency=low
 
   * Fix no logging result not handled error (LP: #851551)
-  * 
+  * Protect against apps.ubuntu.com not being available (LP: #851169)
 
  -- Didier Roche <didrocks@ubuntu.com>  Fri, 16 Sep 2011 08:02:29 +0200
 
