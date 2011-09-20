@@ -3,6 +3,7 @@ webcatalog API, plus a few helper classes.
 """
 
 import ast
+import json
 from urllib import quote_plus
 from piston_mini_client import (
     PistonAPI,
@@ -84,7 +85,12 @@ class WebCatalogAPI(PistonAPI):
         """List all packages for that machine"""
         package_list = self._get('packages/%s/' % machine_uuid, scheme=AUTHENTICATED_API_SCHEME)
         if not package_list:
-            raise APIError('Package list invalid')
+            raise APIError('Package list empty')
+        # FIXME: need to do this hack to transform the http request to a json format content
+        try:
+            package_list = json.loads(package_list[1:-1].replace("'", '"').replace("True", "true").replace("False", 'false'))
+        except ValueError, e:
+            raise APIError('Package list invalid: %s' % e)
         return package_list
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
