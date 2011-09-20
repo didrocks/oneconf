@@ -1,6 +1,8 @@
 oneconf (0.2.6.4) UNRELEASED; urgency=low
 
-  * Convert data receive rom OneConf server from strings to json objects
+  * New release:
+    - Convert data receive rom OneConf server from strings to json objects
+    - Empty content can be valid, like removing latest other host
 
  -- Didier Roche <didrocks@ubuntu.com>  Tue, 20 Sep 2011 13:23:21 +0200
 
