@@ -102,7 +102,7 @@ class SyncHandler(GObject.GObject):
         '''Save local file in an atomic transaction'''
         
         if not content:
-            LOG.warning("Empty content saved as \"\"for %s" % file_uri)
+            LOG.warning("Empty content saved as \"\" for %s" % file_uri)
             content = {}
 
         LOG.debug("Saving updated %s to disk", file_uri)
