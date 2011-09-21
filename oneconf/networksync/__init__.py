@@ -215,7 +215,11 @@ class SyncHandler(GObject.GObject):
         logo_changed = []
 
         # Get all machines
-        full_hosts_list = self.infraclient.list_machines()
+        try:
+            full_hosts_list = self.infraclient.list_machines()
+        except APIError, e:
+            LOG.warning ("Invalid machine list from server, stopping sync: %s" % e)
+            return True
         other_hosts = {}
         distant_current_host = {}
         for machine in full_hosts_list:
