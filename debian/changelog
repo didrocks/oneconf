@@ -1,4 +1,4 @@
-oneconf (0.2.6.4) UNRELEASED; urgency=low
+oneconf (0.2.6.4) oneiric; urgency=low
 
   * New release:
     - Convert data receive rom OneConf server from strings to json objects
@@ -8,7 +8,7 @@ oneconf (0.2.6.4) UNRELEASED; urgency=low
     - Don't continue syncing if we even can't get a successfull list machines
       data (LP: #854685)
 
- -- Didier Roche <didrocks@ubuntu.com>  Wed, 21 Sep 2011 08:51:04 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Wed, 21 Sep 2011 09:13:01 +0200
 
 oneconf (0.2.6.3) oneiric; urgency=low
 
