@@ -171,7 +171,7 @@ class SyncHandler(GObject.GObject):
             if self.infraclient.server_status() != 'ok':
                 LOG.warning("WebClient server answering but not available")
                 return True
-        except (APIError, socket.error, ValueError, ServerNotFoundError), e:
+        except (APIError, socket.error, ValueError, ServerNotFoundError, BadStatusLine), e:
             LOG.warning ("WebClient server answer error: %s", e)
             return True
 
