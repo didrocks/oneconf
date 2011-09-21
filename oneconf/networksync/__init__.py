@@ -32,7 +32,8 @@ from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, P
                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LAST_SYNC_DATE_FILENAME)
 
 from piston_mini_client.failhandlers import APIError
-from httplib2 import socket, ServerNotFoundError
+from httplib import BadStatusLine
+from httplib2 import socket, ServerNotFoundError, RedirectLimit
 
 LOG = logging.getLogger(__name__)
 
@@ -171,7 +172,7 @@ class SyncHandler(GObject.GObject):
             if self.infraclient.server_status() != 'ok':
                 LOG.warning("WebClient server answering but not available")
                 return True
-        except (APIError, socket.error, ValueError, ServerNotFoundError, BadStatusLine), e:
+        except (APIError, socket.error, ValueError, ServerNotFoundError, BadStatusLine, RedirectLimit), e:
             LOG.warning ("WebClient server answer error: %s", e)
             return True
 

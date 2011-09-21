@@ -3,7 +3,8 @@ oneconf (0.2.6.4) UNRELEASED; urgency=low
   * New release:
     - Convert data receive rom OneConf server from strings to json objects
     - Empty content can be valid, like removing latest other host
-    - Protect against a BadStatusLine http requests return (LP: #852296)
+    - Protect against a BadStatusLine and RedirectLimit http requests return
+      (LP: #852296, #851567)
 
  -- Didier Roche <didrocks@ubuntu.com>  Wed, 21 Sep 2011 08:51:04 +0200
 
