@@ -114,6 +114,10 @@ class DbusHostsService(dbus.service.Object):
     def logo_changed(self, hostid):
         LOG.debug("Send logo changed dbus signal for hostid: %s" % hostid)
 
+    @dbus.service.signal(HOSTS_INTERFACE)
+    def latestsync_changed(self, timestamp):
+        LOG.debug("Send last sync timestamp: %s" % timestamp)
+
     @dbus.service.method(HOSTS_INTERFACE)
     def get_last_sync_date(self):
         self.activity = True

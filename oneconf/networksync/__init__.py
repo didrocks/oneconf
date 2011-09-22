@@ -56,6 +56,7 @@ class SyncHandler(GObject.GObject):
             self.emit_new_hostlist = dbusemitter.hostlist_changed
             self.emit_new_packagelist = dbusemitter.packagelist_changed
             self.emit_new_logo = dbusemitter.logo_changed
+            self.emit_new_latestsync = dbusemitter.latestsync_changed
 
         self._netstate.connect("changed", self._network_state_changed)
         self._sso_login.connect("login-result", self._sso_login_result)
@@ -157,6 +158,10 @@ class SyncHandler(GObject.GObject):
     def emit_new_logo(self, hostid):
         '''this signal will be bound at init time'''
         LOG.warning("emit_new_logo not bound to anything")
+        
+    def emit_new_latestsync(self, timestamp):
+        '''this signal will be bound at init time'''
+        LOG.warning("emit_new_hostlist not bound to anything")
 
     def process_sync(self):
         '''start syncing what's needed if can sync
@@ -319,7 +324,8 @@ class SyncHandler(GObject.GObject):
             #        LOG.warning ("Erreur while pushing current logo: %s", e)
 
         # write the last sync date
-        content = {"last_sync":  str(time.time())}
+        timestamp = str(time.time())
+        content = {"last_sync":  timestamp}
         self._save_local_file_update(os.path.join(self.hosts.get_currenthost_dir(), LAST_SYNC_DATE_FILENAME), content)
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)
@@ -329,6 +335,7 @@ class SyncHandler(GObject.GObject):
             self.emit_new_packagelist(hostid)
         for hostid in logo_changed:
             self.emit_new_logo(hostid)
+        self.emit_new_latestsync(timestamp)
 
         # continue syncing in the main loop
         return True
