@@ -1,4 +1,4 @@
-oneconf (0.2.6.5) UNRELEASED; urgency=low
+oneconf (0.2.6.5) oneiric; urgency=low
 
   * New release:
     - fix a crash when using --help having utf8 translations
@@ -7,7 +7,7 @@ oneconf (0.2.6.5) UNRELEASED; urgency=low
     - emitting a last sync accurate date as soon as the sync is done
       (LP: #855345)
 
- -- Didier Roche <didrocks@ubuntu.com>  Wed, 21 Sep 2011 13:53:09 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 22 Sep 2011 14:46:58 +0200
 
 oneconf (0.2.6.4) oneiric; urgency=low
 
