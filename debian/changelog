@@ -2,6 +2,8 @@ oneconf (0.2.6.5) UNRELEASED; urgency=low
 
   * New release:
     - fix a crash when using --help having utf8 translations
+    - fix if you just enable sso login for the first time in software-center,
+      oneconf won't sync before restarting (LP: #855373)
 
  -- Didier Roche <didrocks@ubuntu.com>  Wed, 21 Sep 2011 13:53:09 +0200
 

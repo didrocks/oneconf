@@ -60,16 +60,7 @@ def createsynchandler(myservice, use_mock):
         from oneconf.networksync.infraclient_fake import WebCatalogAPI
         infra = WebCatalogAPI()
     myservice.synchandler = SyncHandler(myservice.hosts, package_handler=myservice.get_packageSetHandler(), infraclient=infra, dbusemitter=myservice)
-    GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, syncwithinfra, myservice)
     return False
-    
-def syncwithinfra(myservice):
-
-    LOG.debug('Check a sync with infra')
-    # force now manual sync if possible (first one was tried by handler callback if can_sync)
-    if myservice.synchandler:
-        myservice.synchandler.process_sync()
-    return True
     
 if __name__ == '__main__':
     usage = _("usage: %prog [options]")

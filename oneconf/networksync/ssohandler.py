@@ -25,8 +25,9 @@ import gettext
 from gi.repository import GObject
 import logging
 
-from gettext import gettext as _
+from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
 
+from gettext import gettext as _
 gettext.textdomain("software-center")
 
 NO_OP = lambda *args, **kwargs: None
@@ -51,16 +52,18 @@ class LoginBackendDbusSSO(GObject.GObject):
         self.appname = "Ubuntu Software Center"
         self.bus = dbus.SessionBus()
         
-        # try it in a spawn/retry process to avoid ubuntu sso login issues
         self.proxy = None
-        GObject.timeout_add_seconds(5, self._get_sso_proxy)
-        
+        self._get_sso_proxy()
+        # try it in a spawn/retry process to avoid ubuntu sso login issues
+        GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, self._get_sso_proxy)
 
     def _get_sso_proxy(self):
         '''avoid crashing if ubuntu sso doesn't answer, which seems common'''
         
         LOG.debug("Try to get a proxy")
         try:
+            # recreate a proxy object to respawn the sso daemon
+            # (TODO: migration to gdbus and dbus owner changed should help)
             self.proxy = self.bus.get_object('com.ubuntu.sso', '/com/ubuntu/sso/credentials')
             self.proxy.connect_to_signal("CredentialsFound",
                                          self._on_credentials_found)
@@ -72,8 +75,7 @@ class LoginBackendDbusSSO(GObject.GObject):
             self.proxy.find_credentials(self.appname, '', reply_handler=NO_OP, error_handler=NO_OP)
         except dbus.DBusException, e:
             LOG.debug("No reply from ubuntu sso: %s" % e)
-            return True # try again
-        return False
+        return True # try again
 
     def _on_credentials_found(self, app_name, credentials):
         if app_name != self.appname:
@@ -104,7 +106,6 @@ if __name__ == "__main__":
     login = LoginBackendDbusSSO()
 
     loop = GObject.MainLoop()
-    login.get_credential()
     
     def print_result(obj, foo):
         print foo

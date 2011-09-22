@@ -25,6 +25,7 @@ import logging
 import os
 import time
 
+from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
 from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
@@ -44,6 +45,7 @@ class SyncHandler(GObject.GObject):
         GObject.GObject.__init__(self)
 
         self._netstate = NetworkStatusWatcher()
+        self._sso_login = LoginBackendDbusSSO()
         self._can_sync = False
         self.credential = None
         self.hosts = hosts
@@ -56,6 +58,7 @@ class SyncHandler(GObject.GObject):
             self.emit_new_logo = dbusemitter.logo_changed
 
         self._netstate.connect("changed", self._network_state_changed)
+        self._sso_login.connect("login-result", self._sso_login_result)
         
 
     def _refresh_can_sync(self):
@@ -69,15 +72,18 @@ class SyncHandler(GObject.GObject):
             return
         self._can_sync = new_can_sync
 
+        # we can now start syncing (as it's a new status), adding the timeout
         if self._can_sync:
             self.process_sync()
+            GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, self.process_sync)
 
     def _sso_login_result(self, sso_login, credential):
-        if not credential:
+        if credential == self.credential:
             return
+
         self.credential = credential
         # Prepare the authenticated infraclient
-        if not self.infraclient:
+        if self.credential and not self.infraclient:
             from piston_mini_client.auth import OAuthAuthorizer
             from infraclient_pristine import WebCatalogAPI
             from oneconf.distributor import get_distro
@@ -92,12 +98,7 @@ class SyncHandler(GObject.GObject):
         self._refresh_can_sync()
 
     def _network_state_changed(self, netstate, connected):
-        if connected:
-            # refresh credential as we are interested (this will call _compute_can_sync)
-            self._sso_login = LoginBackendDbusSSO()
-            self._sso_login.connect("login-result", self._sso_login_result)
-        else:
-            self._refresh_can_sync()
+        self._refresh_can_sync()
 
     def _save_local_file_update(self, file_uri, content):
         '''Save local file in an atomic transaction'''
@@ -162,8 +163,8 @@ class SyncHandler(GObject.GObject):
         
         process sync can be either started directly, or when can_sync changed'''
         
-        # if no more connection, don't try syncing in the main loop
-        if not self._can_sync or not self.infraclient:
+        # we can't no more sync, removing the timeout
+        if not self._can_sync:
             return False
         LOG.debug("Start processing sync")
 
