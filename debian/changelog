@@ -1,8 +1,8 @@
-oneconf (0.2.6.7) UNRELEASED; urgency=low
+oneconf (0.2.6.7) oneiric; urgency=low
 
   * restore MIN_TIME_WITHOUT_ACTIVITY to 5 min
 
- -- Didier Roche <didrocks@ubuntu.com>  Fri, 23 Sep 2011 18:25:29 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 23 Sep 2011 18:27:24 +0200
 
 oneconf (0.2.6.6) oneiric; urgency=low
 
