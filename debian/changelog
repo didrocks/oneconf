@@ -1,9 +1,9 @@
-oneconf (0.2.6.6) UNRELEASED; urgency=low
+oneconf (0.2.6.6) oneiric; urgency=low
 
   * Don't crash if translation domain for that language not available
     (LP: #856576)
 
- -- Didier Roche <didrocks@ubuntu.com>  Fri, 23 Sep 2011 08:25:57 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 23 Sep 2011 08:26:29 +0200
 
 oneconf (0.2.6.5) oneiric; urgency=low
 
