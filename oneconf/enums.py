@@ -18,6 +18,6 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-MIN_TIME_WITHOUT_ACTIVITY = 30#60*5
+MIN_TIME_WITHOUT_ACTIVITY = 60*5
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 
