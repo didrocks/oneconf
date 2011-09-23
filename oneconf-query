@@ -25,7 +25,11 @@ import sys
 from time import localtime, strftime
 
 import gettext
-_ = gettext.translation('oneconf').ugettext
+try:
+    _ = gettext.translation('oneconf').ugettext
+except IOError:
+    from gettext import gettext as _
+    gettext.textdomain('oneconf')
 
 LOG = logging.getLogger(__name__)
 
