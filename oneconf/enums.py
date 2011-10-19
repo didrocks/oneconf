@@ -21,4 +21,3 @@
 MIN_TIME_WITHOUT_ACTIVITY = 60*5
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 
-ONECONF_OVERRIDE_FILE = "/tmp/oneconf.override"

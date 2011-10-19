@@ -17,7 +17,7 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-
+import ConfigParser
 import logging
 import os
 import subprocess
@@ -26,7 +26,7 @@ from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
-from oneconf.enums import ONECONF_OVERRIDE_FILE
+from oneconf.paths import ONECONF_OVERRIDE_FILE
 
 class UnimplementedError(Exception):
     pass
@@ -44,10 +44,11 @@ class Distro(object):
 
 
 def _get_distro():
+    config = ConfigParser.RawConfigParser()
     try:
-        with open(ONECONF_OVERRIDE_FILE, 'r') as f:
-            distro_id = f.read().strip()
-    except IOError:    
+        config.read(ONECONF_OVERRIDE_FILE)
+        distro_id = config.get('TestSuite', 'distro')
+    except IOError:
         distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
                                      stdout=subprocess.PIPE).communicate()[0].strip()
     LOG.debug("get_distro: '%s'" % distro_id)

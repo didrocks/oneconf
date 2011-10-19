@@ -51,7 +51,7 @@ class Hosts(object):
 
         # create cache dir if doesn't exist
         if not os.path.isdir(ONECONF_CACHE_DIR):
-            os.mkdir(ONECONF_CACHE_DIR)
+            os.makedirs(ONECONF_CACHE_DIR)
 
         (logo_checksum, logo_path) = self._get_current_wallpaper_data()
         

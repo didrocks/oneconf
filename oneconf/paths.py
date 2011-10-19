@@ -17,8 +17,11 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+import ConfigParser
 import os
 from xdg import BaseDirectory as xdg
+
+ONECONF_OVERRIDE_FILE = "/tmp/oneconf.override"
 
 ONECONF_DATADIR = '/usr/share/oneconf/data'
 ONECONF_CACHE_DIR = os.path.join(xdg.xdg_cache_home, "oneconf")
@@ -34,4 +37,13 @@ if not os.path.exists(_datadir):
     _datadir = ONECONF_DATADIR
 LOGO_BASE_FILENAME = os.path.join(_datadir, 'images', 'computer.png')
 TEST_SETTINGS_DIR = "/home/didrocks/fake/"
+
+config = ConfigParser.RawConfigParser()
+try:
+    config.read(ONECONF_OVERRIDE_FILE)
+    ONECONF_CACHE_DIR = config.get('TestSuite', 'ONECONF_CACHE_DIR')
+    TEST_SETTINGS_DIR = config.get('TestSuite', 'TEST_SETTINGS_DIR')
+except IOError:
+    pass
+
 
