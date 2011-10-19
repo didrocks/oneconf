@@ -26,6 +26,8 @@ from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
+from oneconf.enums import ONECONF_OVERRIDE_FILE
+
 class UnimplementedError(Exception):
     pass
 
@@ -42,8 +44,12 @@ class Distro(object):
 
 
 def _get_distro():
-    distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
-                                 stdout=subprocess.PIPE).communicate()[0].strip()
+    try:
+        with open(ONECONF_OVERRIDE_FILE, 'r') as f:
+            distro_id = f.read().strip()
+    except IOError:    
+        distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
+                                     stdout=subprocess.PIPE).communicate()[0].strip()
     LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
     module =  __import__(distro_id, globals(), locals(), [], -1)
@@ -56,7 +62,7 @@ def get_distro():
     """ factory to return the right Distro object """
     return distro_instance
 
-# singelton
+# singleton
 distro_instance=_get_distro()
 
 

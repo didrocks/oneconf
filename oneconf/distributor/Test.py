@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 # Copyright (C) 2011 Canonical
 #
 # Authors:
@@ -18,7 +16,26 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-MIN_TIME_WITHOUT_ACTIVITY = 60*5
-ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
+import logging
 
-ONECONF_OVERRIDE_FILE = "/tmp/oneconf.override"
+LOG = logging.getLogger(__name__)
+
+from oneconf.distributor import Distro
+
+
+class Test(Distro):
+
+    ONECONF_SERVER = "foo"
+
+    def compute_local_packagelist(self):
+        '''Introspect what's installed on this hostid
+
+        Return: installed_packages list
+        '''
+        
+        LOG.debug ('Compute package list for current host')
+        return {'foo': {"auto": False},
+                'bar': {"auto": True},
+                'baz': {"auto": False}
+               }
+
