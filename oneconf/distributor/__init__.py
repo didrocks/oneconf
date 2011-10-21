@@ -48,7 +48,7 @@ def _get_distro():
     try:
         config.read(ONECONF_OVERRIDE_FILE)
         distro_id = config.get('TestSuite', 'distro')
-    except IOError:
+    except ConfigParser.NoSectionError:
         distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
                                      stdout=subprocess.PIPE).communicate()[0].strip()
     LOG.debug("get_distro: '%s'" % distro_id)

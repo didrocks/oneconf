@@ -43,7 +43,7 @@ try:
     config.read(ONECONF_OVERRIDE_FILE)
     ONECONF_CACHE_DIR = config.get('TestSuite', 'ONECONF_CACHE_DIR')
     TEST_SETTINGS_DIR = config.get('TestSuite', 'TEST_SETTINGS_DIR')
-except IOError:
+except ConfigParser.NoSectionError:
     pass
 
 

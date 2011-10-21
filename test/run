@@ -1,0 +1,100 @@
+#!/usr/bin/python
+# -*- Mode: Python; coding: utf-8; indent-tabs-mode: nil; tab-width: 4 -*-
+### BEGIN LICENSE
+# Copyright (C) 2011 Didier Roche <didrocks@ubuntu.com>
+# This program is free software: you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License version 3, as published 
+# by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranties of 
+# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR 
+# PURPOSE.  See the GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along 
+# with this program.  If not, see <http://www.gnu.org/licenses/>.
+### END LICENSE
+
+import os
+import shutil
+import sys
+import subprocess
+import time
+import unittest
+
+sys.path.insert(0, os.path.abspath('.'))
+
+shutil.copy(os.path.join(os.path.dirname(__file__), "oneconf.override"), "/tmp/oneconf.override")
+from oneconf import paths
+
+class IntegrationTests(unittest.TestCase):
+
+    def setUp(self):
+        '''Launch dbus service if there'''
+        self.dbus_service_process = None
+        if use_dbus_service:
+            self.dbus_service_process = subprocess.Popen(["./oneconf-service", '--debug', '--mock'])
+            time.sleep(1) # let the main daemon starting
+            
+    def tearDown(self):
+        '''Kill the dbus service if there, and clean things'''
+        
+        if self.dbus_service_process:
+            self.dbus_service_process.terminate()
+            self.dbus_service_process.wait()
+            
+    def daemon_still_there(self, pid=None):
+        '''Return True if the daemon is still running'''
+        if not pid and self.dbus_service_process:
+            pid = self.dbus_service_process.pid
+        if pid:
+            for line in os.popen("ps xa"):
+                fields = line.split()
+                if (str(pid) == fields[0]):
+                    return True
+        return False
+            
+    def test_create_new_host(self):
+        '''Creating a new host, for oneconf first run'''
+        
+    
+    def test_daemon_stop(self):
+        '''Test that the daemon effictively stops when requested'''
+        #@unittest.skipIt andd skipUnless seems to only take use_dbus_service as True, weird…
+        if not use_dbus_service:
+            return
+        self.assertTrue(self.daemon_still_there())
+        query = subprocess.Popen(["./oneconf-query", "--stop"])
+        self.dbus_service_process.wait() # let it proceeding quitting
+        self.assertFalse(self.daemon_still_there())
+        self.dbus_service_process = None
+
+    def test_unique_daemon(self):
+        '''Try to spaw a second daemon and check it can't be there'''
+        if not use_dbus_service:
+            return        
+        daemon2 = subprocess.Popen(["./oneconf-service"], stdout=file('/dev/null'), stderr=file('/dev/null'))
+        returnr = daemon2.wait() # let it proceeding quitting
+        self.assertFalse(self.daemon_still_there(daemon2.pid))        
+        
+    
+#
+# main
+#
+print '''
+#########################################
+#        Testing direct calls           #
+#########################################
+'''
+use_dbus_service = False
+result = unittest.main(exit=False)
+if result.result.errors or result.result.failures:
+    print "Stopping, direct access is failing."
+    sys.exit(1)
+print '''
+#########################################
+#       Use the OneConf service         #
+#########################################
+'''
+use_dbus_service = True
+unittest.main()

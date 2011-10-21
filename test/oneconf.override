@@ -1,0 +1,4 @@
+[TestSuite]
+ONECONF_CACHE_DIR=/tmp/oneconf-test/cache
+TEST_SETTINGS_DIR=/tmp/oneconf-test/test-settings
+distro=Test
