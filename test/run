@@ -87,7 +87,7 @@ class IntegrationTests(unittest.TestCase):
         os.path.isfile(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid)))
         
     def test_diff_host(self):
-        '''Create a diff between current host and AAAAA'''
+        '''Create a diff between current host and AAAAA. This handle the case with auto and manual packages'''
         self.assertEqual(self.oneconf.diff('AAAAAA', None), ([u'libqtdee2', u'ttf-lao'], [u'bar', u'baz']))
     
     def test_diff_with_no_valid_host(self):
@@ -107,7 +107,7 @@ class IntegrationTests(unittest.TestCase):
 
     def test_list_packages_manual_only(self):
         '''List packages for machine for only manual package'''
-        # TODO: the result is not in the same format, that sux…
+        # FIXME: the result is not in the same format, that sux…
         self.assertEqual(self.oneconf.get_packages(self.hostid, None, True), [u'baz', u'foo'])
     
     def test_list_invalid_machine(self):
@@ -125,15 +125,30 @@ class IntegrationTests(unittest.TestCase):
         '''Diff between the same computer which should end up in an empty list'''
         self.assertEqual(self.oneconf.diff(self.hostid, None), ('', ''))
         
-    def test_disable_enable_inventory(self):
-        '''Try to disable and then inventory for 0000 host'''
-        # TODO: ne marche pas
+    def test_disable_enable_inventory_for_current_host(self):
+        '''Try to disable and the inventory for 0000 host (current host)'''
         hosts = self.oneconf.get_all_hosts()
         self.assertEqual(hosts, {u'AAAAAA': (False, u'julie-laptop', True), u'BBBBBB': (False, u'yuna', True), '0000': (True, 'foomachine', True)})
         self.oneconf.set_share_inventory(False, '0000')
         hosts = self.oneconf.get_all_hosts()
         self.assertEqual(hosts, {u'AAAAAA': (False, u'julie-laptop', True), u'BBBBBB': (False, u'yuna', True), '0000': (True, 'foomachine', False)})
+
+    def test_disable_enable_inventory_for_other_host(self):
+        '''Try to disable the current inventory for another host (put the request in pending) and then enable it again'''
+        hosts = self.oneconf.get_all_hosts()
+        self.assertEqual(hosts, {u'AAAAAA': (False, u'julie-laptop', True), u'BBBBBB': (False, u'yuna', True), '0000': (True, 'foomachine', True)})
+        self.oneconf.set_share_inventory(False, 'AAAAAA')
+        with open(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, paths.PENDING_UPLOAD_FILENAME), 'r') as f:
+            self.assertEqual(json.load(f), {u'AAAAAA': {u'share_inventory': False}})
         
+    def test_dummy_last_sync_state(self):
+        '''Get a dummy last sync state'''
+        self.assertEqual(self.oneconf.get_last_sync_date(), '123456789.00')
+
+    def test_bootstrap_without_any_sync(self):
+        '''Bootstrap without any sync before'''
+        os.remove(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, paths.LAST_SYNC_DATE_FILENAME))
+        self.assertEqual(self.oneconf.get_last_sync_date(), 'Was never synced')
     
 #
 # main

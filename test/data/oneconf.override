@@ -1,4 +1,5 @@
 [TestSuite]
 ONECONF_CACHE_DIR=/tmp/oneconf-test/cache
 TEST_SETTINGS_DIR=/tmp/oneconf-test/test-settings
+MIN_TIME_WITHOUT_ACTIVITY=5
 distro=Test

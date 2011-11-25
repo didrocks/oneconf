@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.abspath('.'))
 
 shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.override"), "/tmp/oneconf.override")
 from oneconf import paths
+from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
 
 class DaemonTests(unittest.TestCase):
 
@@ -37,6 +38,7 @@ class DaemonTests(unittest.TestCase):
         self.hostname = "foomachine"
         os.environ["ONECONF_HOST"] = "%s:%s" % (self.hostid, self.hostname)
         self.dbus_service_process = subprocess.Popen(["./oneconf-service", '--debug', '--mock'])
+        self.time_start = time.time()
         time.sleep(1) # let the main daemon starting
             
     def tearDown(self):
@@ -62,19 +64,43 @@ class DaemonTests(unittest.TestCase):
         return False
     
     def test_daemon_stop(self):
-        '''Test that the daemon effictively stops when requested'''
+        '''Test that the daemon effectively stops when requested'''
         self.assertTrue(self.daemon_still_there())
-        query = subprocess.Popen(["./oneconf-query", "--stop"])
+        subprocess.Popen(["./oneconf-query", "--stop"])
         self.dbus_service_process.wait() # let it proceeding quitting
+        time_stop = time.time()
         self.assertFalse(self.daemon_still_there())
+        self.assertTrue(time_stop - self.time_start < MIN_TIME_WITHOUT_ACTIVITY)
         self.dbus_service_process = None
 
     def test_unique_daemon(self):
         '''Try to spaw a second daemon and check it can't be there'''    
         daemon2 = subprocess.Popen(["./oneconf-service"], stdout=file('/dev/null'), stderr=file('/dev/null'))
-        returnr = daemon2.wait() # let it proceeding quitting
-        self.assertFalse(self.daemon_still_there(daemon2.pid))        
-        
+        daemon2.wait() # let it proceeding quitting
+        time_stop = time.time()
+        self.assertFalse(self.daemon_still_there(daemon2.pid))
+        self.assertTrue(time_stop - self.time_start < MIN_TIME_WITHOUT_ACTIVITY)
+
+    def test_daemon_stop_after_timeout(self):
+        '''Test that the daemon effectively stops after a timeout'''
+        self.assertTrue(self.daemon_still_there())
+        self.dbus_service_process.wait() # let it proceeding quitting
+        time_stop = time.time()
+        self.assertFalse(self.daemon_still_there())
+        self.assertTrue(time_stop - self.time_start > MIN_TIME_WITHOUT_ACTIVITY)
+        self.dbus_service_process = None
+
+    def test_daemon_keep_alive_if_activity(self):
+        '''Test that the daemon is kept alive if you have activity'''
+        self.assertTrue(self.daemon_still_there())
+        subprocess.Popen(["./oneconf-query", '--host'])
+        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 3)
+        subprocess.Popen(["./oneconf-query", '--host'])
+        self.dbus_service_process.wait() # let it proceeding quitting
+        time_stop = time.time()
+        self.assertFalse(self.daemon_still_there())
+        self.assertTrue(time_stop - self.time_start > 2*MIN_TIME_WITHOUT_ACTIVITY)
+        self.dbus_service_process = None
     
 #
 # main

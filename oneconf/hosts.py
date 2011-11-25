@@ -266,6 +266,7 @@ class Hosts(object):
 
         if hostid or hostname:
             hostid = self.get_hostid_from_context(hostid, hostname)
+        if hostid != self.current_host['hostid']:
             # do not update if there is already this pending change is already registered
             pending_change_scheduled = self.get_hostid_pending_change(hostid, 'share_inventory')
             if pending_change_scheduled != None:

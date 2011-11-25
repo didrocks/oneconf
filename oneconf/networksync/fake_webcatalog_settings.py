@@ -92,26 +92,7 @@ class FakeWebCatalogSettings(object):
     # update package list
     # *****************************
     # raises APIError if True
-    _FAKE_SETTINGS['update_packages_error'] = False  
-    
-    #THE FOLLOWING SETTINGS RELATE TO LOGIN SSO FUNCTIONALITY
-    # LoginBackendDbusSSO
-    # login()
-    #***********************
-    # what to fake the login response as 
-    # choices (strings): "successful", "failed", "denied"
-    _FAKE_SETTINGS['login_response'] = "successful"
-    
-    # UbuntuSSOAPI
-    # whoami()
-    #***********************
-    # what to fake whoami response as 
-    # choices (strings): "whoami", "error"
-    _FAKE_SETTINGS['whoami_response'] = "whoami"
-    #this only has effect if whoami_response = 'whoami'
-    #determines the username to return in a successful whoami
-    #expects a string or None (for a random username)
-    _FAKE_SETTINGS['whoami_username'] = None
+    _FAKE_SETTINGS['update_packages_error'] = False
 
 
     def __init__(self, settings_file=None):

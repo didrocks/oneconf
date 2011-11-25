@@ -18,6 +18,14 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-MIN_TIME_WITHOUT_ACTIVITY = 60*5
+import ConfigParser
+from oneconf.paths import ONECONF_OVERRIDE_FILE
+
+config = ConfigParser.RawConfigParser()
+try:
+    config.read(ONECONF_OVERRIDE_FILE)
+    MIN_TIME_WITHOUT_ACTIVITY = config.getint('TestSuite', 'MIN_TIME_WITHOUT_ACTIVITY')
+except ConfigParser.NoSectionError:
+    MIN_TIME_WITHOUT_ACTIVITY = 60*5
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
 
