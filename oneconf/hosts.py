@@ -71,6 +71,9 @@ class Hosts(object):
                 if hostname != self.current_host['hostname']:
                     self.current_host['hostname'] = hostname
                     has_changed = True
+                if hostid != self.current_host['hostid']:
+                    self.current_host['hostid'] = hostid
+                    has_changed = True
                 if logo_checksum != self.current_host['logo_checksum']:
                     if (self._create_logo(logo_path)):
                         self.current_host['logo_checksum'] = logo_checksum

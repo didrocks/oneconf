@@ -35,7 +35,7 @@ class Test(Distro):
         
         LOG.debug ('Compute package list for current host')
         return {'foo': {"auto": False},
-                'bar': {"auto": True},
-                'baz': {"auto": False}
+                'pool': {"auto": True},
                }
+
 
