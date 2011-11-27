@@ -103,10 +103,11 @@ class DaemonTests(unittest.TestCase):
 #
 # main
 #
-print '''
-#########################################
-#       Use the OneConf service         #
-#########################################
-'''
-unittest.main(exit=False)
-os.remove("/tmp/oneconf.override")
+if __name__ == '__main__':
+    print '''
+    #########################################
+    #       Use the OneConf service         #
+    #########################################
+    '''
+    unittest.main(exit=False)
+    os.remove("/tmp/oneconf.override")

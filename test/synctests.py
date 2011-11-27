@@ -146,10 +146,11 @@ class OneConfSyncing(unittest.TestCase):
 #
 # main
 #
-print '''
-#########################################
-#         Test OneConf syncing          #
-#########################################
-'''
-unittest.main(exit=False)
-os.remove("/tmp/oneconf.override")
+if __name__ == '__main__':
+    print '''
+    #########################################
+    #         Test OneConf syncing          #
+    #########################################
+    '''
+    unittest.main(exit=False)
+    os.remove("/tmp/oneconf.override")
