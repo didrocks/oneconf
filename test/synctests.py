@@ -44,7 +44,7 @@ class OneConfSyncing(unittest.TestCase):
 
     def tearDown(self):
         try:
-            #shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
+            shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
             pass
         except OSError:
             pass
@@ -221,13 +221,15 @@ class OneConfSyncing(unittest.TestCase):
                                                  u'bar': {u'auto': True},
                                                  u'baz': {u'auto': True}}})
 
-    def test_get_firsttime_other_hosts(self):
-        '''First time getting another host'''
+    def test_get_firsttime_other_host(self):
+        '''First time getting another host, no package'''
+        
 
     # TODO: unshare host which is not hostid
     #       other update a package list
     #       other with a host removed
-    #       other with a host 
+    #       other with an additional host
+    #       other with a host with some packages
     
 
     # TODO: cache interaction for sync and pkg list, host list
@@ -242,4 +244,4 @@ if __name__ == '__main__':
     #########################################
     '''
     unittest.main(exit=False)
-    #os.remove("/tmp/oneconf.override")
+    os.remove("/tmp/oneconf.override")
