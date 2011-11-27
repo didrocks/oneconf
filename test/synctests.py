@@ -43,8 +43,11 @@ class OneConfSyncing(unittest.TestCase):
         self.src_hostdir = None
 
     def tearDown(self):
-        shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
-        pass
+        try:
+            #shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
+            pass
+        except IOError:
+            pass
 
     def collect_debug_output(self, process):
         '''Get the full stderr output from a process'''
@@ -80,11 +83,12 @@ class OneConfSyncing(unittest.TestCase):
         return (self.msg_in_output(self.output, msg))
 
     def copy_state(self, test_ident):
-        '''Copy initial state from the test identifier'''
+        '''Set state from the test identifier.'''
         datadir = os.path.join(os.path.dirname(__file__), "data", "syncdatatests")
         self.src_hostdir = os.path.join(datadir, 'host_%s' % test_ident)
         shutil.copytree(self.src_hostdir, self.hostdir)
-        os.makedirs(paths.WEBCATALOG_SILO_DIR)
+        if not os.path.isdir(paths.WEBCATALOG_SILO_DIR):
+            os.makedirs(paths.WEBCATALOG_SILO_DIR)
         try:
             shutil.copy(os.path.join(datadir, 'silo_%s' % test_ident), paths.WEBCATALOG_SILO_SOURCE)
         except IOError:
@@ -124,6 +128,9 @@ class OneConfSyncing(unittest.TestCase):
         self.copy_state('nosilo_nopackage_onlyhost')
         self.assertTrue(self.check_msg_in_output("Push current host to infra now"))
         self.assertTrue(self.check_msg_in_output("New host registered done"))
+        self.assertFalse(self.check_msg_in_output("emit_new_hostlist"))
+        self.assertFalse(self.check_msg_in_output("emit_new_packagelist"))
+        self.assertFalse(self.check_msg_in_output("emit_new_logo"))
         self.compare_silo_results({self.hostid: {'hostname': self.hostname,
                                                  'logo_checksum': None,
                                                  'packages_checksum': None}},
@@ -140,8 +147,43 @@ class OneConfSyncing(unittest.TestCase):
         with open(sync_file, 'r') as f:
             current_host = self.assertTrue(json.load(f)["last_sync"] > now)
 
+    def test_host_not_shared(self):
+        '''Test a non shared host is really not shared'''
+        self.copy_state('nosilo_nopackage_onlyhost_noshare')
+        self.assertFalse(self.check_msg_in_output("Push current host to infra now"))
+        self.assertFalse(self.check_msg_in_output("New host registered done"))
+        self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
+        self.compare_silo_results({}, {})
+        self.compare_dirs(self.src_hostdir, self.hostdir) # Ensure nothing changed in the source dir        
 
+    def test_unshare_shared_host(self):
+        '''Share a host, and then unshare it. Check that everything is cleaned in the shilo'''
+        self.copy_state('previously_shared_notshared')
+        self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
+        self.compare_silo_results({}, {})
 
+    def test_share_host_with_packages(self):
+        '''Share the current host with a package list'''
+        self.copy_state('with_packages')
+        self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
+        self.assertTrue(self.check_msg_in_output("Push needed"))
+        self.assertTrue(self.check_msg_in_output("refresh done"))
+        self.compare_silo_results({self.hostid: {'hostname': self.hostname,
+                                                 'logo_checksum': None,
+                                                 'packages_checksum': u'9c0d4e619c445551541af522b39ab483ba943b8b298fb96ccc3acd0b'}},
+                                  {self.hostid: {u'bar': {u'auto': True},
+                                                 u'baz': {u'auto': False},
+                                                 u'foo': {u'auto': False}}})
+        self.compare_dirs(self.src_hostdir, self.hostdir) # Ensure nothing changed in the source dir
+
+    def test_unshare_host_with_packages(self):
+        '''Unshare an existing host with packages'''
+        self.copy_state('previously_shared_with_packages_notshared')
+        self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
+        self.compare_silo_results({}, {})
+        
+
+    # TODO: unshare host which is not hostid
 
 #
 # main
