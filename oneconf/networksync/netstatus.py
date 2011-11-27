@@ -77,17 +77,15 @@ class NetworkStatusWatcher(GObject.GObject):
         self.connected = False
         
         
-        # check is ONECONF_NET_DISCONNECTED is in the environment variables
-        # if so force the network status to be disconnected
-        if "ONECONF_NET_DISCONNECTED" in os.environ and \
-            os.environ["ONECONF_NET_DISCONNECTED"] is not None:
-            self._on_connection_state_changed(self.NM_STATE_DISCONNECTED)
-            LOG.warn('forced netstate into disconnected mode...')
-            return
-        if "ONECONF_NET_CONNECTED" in os.environ and \
-            os.environ["ONECONF_NET_CONNECTED"] is not None:
-            self._on_connection_state_changed(self.NM_STATE_CONNECTED_LOCAL)
-            LOG.warn('forced netstate into connected mode...')
+        # check is ONECONF_NET_CONNECTED is in the environment variables
+        # if so force the network status to be connected or disconnected
+        if "ONECONF_NET_CONNECTED" in os.environ:
+            if os.environ["ONECONF_NET_CONNECTED"].lower() == 'true':
+                GObject.idle_add(self._on_connection_state_changed, self.NM_STATE_CONNECTED_LOCAL)
+                LOG.warn('forced netstate into connected mode...')
+            else:
+                GObject.idle_add(self._on_connection_state_changed, self.NM_STATE_DISCONNECTED)
+                LOG.warn('forced netstate into disconnected mode...')
             return
         try:
             bus = dbus.SystemBus()

@@ -36,14 +36,14 @@ _datadir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 if not os.path.exists(_datadir):
     _datadir = ONECONF_DATADIR
 LOGO_BASE_FILENAME = os.path.join(_datadir, 'images', 'computer.png')
-TEST_SETTINGS_DIR = "/home/didrocks/fake/"
+WEBCATALOG_SILO_DIR = "/tmp"
 
 config = ConfigParser.RawConfigParser()
 try:
     config.read(ONECONF_OVERRIDE_FILE)
     ONECONF_CACHE_DIR = config.get('TestSuite', 'ONECONF_CACHE_DIR')
-    TEST_SETTINGS_DIR = config.get('TestSuite', 'TEST_SETTINGS_DIR')
+    WEBCATALOG_SILO_DIR = config.get('TestSuite', 'WEBCATALOG_SILO_DIR')
 except ConfigParser.NoSectionError:
     pass
-
-
+WEBCATALOG_SILO_SOURCE = os.path.join(WEBCATALOG_SILO_DIR, "source")
+WEBCATALOG_SILO_RESULT = os.path.join(WEBCATALOG_SILO_DIR, "result")

@@ -3,7 +3,6 @@ import time
 import logging
 import os
 import cPickle
-from paths import TEST_SETTINGS_DIR
 
 LOG = logging.getLogger(__name__)
 
@@ -19,8 +18,8 @@ def network_delay(fn):
         return fn(self, *args, **kwargs)
     return slp
    
-class FakeWebCatalogSettings(object):
-    '''An object that simply holds settings which are used by WebCatalogAPI
+class FakeWebCatalogSilo(object):
+    '''An object that simply holds settings and data which are used by WebCatalogAPI
        in the infraclient_fake module. Using this module allows a developer to test
        the oneconf functionality without any interaction with a webcatalog server.
        Each setting here provides complete control over how the 'server' will 
@@ -39,14 +38,16 @@ class FakeWebCatalogSettings(object):
     _FAKE_SETTINGS = {}
 
     # Default stored data
-    _FAKE_SETTINGS['hosts_metadata'] = {
-        'AAAAA': {'hostname': 'aaaaa', 'logo_checksum': 'logoAAAAA', 'packages_checksum': 'packageAAAAAA'},
-        'BBBBB': {'hostname': 'bbbbb', 'logo_checksum': 'logoBBBBB', 'packages_checksum': 'packageBBBBBB'},}  
-    _FAKE_SETTINGS['packages_metadata'] = {
-        'AAAAA': {'kiki': {'auto': False}, 'unity': {'auto': False},
-                  'libFoo': {'auto': True}, 'libFool': {'auto': True}},
-        'BBBBB': {'kiki': {'auto': False}, 'gnome-panel': {'auto': False},
-                  'libBar': {'auto': True}, 'libFool': {'auto': False}},}
+    #_FAKE_SETTINGS['hosts_metadata'] = {
+    #    'AAAAA': {'hostname': 'aaaaa', 'logo_checksum': 'logoAAAAA', 'packages_checksum': 'packageAAAAAA'},
+    #    'BBBBB': {'hostname': 'bbbbb', 'logo_checksum': 'logoBBBBB', 'packages_checksum': 'packageBBBBBB'},}  
+    #_FAKE_SETTINGS['packages_metadata'] = {
+    #    'AAAAA': {'kiki': {'auto': False}, 'unity': {'auto': False},
+    #              'libFoo': {'auto': True}, 'libFool': {'auto': True}},
+    #    'BBBBB': {'kiki': {'auto': False}, 'gnome-panel': {'auto': False},
+    #              'libBar': {'auto': True}, 'libFool': {'auto': False}},}
+    _FAKE_SETTINGS['hosts_metadata'] = {}
+    _FAKE_SETTINGS['packages_metadata'] = {}
 
     # general settings
     # *****************************
@@ -95,14 +96,14 @@ class FakeWebCatalogSettings(object):
     _FAKE_SETTINGS['update_packages_error'] = False
 
 
-    def __init__(self, settings_file=None):
+    def __init__(self, silo_filepath=None):
         '''Initialises the object and loads the settings into the _FAKE_SETTINGS
            dict.. If settings_file is not provided, any existing settings in the cache 
            file are ignored and the cache file is overwritten with the defaults 
            set in the class.'''
 
-        if settings_file:
-            self._update_from_file(os.path.join(TEST_SETTINGS_DIR, settings_file))
+        if silo_filepath:
+            self._update_from_file(silo_filepath)
         
     def get_setting(self, key_name):
         '''Takes a string (key_name) which corresponds to a setting in this object, 
@@ -131,14 +132,12 @@ class FakeWebCatalogSettings(object):
             LOG.warning("Settings file %s doesn't exist. Will run with the default" % filepath)
         return
     
-    def save_settings(self, filename):
+    def save_settings(self, filepath):
         """write the dict out to cache file, for generating new cases"""
         try:
-            if not os.path.exists(TEST_SETTINGS_DIR):
-                os.makedirs(TEST_SETTINGS_DIR)
+            if not os.path.exists(os.path.dirname(filepath)):
+                os.makedirs(os.path.dirname(filepath))
             cPickle.dump(self._FAKE_SETTINGS, open(filepath, "w"))
-            print "new testcase saved"
             return True
         except:
-            print "new testcase save failed"
             return False

@@ -30,7 +30,7 @@ from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
 from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
-                  PACKAGE_LIST_PREFIX, LOGO_PREFIX, LAST_SYNC_DATE_FILENAME)
+                  PACKAGE_LIST_PREFIX, LOGO_PREFIX, LAST_SYNC_DATE_FILENAME, WEBCATALOG_SILO_SOURCE)
 
 from piston_mini_client.failhandlers import APIError
 from httplib import BadStatusLine
@@ -64,11 +64,7 @@ class SyncHandler(GObject.GObject):
 
     def _refresh_can_sync(self):
         '''compute current syncable state before asking for refresh the value'''
-        if self.credential is None:
-            new_can_sync = False
-        else:
-            new_can_sync = self._netstate.connected
-
+        new_can_sync = (self.credential is not None) and self._netstate.connected
         if self._can_sync == new_can_sync:
             return
         self._can_sync = new_can_sync
@@ -153,15 +149,15 @@ class SyncHandler(GObject.GObject):
         
     def emit_new_packagelist(self, hostid):
         '''this signal will be bound at init time'''
-        LOG.warning("emit_new_packagelist not bound to anything")
+        LOG.warning("emit_new_packagelist(%s) not bound to anything" % hostid)
 
     def emit_new_logo(self, hostid):
         '''this signal will be bound at init time'''
-        LOG.warning("emit_new_logo not bound to anything")
+        LOG.warning("emit_new_logo(%s) not bound to anything" % hostid)
         
     def emit_new_latestsync(self, timestamp):
         '''this signal will be bound at init time'''
-        LOG.warning("emit_new_hostlist not bound to anything")
+        LOG.warning("emit_new_lastestsync(%s) not bound to anything" % timestamp)
 
     def process_sync(self):
         '''start syncing what's needed if can sync
@@ -347,10 +343,11 @@ if __name__ == '__main__':
     DBusGMainLoop(set_as_default=True)
     
     from hosts import Hosts
+    import sys
     from infraclient_fake import WebCatalogAPI
 
-    sync_handler = SyncHandler(Hosts(), infraclient=WebCatalogAPI())
-    GObject.timeout_add_seconds(20, sync_handler.process_sync) 
-    loop = GObject.MainLoop()
+    sync_handler = SyncHandler(Hosts(), infraclient=WebCatalogAPI(WEBCATALOG_SILO_SOURCE))
+    loop = GObject.MainLoop() 
+    GObject.timeout_add_seconds(15, loop.quit)
 
     loop.run()

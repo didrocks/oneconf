@@ -1,5 +1,5 @@
 [TestSuite]
 ONECONF_CACHE_DIR=/tmp/oneconf-test/cache
-TEST_SETTINGS_DIR=/tmp/oneconf-test/test-settings
+WEBCATALOG_SILO_DIR=/tmp/oneconf-test/resulting_silo
 MIN_TIME_WITHOUT_ACTIVITY=5
 distro=Test

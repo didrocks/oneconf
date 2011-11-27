@@ -24,6 +24,7 @@ import dbus
 import gettext
 from gi.repository import GObject
 import logging
+import os
 
 from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
 
@@ -50,6 +51,16 @@ class LoginBackendDbusSSO(GObject.GObject):
         # use USC credential
         #self.appname = _("Ubuntu Software Center Store")
         self.appname = "Ubuntu Software Center"
+
+        if "ONECONF_SSO_CRED" in os.environ:
+            if os.environ["ONECONF_SSO_CRED"].lower() == 'true':
+                LOG.warn('forced fake sso cred...')
+                GObject.idle_add(self._on_credentials_found, self.appname, "foo")
+            else:
+                LOG.warn('forced not having any sso cred...')
+                GObject.idle_add(self._on_credentials_not_found, self.appname)
+            return
+
         self.bus = dbus.SessionBus()
         
         self.proxy = None

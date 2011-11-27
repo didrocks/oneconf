@@ -15,7 +15,6 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 ### END LICENSE
 
-import json
 import os
 import shutil
 import sys
@@ -32,7 +31,6 @@ from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
 class DaemonTests(unittest.TestCase):
 
     def setUp(self):
-        '''Launch dbus service if there'''
         self.dbus_service_process = None
         self.hostid = "0000"
         self.hostname = "foomachine"
