@@ -46,7 +46,7 @@ class OneConfSyncing(unittest.TestCase):
         try:
             #shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
             pass
-        except IOError:
+        except OSError:
             pass
 
     def collect_debug_output(self, process):
@@ -78,8 +78,9 @@ class OneConfSyncing(unittest.TestCase):
         '''launch the subprocess and check if the msg is present in the output'''
         if not self.output:
             self.output = self.get_daemon_output()
-        # ensure there is no traceback
+        # ensure there is no traceback or error
         self.assertFalse(self.msg_in_output(self.output, 'Traceback'))
+        self.assertFalse(self.msg_in_output(self.output, 'ERROR:'))
         return (self.msg_in_output(self.output, msg))
 
     def copy_state(self, test_ident):
@@ -107,7 +108,7 @@ class OneConfSyncing(unittest.TestCase):
                 continue
             src_content = open(os.path.join(source, filename)).readlines()
             dest_content = open(os.path.join(dest, filename)).readlines()
-            self.assertTrue(src_content, dest_content)
+            self.assertEqual(src_content, dest_content)
 
     def test_no_sync_no_network(self):
         '''Test that no sync is happening if no network'''
@@ -181,9 +182,55 @@ class OneConfSyncing(unittest.TestCase):
         self.copy_state('previously_shared_with_packages_notshared')
         self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
         self.compare_silo_results({}, {})
+
+    def test_update_host_no_change(self):
+        '''Update a host without any change'''
+        self.copy_state('update_current_host')
+        self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
+        self.assertFalse(self.check_msg_in_output("Push needed"))
+        self.assertFalse(self.check_msg_in_output("refresh done"))
+        # No silo result has nothing changed
+        self.assertFalse(os.path.exists(paths.WEBCATALOG_SILO_RESULT))
         
 
+    def test_update_host_with_hostname_change(self):
+        '''Update a host only changing the hostname'''
+        self.hostname = "barmachine"
+        os.environ["ONECONF_HOST"] = "%s:%s" % (self.hostid, self.hostname)
+        self.copy_state('update_current_hostname')
+        self.assertTrue(self.check_msg_in_output("Host data refreshed"))
+        self.assertFalse(self.check_msg_in_output("Push needed"))
+        self.assertFalse(self.check_msg_in_output("refresh done"))
+        self.compare_silo_results({self.hostid: {'hostname': self.hostname,
+                                                 'logo_checksum': None,
+                                                 'packages_checksum': u'9c0d4e619c445551541af522b39ab483ba943b8b298fb96ccc3acd0b'}},
+                                  {self.hostid: {u'bar': {u'auto': True},
+                                                 u'baz': {u'auto': False},
+                                                 u'foo': {u'auto': False}}})
+
+    def test_update_packages_for_host(self):
+        '''Update a package list for current host'''
+        self.copy_state('update_packages_for_current_host')
+        self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
+        self.assertTrue(self.check_msg_in_output("Push needed"))
+        self.assertTrue(self.check_msg_in_output("refresh done"))
+        self.compare_silo_results({self.hostid: {'hostname': self.hostname,
+                                                 'logo_checksum': None,
+                                                 'packages_checksum': u'AAAA'}},
+                                  {self.hostid: {u'fol': {u'auto': False},
+                                                 u'bar': {u'auto': True},
+                                                 u'baz': {u'auto': True}}})
+
+    def test_get_firsttime_other_hosts(self):
+        '''First time getting another host'''
+
     # TODO: unshare host which is not hostid
+    #       other update a package list
+    #       other with a host removed
+    #       other with a host 
+    
+
+    # TODO: cache interaction for sync and pkg list, host list
 
 #
 # main
@@ -195,4 +242,4 @@ if __name__ == '__main__':
     #########################################
     '''
     unittest.main(exit=False)
-    os.remove("/tmp/oneconf.override")
+    #os.remove("/tmp/oneconf.override")

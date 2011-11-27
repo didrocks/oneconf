@@ -172,10 +172,10 @@ class SyncHandler(GObject.GObject):
         # Check server connection
         try:
             if self.infraclient.server_status() != 'ok':
-                LOG.warning("WebClient server answering but not available")
+                LOG.error("WebClient server answering but not available")
                 return True
         except (APIError, socket.error, ValueError, ServerNotFoundError, BadStatusLine, RedirectLimit), e:
-            LOG.warning ("WebClient server answer error: %s", e)
+            LOG.error ("WebClient server answer error: %s", e)
             return True
 
         # Try to do every other hosts pending changes first (we will get fresh
@@ -220,7 +220,7 @@ class SyncHandler(GObject.GObject):
         try:
             full_hosts_list = self.infraclient.list_machines()
         except APIError, e:
-            LOG.warning ("Invalid machine list from server, stopping sync: %s" % e)
+            LOG.error ("Invalid machine list from server, stopping sync: %s" % e)
             return True
         other_hosts = {}
         distant_current_host = {}
@@ -246,7 +246,7 @@ class SyncHandler(GObject.GObject):
                             pass
                     packagelist_changed.append(hostid)
                 except APIError, e:
-                    LOG.warning ("Invalid data from server: %s", e)
+                    LOG.error ("Invalid data from server: %s", e)
                     try:
                         old_checksum = old_hosts[hostid]['packages_checksum']
                     except KeyError:
@@ -263,7 +263,7 @@ class SyncHandler(GObject.GObject):
             #        logo_file.close()
             #        logo_changed.append(hostid)
             #    except APIError, e:
-            #        LOG.warning ("Invalid data from server: %s", e)
+            #        LOG.error ("Invalid data from server: %s", e)
             #        try:
             #            old_checksum = old_hosts[hostid]['logo_checksum']
             #        except KeyError:
@@ -307,7 +307,7 @@ class SyncHandler(GObject.GObject):
                         self.infraclient.update_packages(machine_uuid=current_hostid, packages_checksum=self.hosts.current_host['packages_checksum'], package_list=json.load(f))
                         LOG.debug ("refresh done")
                 except (APIError, IOError), e:
-                        LOG.warning ("Erreur while pushing current package list: %s", e)
+                        LOG.error ("Error while pushing current package list: %s", e)
                         
             # local logo
             # WORKING but not wanted on the isd side for now
@@ -317,7 +317,7 @@ class SyncHandler(GObject.GObject):
             #        self.infraclient.update_machine_logo(machine_uuid=current_hostid, logo_checksum=self.hosts.current_host['logo_checksum'], logo_content=logo_file)
             #        LOG.debug ("refresh done")
             #    except APIError, e:
-            #        LOG.warning ("Erreur while pushing current logo: %s", e)
+            #        LOG.error ("Error while pushing current logo: %s", e)
 
         # write the last sync date
         timestamp = str(time.time())
