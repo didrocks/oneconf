@@ -42,6 +42,11 @@ class IntegrationTests(unittest.TestCase):
             
     def tearDown(self):
         shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
+        
+    def is_same_logo_than_original(self):
+        src_content = open(os.path.join(os.path.dirname(__file__), "data", "hostdata", "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid))).readlines()
+        dest_content = open(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid))).readlines()
+        return (src_content == dest_content)
 
     def test_load_host_data(self):
         '''Load existing hosts data, check that nothing change for current host as well'''
@@ -56,8 +61,8 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(current_host['hostname'], self.hostname)
         self.assertEqual(current_host['packages_checksum'], "9c0d4e619c445551541af522b39ab483ba943b8b298fb96ccc3acd0b")
         self.assertEqual(current_host['share_inventory'], True)
-        self.assertTrue("logo_checksum" in current_host)
-        os.path.isfile(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid)))  
+        self.assertEqual(current_host['logo_checksum'], 'c7e18f80419ea665772fef10e347f244d5ba596cc2764a8e611603061322543811.298964')
+        self.assertTrue(self.is_same_logo_than_original())
         
     def test_create_new_host(self):
         '''Creating a new host, for oneconf first run'''
@@ -70,8 +75,8 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(current_host['hostname'], self.hostname)
         self.assertEqual(current_host['packages_checksum'], None)
         self.assertEqual(current_host['share_inventory'], False)
-        self.assertTrue("logo_checksum" in current_host)
-        os.path.isfile(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid)))              
+        self.assertEqual(current_host['logo_checksum'], 'c7e18f80419ea665772fef10e347f244d5ba596cc2764a8e611603061322543811.298964')
+        self.assertTrue(self.is_same_logo_than_original())            
 
     def test_update_host(self):
         '''Update an existing hostid and hostname, checking that the "host" file is changed'''
@@ -83,8 +88,8 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(current_host['hostname'], self.hostname)
         self.assertEqual(current_host["packages_checksum"], "60f28c520e53c65cc37e9b68fe61911fb9f73ef910e08e988cb8ad52")
         self.assertEqual(current_host["share_inventory"], True)
-        self.assertTrue("logo_checksum" in current_host)
-        os.path.isfile(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid)))
+        self.assertEqual(current_host['logo_checksum'], 'c7e18f80419ea665772fef10e347f244d5ba596cc2764a8e611603061322543811.298964')
+        self.assertTrue(self.is_same_logo_than_original())
         
     def test_diff_host(self):
         '''Create a diff between current host and AAAAA. This handle the case with auto and manual packages'''
