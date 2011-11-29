@@ -108,6 +108,8 @@ class OneConfSyncing(unittest.TestCase):
                 continue
             src_content = open(os.path.join(source, filename)).readlines()
             dest_content = open(os.path.join(dest, filename)).readlines()
+            print os.path.join(source, filename)
+            print os.path.join(dest, filename)
             self.assertEqual(src_content, dest_content)
 
     def test_no_sync_no_network(self):

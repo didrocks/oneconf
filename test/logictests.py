@@ -149,6 +149,8 @@ class IntegrationTests(unittest.TestCase):
         '''Bootstrap without any sync before'''
         os.remove(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, paths.LAST_SYNC_DATE_FILENAME))
         self.assertEqual(self.oneconf.get_last_sync_date(), 'Was never synced')
+        
+    # TODO: ensure a logo is updated
     
 #
 # main

@@ -30,7 +30,7 @@ from gettext import gettext as _
 LOG = logging.getLogger(__name__)
 
 from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
-                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME)
+                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME, FAKE_WALLPAPER)
 
 class HostError(Exception):
     def __init__(self, message):
@@ -93,8 +93,10 @@ class Hosts(object):
 
     def _get_current_wallpaper_data(self):
         '''Get current wallpaper metadatas from store'''
-        settings = Gio.Settings.new("org.gnome.desktop.background")
-        file_path = settings.get_string("picture-uri").replace("file://", "")
+        file_path = FAKE_WALLPAPER
+        if not file_path:
+            settings = Gio.Settings.new("org.gnome.desktop.background")
+            file_path = settings.get_string("picture-uri").replace("file://", "")
         try:
             logo_checksum = "%s%f" % (hashlib.sha224(file_path).hexdigest(), os.stat(file_path).st_mtime)
         except OSError:
