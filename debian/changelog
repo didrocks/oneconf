@@ -1,3 +1,10 @@
+oneconf (0.2.6.8) UNRELEASED; urgency=low
+
+  * debian/control:
+    - change python-gobject dep by python-gi
+
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 09 Dec 2011 07:41:20 +0100
+
 oneconf (0.2.6.7) oneiric; urgency=low
 
   * restore MIN_TIME_WITHOUT_ACTIVITY to 5 min
