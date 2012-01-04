@@ -158,8 +158,8 @@ if __name__ == '__main__':
         oneconf = DirectConnect()
     else:
         LOG.debug("Using dbus")
+        from dbus import DBusException
         try:
-            from dbus import DBusException
             from oneconf.dbusconnect import DbusConnect
             oneconf = DbusConnect()
         except DBusException, e:
