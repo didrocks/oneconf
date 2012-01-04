@@ -194,8 +194,8 @@ class SyncHandler(GObject.GObject):
                         if not pending_changes[hostid].pop('share_inventory'):
                             LOG.debug("Removing machine %s requested as a pending change" % hostid)
                             self.infraclient.delete_machine(machine_uuid=hostid)
-                    except APIError:
-                        pass
+                    except APIError, e:
+                        LOG.error("WebClient server doesn't want to remove hostid: %s" % e)
                 except KeyError:
                     pass
                 # after all changes, is hostid still relevant?
@@ -248,12 +248,12 @@ class SyncHandler(GObject.GObject):
                             pass
                     packagelist_changed.append(hostid)
                 except APIError, e:
-                    LOG.error ("Invalid data from server: %s", e)
+                    LOG.error ("Invalid package data from server: %s", e)
                     try:
                         old_checksum = old_hosts[hostid]['packages_checksum']
                     except KeyError:
-                        packages_checksum = None
-                    other_hosts[hostid]['packages_checksum'] = packages_checksum
+                        old_checksum = None
+                    other_hosts[hostid]['packages_checksum'] = old_checksum
 
             # refresh the logo for every hosts as well
             # WORKING but not wanted on the isd side for now
@@ -287,19 +287,26 @@ class SyncHandler(GObject.GObject):
             LOG.debug("Ensure that current host is not shared")
             try:
                 self.infraclient.delete_machine(machine_uuid=current_hostid)
-            except APIError:
-                pass
+            except APIError, e:
+                # just a debug message as it can be already not shared
+                LOG.debug ("Can't delete current host from infra: %s" % e)
         else:
             LOG.debug("Push current host to infra now")
             # check if current host changed
             try:
                 if self.hosts.current_host['hostname'] != distant_current_host['hostname']:
-                    self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
-                    LOG.debug ("Host data refreshed")
+                    try:
+                        self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
+                        LOG.debug ("Host data refreshed")
+                    except APIError, e:
+                        LOG.error ("Can't update machine: %s", e)
             except KeyError:
-                self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
-                LOG.debug ("New host registered done")
-                distant_current_host = {'packages_checksum': None, 'logo_checksum': None}
+                try:
+                    self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
+                    LOG.debug ("New host registered done")
+                    distant_current_host = {'packages_checksum': None, 'logo_checksum': None}
+                except APIError, e:
+                    LOG.error ("Can't register new host: %s", e)
             
             # local package list
             if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'packages'):
@@ -308,7 +315,7 @@ class SyncHandler(GObject.GObject):
                     with open(local_packagelist_filename, 'r') as f:
                         self.infraclient.update_packages(machine_uuid=current_hostid, packages_checksum=self.hosts.current_host['packages_checksum'], package_list=json.load(f))
                 except (APIError, IOError), e:
-                        LOG.error ("Error while pushing current package list: %s", e)
+                        LOG.error ("Can't push current package list: %s", e)
                         
             # local logo
             # WORKING but not wanted on the isd side for now

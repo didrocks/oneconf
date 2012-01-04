@@ -39,6 +39,7 @@ class WebCatalogAPI(PistonAPI):
     def __init__(self, fake_settings_filename = None):
         super(WebCatalogAPI, self).__init__()
         self.silo = FakeWebCatalogSilo(fake_settings_filename)
+        self.silo.save_settings(WEBCATALOG_SILO_RESULT)
 
     def machineuuid_exist(self, machine_uuid):
         '''Generic method to check before doing an update operation that the machine_uuid exist in the host list'''

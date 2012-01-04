@@ -57,6 +57,7 @@ class FakeWebCatalogSilo(object):
 
     # server status
     # *****************************
+    # can be env variables as well like: ONECONF_server_response_error
     # raises APIError if True
     _FAKE_SETTINGS['server_response_error'] = False
     
@@ -109,6 +110,11 @@ class FakeWebCatalogSilo(object):
         '''Takes a string (key_name) which corresponds to a setting in this object, 
         
         Raises a NameError if the setting name doesn't exist'''
+        
+        if "error" in key_name:
+            error_value = os.getenv("ONECONF_%s" % key_name)
+            if error_value is not None: # can be false
+                return error_value
         if not key_name in self._FAKE_SETTINGS:
             raise NameError ('Setting %s does not exist' % key_name)
         return self._FAKE_SETTINGS[key_name]

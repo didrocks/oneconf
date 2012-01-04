@@ -43,7 +43,9 @@ class OneConfSyncing(unittest.TestCase):
         self.src_hostdir = None
 
     def tearDown(self):
-        return
+        for key in os.environ.keys():
+            if "ONECONF_" in key:
+                os.environ.pop(key)
         try:
             shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
         except OSError:
@@ -74,13 +76,14 @@ class OneConfSyncing(unittest.TestCase):
         p = None
         return output
 
-    def check_msg_in_output(self, msg):
+    def check_msg_in_output(self, msg, check_errors=True):
         '''launch the subprocess and check if the msg is present in the output'''
         if not self.output:
             self.output = self.get_daemon_output()
         # ensure there is no traceback or error
         self.assertFalse(self.msg_in_output(self.output, 'Traceback'))
-        self.assertFalse(self.msg_in_output(self.output, 'ERROR:'))
+        if check_errors:
+            self.assertFalse(self.msg_in_output(self.output, 'ERROR:'))
         return (self.msg_in_output(self.output, msg))
 
     def copy_state(self, test_ident):
@@ -156,12 +159,13 @@ class OneConfSyncing(unittest.TestCase):
         self.assertFalse(self.check_msg_in_output("New host registered done"))
         self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
         self.compare_silo_results({}, {})
-        self.compare_dirs(self.src_hostdir, self.hostdir) # Ensure nothing changed in the source dir        
+        self.compare_dirs(self.src_hostdir, self.hostdir) # Ensure nothing changed in the source dir
 
     def test_unshare_shared_host(self):
         '''Share a host, and then unshare it. Check that everything is cleaned in the shilo'''
         self.copy_state('previously_shared_notshared')
         self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
+        self.assertFalse(self.check_msg_in_output("Can't delete current host from infra: Host Not Found"))
         self.compare_silo_results({}, {})
 
     def test_share_host_with_packages(self):
@@ -181,15 +185,28 @@ class OneConfSyncing(unittest.TestCase):
         '''Unshare an existing host with packages'''
         self.copy_state('previously_shared_with_packages_notshared')
         self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
+        self.assertFalse(self.check_msg_in_output("Can't delete current host from infra: Host Not Found"))
         self.compare_silo_results({}, {})
+        
+    def test_unshare_other_host(self):
+        '''Unshare a host which is not the current one'''
+        self.copy_state('unshare_other_host')
+        self.assertTrue(self.check_msg_in_output("Removing machine AAAA requested as a pending change"))
+        self.compare_silo_results({}, {})
+        
 
     def test_update_host_no_change(self):
         '''Update a host without any change'''
         self.copy_state('only_current_host')
         self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
+        self.assertFalse(self.check_msg_in_output("No more pending changes remaining, removing the file"))
         self.assertFalse(self.check_msg_in_output("Push new"))
-        # No silo result has nothing changed
-        self.assertFalse(os.path.exists(paths.WEBCATALOG_SILO_RESULT))
+        self.compare_silo_results({self.hostid: {'hostname': self.hostname,
+                                                 'logo_checksum': None,
+                                                 'packages_checksum': u'9c0d4e619c445551541af522b39ab483ba943b8b298fb96ccc3acd0b'}},
+                                  {u'0000': {u'bar': {u'auto': True},
+                                             u'baz': {u'auto': False},
+                                             u'foo': {u'auto': False}}})
         
 
     def test_update_host_with_hostname_change(self):
@@ -273,15 +290,91 @@ class OneConfSyncing(unittest.TestCase):
     def test_sync_remove_other_host(self):
         '''Remove a host after a sync'''
         self.copy_state('sync_remove_other_host')
-        self.assertTrue(self.check_msg_in_output(":Refresh new host"))
+        self.assertTrue(self.check_msg_in_output("Refresh new host"))
         self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
         self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
         self.assertFalse(self.check_msg_in_output("emit_new_packagelist"))
         self.compare_dirs(self.result_hostdir, self.hostdir)
         
-    
-    # TODO:
-    # all server errors
+    def test_server_error(self):
+        '''Test server not responsing at all'''
+        self.copy_state('fake_server_errors')
+        os.environ["ONECONF_server_response_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("WebClient server answer error: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        self.assertFalse(self.check_msg_in_output("Saving updated", check_errors=False))
+        # Untouched silo and source dir
+        self.compare_silo_results({self.hostid: {'hostname': 'barmachine',
+                                                 'logo_checksum': None,
+                                                 'packages_checksum': '9c0d4e619c445551541af522b39ab483ba943b8b298fb96ccc3acd0b'},
+                                   'AAAA': {'hostname': 'aaaa',
+                                            'logo_checksum': None,
+                                            'packages_checksum': 'packageaaaa'},
+                                   'BBBB': {'hostname': 'toremove',
+                                            'logo_checksum': None,
+                                            'packages_checksum': 'toremove'}},
+                                  {self.hostid: {'bar': {'auto': True},
+                                                 'baz': {'auto': False},
+                                                 'foo': {'auto': False}},
+                                   'AAAA': {'bar': {'auto': True},
+                                            'baz': {'auto': False},
+                                            'foo': {'auto': False}},
+                                   'BBBB': {u'bar': {u'auto': False}}})
+        self.compare_dirs(self.src_hostdir, self.hostdir)
+        
+    def test_removing_pending_host_error(self):
+        '''Test an error when removing a pending host'''
+        self.copy_state('fake_server_errors')
+        os.environ["ONECONF_delete_machine_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("WebClient server doesn't want to remove hostid: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        # check that other requests still happens (and BBBB still there)
+        self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("emit_new_packagelist(BBBB) not bound to anything", check_errors=False))
+
+    def test_get_all_machines_error(self):
+        '''Test when getting all machines errors, we should stop syncing'''
+        self.copy_state('fake_server_errors')
+        os.environ["ONECONF_list_machines_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("Invalid machine list from server, stopping sync: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        # Stop the sync there
+        self.assertFalse(self.check_msg_in_output("Saving updated", check_errors=False))
+
+    def test_get_packages_error(self):
+        '''Test when getting all packages errors'''
+        self.copy_state('fake_server_errors')
+        os.environ["ONECONF_list_packages_error"] = "True"      
+        self.assertTrue(self.check_msg_in_output("Invalid package data from server: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
+        
+    def test_delete_current_host_error(self):
+        '''Try to delete the current host and there is an error'''
+        self.copy_state('delete_current_host_error')
+        os.environ["ONECONF_delete_machine_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("Can't delete current host from infra: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
+        
+    def test_update_current_host_error(self):
+        '''Update an already registered current host and there is an error'''
+        self.copy_state('fake_server_errors')
+        os.environ["ONECONF_update_machine_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("Can't update machine: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        self.assertFalse(self.check_msg_in_output("Host data refreshed", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
+        
+    def test_create_current_host_error(self):
+        '''Try to create the current host and there is an error'''
+        self.copy_state('nosilo_nopackage_onlyhost')
+        os.environ["ONECONF_update_machine_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("Can't register new host: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        self.assertFalse(self.check_msg_in_output("New host registered done", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
+        
+    def test_update_package_list_error(self):
+        '''Try to update the remove package list and get an error'''
+        self.copy_state('fake_server_errors')
+        os.environ["ONECONF_update_packages_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("Can't push current package list: Fake WebCatalogAPI raising fake exception", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
 
 #
 # main

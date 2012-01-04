@@ -92,7 +92,7 @@ class DaemonTests(unittest.TestCase):
         '''Test that the daemon is kept alive if you have activity'''
         self.assertTrue(self.daemon_still_there())
         subprocess.Popen(["./oneconf-query", '--host'])
-        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 3)
+        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
         subprocess.Popen(["./oneconf-query", '--host'])
         self.dbus_service_process.wait() # let it proceeding quitting
         time_stop = time.time()
