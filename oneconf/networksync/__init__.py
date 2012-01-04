@@ -140,7 +140,7 @@ class SyncHandler(GObject.GObject):
         except KeyError:
             need_push = True
         if need_push:
-            LOG.debug("Push needed")
+            LOG.debug("Push new %s" % key)
         return need_push
 
     def emit_new_hostlist(self):

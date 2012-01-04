@@ -167,7 +167,7 @@ class OneConfSyncing(unittest.TestCase):
         '''Share the current host with a package list'''
         self.copy_state('with_packages')
         self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
-        self.assertTrue(self.check_msg_in_output("Push needed"))
+        self.assertTrue(self.check_msg_in_output("Push new packages"))
         self.assertTrue(self.check_msg_in_output("refresh done"))
         self.compare_silo_results({self.hostid: {'hostname': self.hostname,
                                                  'logo_checksum': None,
@@ -187,7 +187,7 @@ class OneConfSyncing(unittest.TestCase):
         '''Update a host without any change'''
         self.copy_state('update_current_host')
         self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
-        self.assertFalse(self.check_msg_in_output("Push needed"))
+        self.assertFalse(self.check_msg_in_output("Push new"))
         self.assertFalse(self.check_msg_in_output("refresh done"))
         # No silo result has nothing changed
         self.assertFalse(os.path.exists(paths.WEBCATALOG_SILO_RESULT))
@@ -199,7 +199,7 @@ class OneConfSyncing(unittest.TestCase):
         os.environ["ONECONF_HOST"] = "%s:%s" % (self.hostid, self.hostname)
         self.copy_state('update_current_hostname')
         self.assertTrue(self.check_msg_in_output("Host data refreshed"))
-        self.assertFalse(self.check_msg_in_output("Push needed"))
+        self.assertFalse(self.check_msg_in_output("Push new"))
         self.assertFalse(self.check_msg_in_output("refresh done"))
         self.compare_silo_results({self.hostid: {'hostname': self.hostname,
                                                  'logo_checksum': None,
@@ -212,7 +212,7 @@ class OneConfSyncing(unittest.TestCase):
         '''Update a package list for current host'''
         self.copy_state('update_packages_for_current_host')
         self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
-        self.assertTrue(self.check_msg_in_output("Push needed"))
+        self.assertTrue(self.check_msg_in_output("Push new packages"))
         self.assertTrue(self.check_msg_in_output("refresh done"))
         self.compare_silo_results({self.hostid: {'hostname': self.hostname,
                                                  'logo_checksum': None,
