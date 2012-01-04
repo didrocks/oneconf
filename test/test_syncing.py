@@ -45,7 +45,6 @@ class OneConfSyncing(unittest.TestCase):
     def tearDown(self):
         try:
             shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
-            pass
         except OSError:
             pass
 
@@ -87,6 +86,7 @@ class OneConfSyncing(unittest.TestCase):
         '''Set state from the test identifier.'''
         datadir = os.path.join(os.path.dirname(__file__), "data", "syncdatatests")
         self.src_hostdir = os.path.join(datadir, 'host_%s' % test_ident)
+        self.result_hostdir = os.path.join(datadir, 'resulthost_%s' % test_ident)
         shutil.copytree(self.src_hostdir, self.hostdir)
         if not os.path.isdir(paths.WEBCATALOG_SILO_DIR):
             os.makedirs(paths.WEBCATALOG_SILO_DIR)
@@ -168,7 +168,6 @@ class OneConfSyncing(unittest.TestCase):
         self.copy_state('with_packages')
         self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
         self.assertTrue(self.check_msg_in_output("Push new packages"))
-        self.assertTrue(self.check_msg_in_output("refresh done"))
         self.compare_silo_results({self.hostid: {'hostname': self.hostname,
                                                  'logo_checksum': None,
                                                  'packages_checksum': u'9c0d4e619c445551541af522b39ab483ba943b8b298fb96ccc3acd0b'}},
@@ -185,10 +184,9 @@ class OneConfSyncing(unittest.TestCase):
 
     def test_update_host_no_change(self):
         '''Update a host without any change'''
-        self.copy_state('update_current_host')
+        self.copy_state('only_current_host')
         self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
         self.assertFalse(self.check_msg_in_output("Push new"))
-        self.assertFalse(self.check_msg_in_output("refresh done"))
         # No silo result has nothing changed
         self.assertFalse(os.path.exists(paths.WEBCATALOG_SILO_RESULT))
         
@@ -200,7 +198,6 @@ class OneConfSyncing(unittest.TestCase):
         self.copy_state('update_current_hostname')
         self.assertTrue(self.check_msg_in_output("Host data refreshed"))
         self.assertFalse(self.check_msg_in_output("Push new"))
-        self.assertFalse(self.check_msg_in_output("refresh done"))
         self.compare_silo_results({self.hostid: {'hostname': self.hostname,
                                                  'logo_checksum': None,
                                                  'packages_checksum': u'9c0d4e619c445551541af522b39ab483ba943b8b298fb96ccc3acd0b'}},
@@ -213,7 +210,6 @@ class OneConfSyncing(unittest.TestCase):
         self.copy_state('update_packages_for_current_host')
         self.assertTrue(self.check_msg_in_output("Check if packages for current host need to be pushed to infra"))
         self.assertTrue(self.check_msg_in_output("Push new packages"))
-        self.assertTrue(self.check_msg_in_output("refresh done"))
         self.compare_silo_results({self.hostid: {'hostname': self.hostname,
                                                  'logo_checksum': None,
                                                  'packages_checksum': u'AAAA'}},
@@ -223,7 +219,13 @@ class OneConfSyncing(unittest.TestCase):
 
     def test_get_firsttime_other_host(self):
         '''First time getting another host, no package'''
-        
+        self.copy_state('firsttime_sync')
+        self.assertTrue(self.check_msg_in_output("Refresh new host"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
+        self.assertFalse(self.check_msg_in_output("Refresh new packages"))
+        self.assertFalse(self.check_msg_in_output("Refresh new logo"))        
+        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
+        self.compare_dirs(self.result_hostdir, self.hostdir)
 
     # TODO: unshare host which is not hostid
     #       other update a package list

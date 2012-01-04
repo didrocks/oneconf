@@ -140,10 +140,10 @@ class WebCatalogAPI(PistonAPI):
 
         packages = self.silo.get_package_silo()
         if machine_uuid not in packages:
-            raise APIError('Package list Not Found')
+            raise APIError('Package list empty')
         package_list = packages[machine_uuid]
         if not package_list:
-            raise APIError('Package list invalid')
+            raise APIError('Package list empty')
         return simplejson.dumps(package_list)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')

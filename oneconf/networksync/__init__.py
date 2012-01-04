@@ -124,9 +124,11 @@ class SyncHandler(GObject.GObject):
             if old_data[hostid]['%s_checksum' % key] != new_data[hostid]['%s_checksum' % key]:
                 need_refresh = True
         except KeyError:
-            need_refresh = True
+            # there was no old_data, if the new ones are not none, refresh
+            if new_data[hostid]['%s_checksum' % key]:
+                need_refresh = True
         if need_refresh:
-            LOG.debug("Refresh needed")
+            LOG.debug("Refresh new %s" % key)
         return need_refresh
 
     def check_if_push_needed(self, local_data, distant_data, key):
@@ -274,7 +276,7 @@ class SyncHandler(GObject.GObject):
         # the hosts metadata there. This removes as well the remaining package list and logo
         LOG.debug("Check if other hosts metadata needs to be refreshed")
         if other_hosts != old_hosts:
-            LOG.debug("Refresh needed")
+            LOG.debug("Refresh new host")
             hostlist_changed = True
             other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
             self._save_local_file_update(other_host_filename, other_hosts)
@@ -305,7 +307,6 @@ class SyncHandler(GObject.GObject):
                 try:
                     with open(local_packagelist_filename, 'r') as f:
                         self.infraclient.update_packages(machine_uuid=current_hostid, packages_checksum=self.hosts.current_host['packages_checksum'], package_list=json.load(f))
-                        LOG.debug ("refresh done")
                 except (APIError, IOError), e:
                         LOG.error ("Error while pushing current package list: %s", e)
                         
