@@ -43,6 +43,7 @@ class OneConfSyncing(unittest.TestCase):
         self.src_hostdir = None
 
     def tearDown(self):
+        return
         try:
             shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
         except OSError:
@@ -217,9 +218,9 @@ class OneConfSyncing(unittest.TestCase):
                                                  u'bar': {u'auto': True},
                                                  u'baz': {u'auto': True}}})
 
-    def test_get_firsttime_other_host(self):
+    def test_get_firsttime_sync_other_host(self):
         '''First time getting another host, no package'''
-        self.copy_state('firsttime_sync')
+        self.copy_state('firsttime_sync_other_host')
         self.assertTrue(self.check_msg_in_output("Refresh new host"))
         self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
         self.assertFalse(self.check_msg_in_output("Refresh new packages"))
@@ -227,14 +228,60 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
         self.compare_dirs(self.result_hostdir, self.hostdir)
 
-    # TODO: unshare host which is not hostid
-    #       other update a package list
-    #       other with a host removed
-    #       other with an additional host
-    #       other with a host with some packages
-    
+    def test_sync_other_host_with_packages(self):
+        '''Sync another host with packages'''
+        self.copy_state('sync_other_host_with_packages')
+        self.assertTrue(self.check_msg_in_output("Refresh new packages"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/package_list_AAAA to disk"))
+        self.assertTrue(self.check_msg_in_output("Refresh new host"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
+        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
+        self.assertTrue(self.check_msg_in_output("emit_new_packagelist(AAAA) not bound to anything"))
+        self.compare_dirs(self.result_hostdir, self.hostdir)        
+        
+    def test_sync_other_host_with_updated_packages(self):    
+        '''Sync another host with updated packages'''
+        self.copy_state('sync_other_host_with_updated_packages')
+        self.assertTrue(self.check_msg_in_output("Refresh new packages"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/package_list_AAAA to disk"))
+        self.assertTrue(self.check_msg_in_output("Refresh new host"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
+        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
+        self.assertTrue(self.check_msg_in_output("emit_new_packagelist(AAAA) not bound to anything"))
+        self.compare_dirs(self.result_hostdir, self.hostdir)
 
-    # TODO: cache interaction for sync and pkg list, host list
+    def test_sync_other_host_with_updated_hostname(self):
+        '''Sync another host with updated hostname'''
+        self.copy_state('sync_other_host_with_updated_hostname')
+        self.assertFalse(self.check_msg_in_output("Refresh new packages"))
+        self.assertTrue(self.check_msg_in_output("Refresh new host"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
+        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
+        self.compare_dirs(self.result_hostdir, self.hostdir)
+    
+    def test_sync_a_newhost_with_already_other_hosts(self):
+        '''Add an additional host with some already there'''
+        self.copy_state('sync_a_newhost_with_already_other_hosts')
+        self.assertTrue(self.check_msg_in_output("Refresh new packages"))
+        self.assertFalse(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/package_list_AAAA to disk"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/package_list_BBBB to disk"))
+        self.assertTrue(self.check_msg_in_output("Refresh new host"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
+        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
+        self.compare_dirs(self.result_hostdir, self.hostdir)
+        
+    def test_sync_remove_other_host(self):
+        '''Remove a host after a sync'''
+        self.copy_state('sync_remove_other_host')
+        self.assertTrue(self.check_msg_in_output(":Refresh new host"))
+        self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
+        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
+        self.assertFalse(self.check_msg_in_output("emit_new_packagelist"))
+        self.compare_dirs(self.result_hostdir, self.hostdir)
+        
+    
+    # TODO:
+    # all server errors
 
 #
 # main
