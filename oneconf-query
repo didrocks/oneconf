@@ -21,6 +21,7 @@
 
 import logging
 from optparse import OptionParser, OptionGroup
+import os
 import sys
 from time import localtime, strftime
 
@@ -145,6 +146,11 @@ if __name__ == '__main__':
     parser.add_option_group(scope_hosts)
     parser.add_option_group(scope_manage_host)
     (options, args) = parser.parse_args()
+
+    # don't run as root:
+    if os.getuid() == 0:
+        print "oneconf-query can't run as root. Exiting"
+        sys.exit(1)
 
     # set verbosity
     if options.debug:

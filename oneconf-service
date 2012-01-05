@@ -21,6 +21,7 @@
 import dbus
 import logging
 from optparse import OptionParser
+import os
 import sys
 
 import gettext
@@ -70,6 +71,12 @@ if __name__ == '__main__':
     parser.add_option("--mock", action="store_true", dest="mock",
                       help=_("use the mock infrastructure"))
     (options, args) = parser.parse_args()
+
+    # don't run as root:
+    if os.getuid() == 0:
+        print "oneconf-service can't run as root. Exiting"
+        sys.exit(1)
+
     # set verbosity
     if options.debug:
         logging.basicConfig(level=logging.DEBUG)

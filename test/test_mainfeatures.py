@@ -154,6 +154,11 @@ class IntegrationTests(unittest.TestCase):
         '''Bootstrap without any sync before'''
         os.remove(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, paths.LAST_SYNC_DATE_FILENAME))
         self.assertEqual(self.oneconf.get_last_sync_date(), 'Was never synced')
+
+    def test_daemon_query_cant_run_root(self):
+        '''Test that the daemon or the querier can't run as root'''
+        self.assertEqual(subprocess.call(["fakeroot", "./oneconf-query"]), 1)
+        self.assertEqual(subprocess.call(["fakeroot", "./oneconf-service"]), 1)
         
     # TODO: ensure a logo is updated
     
