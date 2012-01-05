@@ -96,7 +96,10 @@ class Hosts(object):
         file_path = FAKE_WALLPAPER
         if not file_path:
             settings = Gio.Settings.new("org.gnome.desktop.background")
-            file_path = settings.get_string("picture-uri").replace("file://", "")
+            file_path = settings.get_string("picture-uri")
+        if not file_path:
+            return ('', '')
+        file_path = file_path.replace("file://", "")
         try:
             logo_checksum = "%s%f" % (hashlib.sha224(file_path).hexdigest(), os.stat(file_path).st_mtime)
         except OSError:
