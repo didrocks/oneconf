@@ -1,5 +1,14 @@
 oneconf (0.2.6.8) UNRELEASED; urgency=low
 
+  * New release:
+    - ensure we keep staged pending action of the server told us the operation
+      failed (LP: #932715)
+    - preventing running as root (LP: #834458)
+    - fix a typo when gsettings return null (LP: #871783)
+    - oneconf-service crashed with UnboundLocalError in process_sync(): local
+      variable 'packages_checksum' referenced before assignment (LP: #908759)
+    - import the dbus exception at the right place (LP: #889867)
+    - add a lot of tests
   * debian/control:
     - change python-gobject dep by python-gi
 
