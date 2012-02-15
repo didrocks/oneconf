@@ -105,14 +105,18 @@ class OneConfSyncing(unittest.TestCase):
         self.assertEqual(fakecatalog._FAKE_SETTINGS['hosts_metadata'], hosts_medata)
         self.assertEqual(fakecatalog._FAKE_SETTINGS['packages_metadata'], packages_metadata)
 
+    def compare_files(self, file1, file2):
+        '''Compare file content'''
+        src_content = open(file1).read().splitlines()
+        dest_content = open(file2).read().splitlines()
+        self.assertEqual(src_content, dest_content)
+
     def compare_dirs(self, source, dest):
         '''Compare directory files, ignoring the last_sync file on purpose'''
         for filename in os.listdir(source):
             if filename == paths.LAST_SYNC_DATE_FILENAME:
                 continue
-            src_content = open(os.path.join(source, filename)).readlines()
-            dest_content = open(os.path.join(dest, filename)).readlines()
-            self.assertEqual(src_content, dest_content)
+            self.compare_files(os.path.join(source, filename), os.path.join(dest, filename))
 
     def test_no_sync_no_network(self):
         '''Test that no sync is happening if no network'''
@@ -162,7 +166,7 @@ class OneConfSyncing(unittest.TestCase):
         self.compare_dirs(self.src_hostdir, self.hostdir) # Ensure nothing changed in the source dir
 
     def test_unshare_shared_host(self):
-        '''Share a host, and then unshare it. Check that everything is cleaned in the shilo'''
+        '''Share a host, and then unshare it. Check that everything is cleaned in the silo'''
         self.copy_state('previously_shared_notshared')
         self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
         self.assertFalse(self.check_msg_in_output("Can't delete current host from infra: Host Not Found"))
@@ -192,8 +196,23 @@ class OneConfSyncing(unittest.TestCase):
         '''Unshare a host which is not the current one'''
         self.copy_state('unshare_other_host')
         self.assertTrue(self.check_msg_in_output("Removing machine AAAA requested as a pending change"))
+        self.assertTrue(self.check_msg_in_output("No more pending changes remaining, removing the file"))
         self.compare_silo_results({}, {})
-        
+
+    def test_unshare_other_host_error(self):
+        '''Unshare a host which is not the current one, raising an exception and keep it to the list of unsharing'''
+        self.copy_state('unshare_other_host')
+        os.environ["ONECONF_delete_machine_error"] = "True"
+        self.assertTrue(self.check_msg_in_output("Removing machine AAAA requested as a pending change", check_errors=False))
+        self.assertTrue(self.check_msg_in_output("WebClient server doesn't want to remove hostid (AAAA): Fake WebCatalogAPI raising fake exception", check_errors=False))
+        self.assertFalse(self.check_msg_in_output("No more pending changes remaining, removing the file", check_errors=False))
+        self.compare_silo_results({'AAAA': {'hostname': 'aaaa',
+                                            'logo_checksum': None,
+                                            'packages_checksum': 'packageaaaa'}},
+                                  {'AAAA': {u'bar': {u'auto': True},
+                                             'baz': {u'auto': False},
+                                             'foo': {u'auto': False}}})
+        self.compare_files(os.path.join(self.src_hostdir, paths.PENDING_UPLOAD_FILENAME), os.path.join(self.hostdir, paths.PENDING_UPLOAD_FILENAME))
 
     def test_update_host_no_change(self):
         '''Update a host without any change'''
@@ -320,16 +339,6 @@ class OneConfSyncing(unittest.TestCase):
                                             'foo': {'auto': False}},
                                    'BBBB': {u'bar': {u'auto': False}}})
         self.compare_dirs(self.src_hostdir, self.hostdir)
-        
-    def test_removing_pending_host_error(self):
-        '''Test an error when removing a pending host'''
-        self.copy_state('fake_server_errors')
-        os.environ["ONECONF_delete_machine_error"] = "True"
-        self.assertTrue(self.check_msg_in_output("WebClient server doesn't want to remove hostid: Fake WebCatalogAPI raising fake exception", check_errors=False))
-        # check that other requests still happens (and BBBB still there)
-        self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
-        self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything", check_errors=False))
-        self.assertTrue(self.check_msg_in_output("emit_new_packagelist(BBBB) not bound to anything", check_errors=False))
 
     def test_get_all_machines_error(self):
         '''Test when getting all machines errors, we should stop syncing'''

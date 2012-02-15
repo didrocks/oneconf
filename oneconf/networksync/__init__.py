@@ -197,7 +197,8 @@ class SyncHandler(GObject.GObject):
                             LOG.debug("Removing machine %s requested as a pending change" % hostid)
                             self.infraclient.delete_machine(machine_uuid=hostid)
                     except APIError, e:
-                        LOG.error("WebClient server doesn't want to remove hostid: %s" % e)
+                        LOG.error("WebClient server doesn't want to remove hostid (%s): %s" % (hostid, e))
+                        pending_changes[hostid]['share_inventory'] = False # append it again to be done
                 except KeyError:
                     pass
                 # after all changes, is hostid still relevant?
