@@ -72,7 +72,9 @@ class SyncHandler(GObject.GObject):
         # we can now start syncing (as it's a new status), adding the timeout
         if self._can_sync:
             self.process_sync()
-            GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, self.process_sync)
+            # adding the timeout only if we are not on a single sync
+            if not "ONECONF_SINGLE_SYNC" in os.environ or not os.environ["ONECONF_SINGLE_SYNC"]:
+                GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, self.process_sync)
 
     def _sso_login_result(self, sso_login, credential):
         if credential == self.credential:
@@ -353,6 +355,8 @@ if __name__ == '__main__':
     from hosts import Hosts
     import sys
     from infraclient_fake import WebCatalogAPI
+
+    os.environ["ONECONF_SINGLE_SYNC"] = "True"
 
     sync_handler = SyncHandler(Hosts(), infraclient=WebCatalogAPI(WEBCATALOG_SILO_SOURCE))
     loop = GObject.MainLoop() 
