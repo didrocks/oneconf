@@ -1,4 +1,4 @@
-oneconf (0.2.6.8) UNRELEASED; urgency=low
+oneconf (0.2.6.8) precise; urgency=low
 
   * New release:
     - ensure we keep staged pending action of the server told us the operation
@@ -12,7 +12,7 @@ oneconf (0.2.6.8) UNRELEASED; urgency=low
   * debian/control:
     - change python-gobject dep by python-gi
 
- -- Didier Roche <didrocks@ubuntu.com>  Fri, 09 Dec 2011 07:41:20 +0100
+ -- Didier Roche <didrocks@ubuntu.com>  Wed, 15 Feb 2012 17:22:39 +0100
 
 oneconf (0.2.6.7) oneiric; urgency=low
 
