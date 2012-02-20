@@ -1,4 +1,4 @@
-oneconf (0.2.6.9) UNRELEASED; urgency=low
+oneconf (0.2.6.9) precise; urgency=low
 
   * setup.py: Include missing oneconf.distributor package. (LP: #934624)
 
