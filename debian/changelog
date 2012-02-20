@@ -1,3 +1,9 @@
+oneconf (0.2.6.9) UNRELEASED; urgency=low
+
+  * setup.py: Include missing oneconf.distributor package. (LP: #934624)
+
+ -- Gediminas Paulauskas <menesis@pov.lt>  Sun, 19 Feb 2012 19:03:16 +0200
+
 oneconf (0.2.6.8ubuntu1) precise; urgency=low
 
   * po/POTFILES.in Update with current list of source files. (LP: #934592)
