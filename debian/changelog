@@ -1,3 +1,9 @@
+oneconf (0.2.6.8ubuntu1) precise; urgency=low
+
+  * po/POTFILES.in Update with current list of source files. (LP: #934592)
+
+ -- Barry Warsaw <barry@ubuntu.com>  Fri, 17 Feb 2012 18:56:11 -0500
+
 oneconf (0.2.6.8) precise; urgency=low
 
   * New release:
