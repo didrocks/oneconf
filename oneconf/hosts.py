@@ -187,7 +187,7 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
                 return json.load(f)[hostid][attribute]
-        except IOError, KeyError:
+        except (IOError, KeyError) as e:
             return None
     
     def gethost_by_id(self, hostid):
