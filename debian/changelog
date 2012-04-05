@@ -1,3 +1,15 @@
+oneconf (0.2.6.9ubuntu1) UNRELEASED; urgency=low
+ 
+  [ Michael Vogt ]
+  * Fix software-center crashed with KeyError in get_hostid_pending_change()
+    (LP: #941193)
+
+  [ Didier Roche ]
+  * Move saving facility to an utils module to reuse safe saving accross
+    the whole application. Removed a deprecated call as well (LP: #944738)
+
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 29 Mar 2012 18:31:42 +0200
+
 oneconf (0.2.6.9) precise; urgency=low
 
   * setup.py: Include missing oneconf.distributor package. (LP: #934624)

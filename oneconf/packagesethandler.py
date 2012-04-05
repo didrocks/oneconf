@@ -27,6 +27,7 @@ LOG = logging.getLogger(__name__)
 from oneconf.hosts import Hosts, HostError
 from oneconf.distributor import get_distro
 from oneconf.paths import ONECONF_CACHE_DIR, PACKAGE_LIST_PREFIX
+from oneconf import utils
 
 class PackageSetHandler(object):
     """
@@ -58,8 +59,8 @@ class PackageSetHandler(object):
                 
         LOG.debug("Package list need refresh")
         self.package_list[hostid] = {'valid': True, 'package_list': newpkg_list}
-        with open(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)), 'w') as f:
-            json.dump(self.package_list[hostid]['package_list'], f)
+        utils.save_json_file_update(os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid)),
+                                    self.package_list[hostid]['package_list'])
         if self.hosts.current_host['packages_checksum'] != checksum:
             self.hosts.current_host['packages_checksum'] = checksum
             self.hosts.save_current_host()

@@ -26,6 +26,7 @@ import os
 import time
 
 from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
+import utils
 from netstatus import NetworkStatusWatcher
 from ssohandler import LoginBackendDbusSSO
 
@@ -98,25 +99,6 @@ class SyncHandler(GObject.GObject):
 
     def _network_state_changed(self, netstate, connected):
         self._refresh_can_sync()
-
-    def _save_local_file_update(self, file_uri, content):
-        '''Save local file in an atomic transaction'''
-        
-        if not content:
-            LOG.warning("Empty content saved as \"\" for %s" % file_uri)
-            content = {}
-
-        LOG.debug("Saving updated %s to disk", file_uri)
-        new_file = file_uri + '.new'
-    
-        try:
-            with open(new_file, 'w') as f:
-                json.dump(content, f)
-            os.rename(new_file, file_uri)
-            return True
-        except IOError:
-            LOG.error("Can't save update file for %s", self._url_to_file(url))
-            return False
 
     def check_if_refresh_needed(self, old_data, new_data, hostid, key):
         '''Return if data dictionnary needs to be refreshed'''
@@ -210,8 +192,7 @@ class SyncHandler(GObject.GObject):
                 os.remove(pending_upload_filename)
             # update the remaining tasks
             else:
-                with open(pending_upload_filename, 'w') as f:
-                    json.dump(pending_changes, f)
+                utils.save_json_file_update(pending_upload_filename, pending_changes)
         except IOError:
             pass
 
@@ -242,7 +223,7 @@ class SyncHandler(GObject.GObject):
             if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'packages'):
                 try:
                     new_package_list = self.infraclient.list_packages(machine_uuid=hostid)
-                    self._save_local_file_update(packagelist_filename, new_package_list)
+                    utils.save_json_file_update(packagelist_filename, new_package_list)
                     # if already loaded, unload the package cache
                     if self.package_handler:
                         try:
@@ -282,7 +263,7 @@ class SyncHandler(GObject.GObject):
             LOG.debug("Refresh new host")
             hostlist_changed = True
             other_host_filename = os.path.join(ONECONF_CACHE_DIR, current_hostid, OTHER_HOST_FILENAME)
-            self._save_local_file_update(other_host_filename, other_hosts)
+            utils.save_json_file_update(other_host_filename, other_hosts)
             self.hosts.update_other_hosts()
 
         # now push current host
@@ -333,7 +314,7 @@ class SyncHandler(GObject.GObject):
         # write the last sync date
         timestamp = str(time.time())
         content = {"last_sync":  timestamp}
-        self._save_local_file_update(os.path.join(self.hosts.get_currenthost_dir(), LAST_SYNC_DATE_FILENAME), content)
+        utils.save_json_file_update(os.path.join(self.hosts.get_currenthost_dir(), LAST_SYNC_DATE_FILENAME), content)
 
         # send dbus signal if needed events (just now so that we don't block on remaining operations)
         if hostlist_changed:

@@ -32,6 +32,12 @@ LOG = logging.getLogger(__name__)
 from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
                    PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME, FAKE_WALLPAPER)
 
+# FIXME: ask about those horrible symlink to barry when I get time for it.
+try:
+    from oneconf import utils
+except ImportError:
+    import utils
+
 class HostError(Exception):
     def __init__(self, message):
         self.message = message
@@ -156,8 +162,7 @@ class Hosts(object):
         '''Save current host on disk'''
         
         LOG.debug("Save current host to disk")
-        with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'w') as f:
-            json.dump(self.current_host, f)
+        utils.save_json_file_update(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), self.current_host)
 
     def add_hostid_pending_change(self, change):
         '''Pend a scheduled change for another host on disk
@@ -177,8 +182,7 @@ class Hosts(object):
                 pending_changes[hostid] = {}
             pending_changes[hostid].update(change[hostid])
 
-        with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'w') as f:
-            json.dump(pending_changes, f)
+        utils.save_json_file_update(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), pending_changes)
 
     def get_hostid_pending_change(self, hostid, attribute):
         '''Get the status if a pending change is in progress for an host
