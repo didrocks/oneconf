@@ -23,11 +23,15 @@ import subprocess
 import time
 import unittest
 
+import gettext
+from gettext import gettext as _
+
 sys.path.insert(0, os.path.abspath('.'))
 
 shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.override"), "/tmp/oneconf.override")
 from oneconf import paths
 from oneconf.hosts import HostError
+from oneconf import directconnect
 from oneconf.directconnect import DirectConnect
 
 class IntegrationTests(unittest.TestCase):
@@ -38,7 +42,9 @@ class IntegrationTests(unittest.TestCase):
         self.hostname = "foomachine"
         os.environ["ONECONF_HOST"] = "%s:%s" % (self.hostid, self.hostname)
         self.oneconf = DirectConnect()
-        shutil.copytree(os.path.join(os.path.dirname(__file__), "data", "hostdata"), os.path.join(paths.ONECONF_CACHE_DIR, self.hostid))
+        self.hostdir = os.path.join(paths.ONECONF_CACHE_DIR, self.hostid)
+        shutil.copytree(os.path.join(os.path.dirname(__file__), "data", "hostdata"), self.hostdir)
+        self.src_hostdir = None
             
     def tearDown(self):
         shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
@@ -47,6 +53,14 @@ class IntegrationTests(unittest.TestCase):
         src_content = open(os.path.join(os.path.dirname(__file__), "data", "hostdata", "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid))).readlines()
         dest_content = open(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, "%s_%s.png" % (paths.LOGO_PREFIX, self.hostid))).readlines()
         return (src_content == dest_content)
+        
+    def copy_state(self, test_ident):
+        '''Set state from the test identifier.'''
+        datadir = os.path.join(os.path.dirname(__file__), "data", "integrationdatatests")
+        self.src_hostdir = os.path.join(datadir, 'host_%s' % test_ident)
+        self.result_hostdir = os.path.join(datadir, 'resulthost_%s' % test_ident)
+        shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
+        shutil.copytree(self.src_hostdir, self.hostdir)
 
     def test_load_host_data(self):
         '''Load existing hosts data, check that nothing change for current host as well'''
@@ -159,6 +173,50 @@ class IntegrationTests(unittest.TestCase):
         '''Test that the daemon or the querier can't run as root'''
         self.assertEqual(subprocess.call(["fakeroot", "./oneconf-query"]), 1)
         self.assertEqual(subprocess.call(["fakeroot", "./oneconf-service"]), 1)
+        
+    def test_broken_host_file(self):
+        '''Test that we recreate a new host file if the file is broken'''
+        self.copy_state('brokenhostfile')
+        self.assertEqual(self.oneconf.get_all_hosts(), {self.hostid: (True, self.hostname, False)})
+        host_file = os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, paths.HOST_DATA_FILENAME)
+        with open(host_file, 'r') as f:
+            current_host = json.load(f)
+        self.assertEqual(current_host['hostid'], self.hostid)
+        self.assertEqual(current_host['hostname'], self.hostname)
+        self.assertEqual(current_host['packages_checksum'], None)
+        self.assertEqual(current_host['share_inventory'], False)
+        
+    def test_broken_otherhosts_file(self):
+        '''Test that we discare the other hosts file if the file is broken (a future sync will rewrite it)'''
+        self.copy_state('brokenotherhosts')
+        from oneconf.hosts import Hosts
+        host = Hosts()
+        self.assertEqual(host._load_other_hosts(), {})
+        
+    def test_broken_pending_file(self):
+        '''Test that we discare the other hosts file if the file is broken (a future sync will rewrite it)'''
+        self.copy_state('brokenpending')
+        from oneconf.hosts import Hosts
+        host = Hosts()
+        self.assertEqual(host.get_hostid_pending_change('foo', 'bar'), None)
+        host.add_hostid_pending_change({'foo': {'bar': 'baz'}})
+        self.assertEqual(host.get_hostid_pending_change('foo', 'bar'), 'baz')
+        
+    def test_broken_latestsync_file(self):
+        '''Test that we return a dummy latest sync date if we can't load it. Next update will rewrite it'''
+        self.copy_state('brokenlatestsync')
+        from oneconf.hosts import Hosts
+        host = Hosts()
+        self.assertEqual(host.get_last_sync_date(), _("Was never synced"))
+        
+    def test_broken_packageset_file(self):
+        '''Test that we discare the other hosts file if the file is broken (a future sync will rewrite it)'''
+        self.copy_state('brokenpackageset')
+        from oneconf.packagesethandler import PackageSetHandler
+        packageset = PackageSetHandler()
+        self.assertEqual(packageset._get_packagelist_from_store(self.hostid), {'foo': {'auto': False}, 'pool': {'auto': True}})
+        self.assertEqual(packageset.hosts.current_host['packages_checksum'], '60f28c520e53c65cc37e9b68fe61911fb9f73ef910e08e988cb8ad52')
+        
         
     # TODO: ensure a logo is updated
     

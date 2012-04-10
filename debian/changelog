@@ -6,7 +6,10 @@ oneconf (0.2.6.9ubuntu1) UNRELEASED; urgency=low
 
   [ Didier Roche ]
   * Move saving facility to an utils module to reuse safe saving accross
-    the whole application. Removed a deprecated call as well (LP: #944738)
+    the whole application. Removed a deprecated call as well
+    (LP: #944738, #842198)
+  * Recover gracefully if any of the json file is broken (LP: #849037)
+  * Added tests for all the above
 
  -- Didier Roche <didrocks@ubuntu.com>  Thu, 29 Mar 2012 18:31:42 +0200
 

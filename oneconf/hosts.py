@@ -86,7 +86,7 @@ class Hosts(object):
                     has_changed = True
             if has_changed:
                 self.save_current_host()
-        except IOError:
+        except (IOError, ValueError):
             self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False,
                                  'logo_checksum': logo_checksum, 'packages_checksum': None}
             if not os.path.isdir(self._host_file_dir):
@@ -154,7 +154,7 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
                 return json.load(f)
-        except (IOError, TypeError), e:
+        except (IOError, TypeError, ValueError), e:
             LOG.warning("Error in loading %s file: %s" % (OTHER_HOST_FILENAME, e))
             return {}
 
@@ -173,7 +173,7 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
                 pending_changes = json.load(f)
-        except IOError:
+        except (IOError, ValueError):
             pending_changes = {}
 
         # merge existing changes with new ones
@@ -191,7 +191,7 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
                 return json.load(f)[hostid][attribute]
-        except (IOError, KeyError) as e:
+        except (IOError, KeyError, ValueError) as e:
             return None
     
     def gethost_by_id(self, hostid):
@@ -305,6 +305,9 @@ class Hosts(object):
                 last_sync = content['last_sync']
                 #last_sync = datetime.datetime.fromtimestamp(content['last_sync']).strftime("%X %x")
         except IOError:
+            last_sync = _("Was never synced")
+        # FIXME: give a better sentence like "Last sync not completed successfully", but let's not add a translation right now
+        except ValueError:
             last_sync = _("Was never synced")
         return last_sync
         

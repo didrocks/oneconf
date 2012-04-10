@@ -195,6 +195,8 @@ class SyncHandler(GObject.GObject):
                 utils.save_json_file_update(pending_upload_filename, pending_changes)
         except IOError:
             pass
+        except ValueError:
+            LOG.warning("The pending file is broken, ignoring")
 
         current_hostid = self.hosts.current_host['hostid']
         old_hosts = self.hosts.other_hosts

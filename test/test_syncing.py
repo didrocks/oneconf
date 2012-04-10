@@ -384,6 +384,12 @@ class OneConfSyncing(unittest.TestCase):
         os.environ["ONECONF_update_packages_error"] = "True"
         self.assertTrue(self.check_msg_in_output("Can't push current package list: Fake WebCatalogAPI raising fake exception", check_errors=False))
         self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
+        
+    def test_sync_with_broken_pending_file(self):
+        '''Try to update with a broken pending file, should just ignore it'''
+        self.copy_state('broken_pending_file')
+        self.check_msg_in_output("The pending file is broken, ignoring", check_errors=False)
+        
 
 #
 # main
