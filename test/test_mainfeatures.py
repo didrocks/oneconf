@@ -151,6 +151,15 @@ class IntegrationTests(unittest.TestCase):
         self.oneconf.set_share_inventory(False, '0000')
         hosts = self.oneconf.get_all_hosts()
         self.assertEqual(hosts, {u'AAAAAA': (False, u'julie-laptop', True), u'BBBBBB': (False, u'yuna', True), '0000': (True, 'foomachine', False)})
+        # software-center does it without using the hostid
+        self.oneconf.set_share_inventory(True, '')
+        hosts = self.oneconf.get_all_hosts()
+        self.assertEqual(hosts, {u'AAAAAA': (False, u'julie-laptop', True), u'BBBBBB': (False, u'yuna', True), '0000': (True, 'foomachine', True)})
+        host_file = os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, paths.HOST_DATA_FILENAME)
+        with open(host_file, 'r') as f:
+            current_host = json.load(f)
+        self.assertEqual(current_host['share_inventory'], True)
+        self.assertFalse(os.path.isfile(os.path.join(paths.ONECONF_CACHE_DIR, self.hostid, paths.PENDING_UPLOAD_FILENAME)))
 
     def test_disable_enable_inventory_for_other_host(self):
         '''Try to disable the current inventory for another host (put the request in pending) and then enable it again'''
@@ -215,8 +224,7 @@ class IntegrationTests(unittest.TestCase):
         from oneconf.packagesethandler import PackageSetHandler
         packageset = PackageSetHandler()
         self.assertEqual(packageset._get_packagelist_from_store(self.hostid), {'foo': {'auto': False}, 'pool': {'auto': True}})
-        self.assertEqual(packageset.hosts.current_host['packages_checksum'], '60f28c520e53c65cc37e9b68fe61911fb9f73ef910e08e988cb8ad52')
-        
+        self.assertEqual(packageset.hosts.current_host['packages_checksum'], '60f28c520e53c65cc37e9b68fe61911fb9f73ef910e08e988cb8ad52')        
         
     # TODO: ensure a logo is updated
     
