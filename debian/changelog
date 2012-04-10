@@ -10,7 +10,9 @@ oneconf (0.2.6.9ubuntu1) UNRELEASED; urgency=low
     (LP: #944738, #842198)
   * Recover gracefully if any of the json file is broken (LP: #849037)
   * Fix turning off oneconf is USC doesn't work (LP: #964659)
-  * Added tests for all the above
+  * oneconf-service crashed with KeyError in check_if_refresh_needed():
+    'packages_checksum' (LP: #940710)
+  * Added/Enhanced tests for all the above
 
  -- Didier Roche <didrocks@ubuntu.com>  Thu, 29 Mar 2012 18:31:42 +0200
 

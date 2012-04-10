@@ -219,8 +219,11 @@ class SyncHandler(GObject.GObject):
             else:
                 distant_current_host = machine
 
+        # now refresh packages list for every hosts
         for hostid in other_hosts:
-            # now refresh packages list for every hosts
+            # init the list as the infra can not send it            
+            if not "packages_checksum" in other_hosts[hostid]:
+                other_hosts[hostid]["packages_checksum"] = None
             packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid))
             if self.check_if_refresh_needed(old_hosts, other_hosts, hostid, 'packages'):
                 try:
