@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 7.0.50),
                python-distutils-extra,
                python-nose,
 Maintainer: Didier Roche <didrocks@ubuntu.com>
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 
 Package: oneconf
 Architecture: all

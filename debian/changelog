@@ -13,6 +13,8 @@ oneconf (0.2.6.9ubuntu1) UNRELEASED; urgency=low
   * oneconf-service crashed with KeyError in check_if_refresh_needed():
     'packages_checksum' (LP: #940710)
   * Added/Enhanced tests for all the above
+  * debian/control:
+    - Bump Standards-Version: to latest
 
  -- Didier Roche <didrocks@ubuntu.com>  Thu, 29 Mar 2012 18:31:42 +0200
 
