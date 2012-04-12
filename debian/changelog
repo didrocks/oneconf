@@ -1,3 +1,10 @@
+oneconf (0.2.8.1) UNRELEASED; urgency=low
+
+  * debian/control:
+    - python-gtk2 removed, not needed anymore
+
+ -- Didier Roche <didrocks@ubuntu.com>  Thu, 12 Apr 2012 16:45:12 +0200
+
 oneconf (0.2.8) precise; urgency=low
  
   [ Michael Vogt ]
