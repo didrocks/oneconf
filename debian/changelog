@@ -2,6 +2,9 @@ oneconf (0.2.9) UNRELEASED; urgency=low
 
   * New release:
     - fix some typos and enhanced translations
+    - fix some tests to be able to pass on others machines
+    - prevent crashes on mint and elementary which doesn't ship a file
+      for their distro. Added test cases for it (LP: #1006701)
   * debian/control:
     - python-gtk2 removed, not needed anymore
 

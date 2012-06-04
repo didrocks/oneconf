@@ -60,12 +60,17 @@ class DbusHostsService(dbus.service.Object):
         self.synchandler = None
         self.loop = loop
         
-    # TODO: can be a property
+    # TODO: can be a decorator, handling null case and change the API so that if it returns
+    # the None value -> no result
     def get_packageSetHandler(self):
         '''Ensure we load the package set handler at the right time'''
         if not self._packageSetHandler:
-            from oneconf.packagesethandler import PackageSetHandler
-            self._packageSetHandler = PackageSetHandler(self.hosts)
+            from oneconf.packagesethandler import PackageSetHandler, PackageSetInitError
+            try:
+                self._packageSetHandler = PackageSetHandler(self.hosts)
+            except PackageSetInitError, e:
+                LOG.error (e) 
+                self._packageSetHandler = None
         return self._packageSetHandler
 
     @dbus.service.method(HOSTS_INTERFACE)
@@ -85,22 +90,28 @@ class DbusHostsService(dbus.service.Object):
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def get_packages(self, hostid, hostname, only_manual):
         self.activity = True
+        if not self.get_packageSetHandler():
+            return ''
         return none_to_null(self.get_packageSetHandler().get_packages(hostid, hostname, only_manual))
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def diff(self, hostid, hostname):
         self.activity = True
+        if not self.get_packageSetHandler():
+            return ('', '')
         return self.get_packageSetHandler().diff(hostid, hostname)
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def update(self):
         self.activity = True
-        self.get_packageSetHandler().update()
+        if self.get_packageSetHandler():
+            self.get_packageSetHandler().update()
 
     @dbus.service.method(PACKAGE_SET_INTERFACE)
     def async_update(self):
         self.activity = True
-        GObject.timeout_add_seconds(1, self.get_packageSetHandler().update)
+        if self.get_packageSetHandler():
+            GObject.timeout_add_seconds(1, self.get_packageSetHandler().update)
         
     @dbus.service.signal(HOSTS_INTERFACE)
     def hostlist_changed(self):

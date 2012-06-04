@@ -29,6 +29,12 @@ from oneconf.distributor import get_distro
 from oneconf.paths import ONECONF_CACHE_DIR, PACKAGE_LIST_PREFIX
 from oneconf import utils
 
+class PackageSetInitError(Exception):
+    """An error occurred, preventing the package set to initialize."""
+
+    def __init__(self, message, *args, **kwargs):
+        super(PackageSetInitError, self).__init__(message, *args, **kwargs)
+
 class PackageSetHandler(object):
     """
     Direct access to database for getting and updating the list
@@ -40,6 +46,8 @@ class PackageSetHandler(object):
         if not hosts:
             self.hosts = Hosts()
         self.distro = get_distro()
+        if not self.distro:
+            raise PackageSetInitError, "Can't initialize PackageSetHandler: no valid distro provided"
         self.last_storage_sync = None
 
         # create cache for storage package list, indexed by hostid

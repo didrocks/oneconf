@@ -51,12 +51,17 @@ def _get_distro():
     except ConfigParser.NoSectionError:
         distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
                                      stdout=subprocess.PIPE).communicate()[0].strip()
+        distro_id = "fooo"
     LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
-    module =  __import__(distro_id, globals(), locals(), [], -1)
-    # get the right class and instanciate it
-    distro_class = getattr(module, distro_id)
-    instance = distro_class()
+    try:
+        module =  __import__(distro_id, globals(), locals(), [], -1)
+        # get the right class and instanciate it
+        distro_class = getattr(module, distro_id)
+        instance = distro_class()
+    except ImportError:
+        LOG.warn("invalid distro: '%s'" % distro_id)
+        return None
     return instance
 
 def get_distro():

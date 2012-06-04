@@ -65,12 +65,13 @@ class SyncHandler(GObject.GObject):
 
     def _refresh_can_sync(self):
         '''compute current syncable state before asking for refresh the value'''
-        new_can_sync = (self.credential is not None) and self._netstate.connected
+        new_can_sync = (self.credential is not None) and (self.infraclient is not None) and self._netstate.connected
         if self._can_sync == new_can_sync:
             return
         self._can_sync = new_can_sync
 
         # we can now start syncing (as it's a new status), adding the timeout
+        # TODO: self.infraclient should be built here
         if self._can_sync:
             self.process_sync()
             # adding the timeout only if we are not on a single sync
@@ -87,7 +88,11 @@ class SyncHandler(GObject.GObject):
             from piston_mini_client.auth import OAuthAuthorizer
             from infraclient_pristine import WebCatalogAPI
             from oneconf.distributor import get_distro
-            service_root = get_distro().ONECONF_SERVER
+            distro = get_distro()
+            # No update if not supported distribution
+            if not distro:
+               return
+            service_root = distro.ONECONF_SERVER
             authorizer = OAuthAuthorizer(token_key=credential['token'],
                 token_secret=credential['token_secret'],
                 consumer_key=credential['consumer_key'],

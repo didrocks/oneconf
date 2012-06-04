@@ -126,15 +126,9 @@ class DaemonTests(unittest.TestCase):
         oneconf.get_packages(self.hostid, '', False)
         oneconf.update()
         # try to wait for it syncing (for additional invalid data loading)
-        oneconf.get_all_hosts()
-        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
-        oneconf.get_all_hosts()
-        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
-        oneconf.get_all_hosts()
-        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
-        oneconf.get_all_hosts()
-        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
-        oneconf.get_all_hosts()
+        for i in range(5):
+          oneconf.get_all_hosts()
+          time.sleep(MIN_TIME_WITHOUT_ACTIVITY)
         subprocess.Popen(["./oneconf-query", "--stop"])
     
 #

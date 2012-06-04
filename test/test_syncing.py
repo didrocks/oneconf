@@ -32,6 +32,7 @@ from oneconf.networksync.fake_webcatalog_silo import FakeWebCatalogSilo
 class OneConfSyncing(unittest.TestCase):
 
     def setUp(self):
+        os.environ['PYTHONPATH'] = '.:' + os.environ.get('PYTHONPATH', '')
         self.cmd_line = ["python", "oneconf/networksync/__init__.py"]
         self.hostid = "0000"
         self.hostname = "foomachine"
