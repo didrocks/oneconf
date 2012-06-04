@@ -1,4 +1,4 @@
-oneconf (0.2.9) UNRELEASED; urgency=low
+oneconf (0.2.9) quantal; urgency=low
 
   * New release:
     - fix some typos and enhanced translations
@@ -8,7 +8,7 @@ oneconf (0.2.9) UNRELEASED; urgency=low
   * debian/control:
     - python-gtk2 removed, not needed anymore
 
- -- Didier Roche <didrocks@ubuntu.com>  Thu, 12 Apr 2012 16:45:12 +0200
+ -- Didier Roche <didrocks@ubuntu.com>  Mon, 04 Jun 2012 13:43:51 +0200
 
 oneconf (0.2.8) precise; urgency=low
  
