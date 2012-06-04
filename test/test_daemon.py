@@ -61,17 +61,6 @@ class DaemonTests(unittest.TestCase):
                     return True
         return False
 
-    def collect_debug_output(self, process):
-        '''Get the full stderr output from a process'''
-        output = []
-        while True:
-            additional_output = process.stderr.readline()
-            print additional_output
-            if not additional_output:
-                break
-            output.append(additional_output)
-        return output
-    
     def test_daemon_stop(self):
         '''Test that the daemon effectively stops when requested'''
         self.assertTrue(self.daemon_still_there())
