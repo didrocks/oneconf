@@ -1,5 +1,7 @@
-oneconf (0.2.8.1) UNRELEASED; urgency=low
+oneconf (0.2.9) UNRELEASED; urgency=low
 
+  * New release:
+    - fix some typos and enhanced translations
   * debian/control:
     - python-gtk2 removed, not needed anymore
 
