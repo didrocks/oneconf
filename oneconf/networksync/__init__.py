@@ -345,7 +345,11 @@ if __name__ == '__main__':
 
     os.environ["ONECONF_SINGLE_SYNC"] = "True"
 
-    sync_handler = SyncHandler(Hosts(), infraclient=WebCatalogAPI(WEBCATALOG_SILO_SOURCE))
+    infraclient = None
+    if not "--no-infra-client" in sys.argv:
+        infraclient = WebCatalogAPI(WEBCATALOG_SILO_SOURCE)
+
+    sync_handler = SyncHandler(Hosts(), infraclient=infraclient)
     loop = GObject.MainLoop() 
     GObject.timeout_add_seconds(15, loop.quit)
 

@@ -1,0 +1,7 @@
+[TestSuite]
+ONECONF_CACHE_DIR=/tmp/oneconf-test/cache
+WEBCATALOG_SILO_DIR=/tmp/oneconf-test/resulting_silo
+FAKE_WALLPAPER=test/data/wallpaper.png
+FAKE_WALLPAPER_MTIME=0000000000.000042
+MIN_TIME_WITHOUT_ACTIVITY=5
+distro=foobardistro

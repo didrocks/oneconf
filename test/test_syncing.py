@@ -390,6 +390,11 @@ class OneConfSyncing(unittest.TestCase):
         self.copy_state('broken_pending_file')
         self.check_msg_in_output("The pending file is broken, ignoring", check_errors=False)
         
+    def test_no_sync_with_invalid_setup(self):
+        '''Test that no sync and no traceback is happening if we have an invalid setup'''
+        self.cmd_line = ["python", "oneconf/networksync/__init__.py", "--no-infra-client"]
+        shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.invaliddistro.override"), "/tmp/oneconf.override")
+        self.assertFalse(self.check_msg_in_output("Start processing sync"))
 
 #
 # main

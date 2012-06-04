@@ -60,6 +60,17 @@ class DaemonTests(unittest.TestCase):
                 if (str(pid) == fields[0]):
                     return True
         return False
+
+    def collect_debug_output(self, process):
+        '''Get the full stderr output from a process'''
+        output = []
+        while True:
+            additional_output = process.stderr.readline()
+            print additional_output
+            if not additional_output:
+                break
+            output.append(additional_output)
+        return output
     
     def test_daemon_stop(self):
         '''Test that the daemon effectively stops when requested'''
@@ -99,6 +110,32 @@ class DaemonTests(unittest.TestCase):
         self.assertFalse(self.daemon_still_there())
         self.assertTrue(time_stop - self.time_start > 2*MIN_TIME_WITHOUT_ACTIVITY)
         self.dbus_service_process = None
+
+    def test_no_daemon_crash_if_invalid_setup(self):
+        '''Test that the daemon doesn't crash in case of invalid setup'''
+        shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.invaliddistro.override"), "/tmp/oneconf.override")
+        self.assertTrue(self.daemon_still_there())
+        self.dbus_service_process.terminate()
+        self.dbus_service_process.wait() # let the existing daemon quitting
+        self.assertFalse(self.daemon_still_there())
+        self.dbus_service_process = None
+        self.dbus_service_process = subprocess.Popen(["./oneconf-service", '--debug', '--mock'])
+        self.assertTrue(self.daemon_still_there())
+        from oneconf import dbusconnect
+        oneconf = dbusconnect.DbusConnect()
+        oneconf.get_packages(self.hostid, '', False)
+        oneconf.update()
+        # try to wait for it syncing (for additional invalid data loading)
+        oneconf.get_all_hosts()
+        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
+        oneconf.get_all_hosts()
+        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
+        oneconf.get_all_hosts()
+        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
+        oneconf.get_all_hosts()
+        time.sleep(MIN_TIME_WITHOUT_ACTIVITY + 2)
+        oneconf.get_all_hosts()
+        subprocess.Popen(["./oneconf-query", "--stop"])
     
 #
 # main
