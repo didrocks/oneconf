@@ -51,7 +51,6 @@ def _get_distro():
     except ConfigParser.NoSectionError:
         distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
                                      stdout=subprocess.PIPE).communicate()[0].strip()
-        distro_id = "fooo"
     LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
     try:
