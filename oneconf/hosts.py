@@ -30,7 +30,8 @@ from gettext import gettext as _
 LOG = logging.getLogger(__name__)
 
 from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
-                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME, FAKE_WALLPAPER)
+                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME, FAKE_WALLPAPER,
+                   FAKE_WALLPAPER_MTIME)
 
 # FIXME: ask about those horrible symlink to barry when I get time for it.
 try:
@@ -99,15 +100,19 @@ class Hosts(object):
 
     def _get_current_wallpaper_data(self):
         '''Get current wallpaper metadatas from store'''
+        # TODO: add fake objects instead of introducing logic into the code for testing
         file_path = FAKE_WALLPAPER
+        file_mtime = FAKE_WALLPAPER_MTIME
         if not file_path:
             settings = Gio.Settings.new("org.gnome.desktop.background")
             file_path = settings.get_string("picture-uri")
         if not file_path:
             return ('', '')
         file_path = file_path.replace("file://", "")
+        if not file_mtime:
+            file_mtime = os.stat(file_path).st_mtime
         try:
-            logo_checksum = "%s%f" % (hashlib.sha224(file_path).hexdigest(), os.stat(file_path).st_mtime)
+            logo_checksum = "%s%f" % (hashlib.sha224(file_path).hexdigest(), file_mtime)
         except OSError:
             logo_checksum = None
             file_path = None

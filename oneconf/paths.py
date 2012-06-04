@@ -40,6 +40,7 @@ if not os.path.exists(_datadir):
 LOGO_BASE_FILENAME = os.path.join(_datadir, 'images', 'computer.png')
 WEBCATALOG_SILO_DIR = "/tmp"
 FAKE_WALLPAPER = None # Fake wallpaper for tests
+FAKE_WALLPAPER_MTIME = None # Fake wallpaper for tests
 
 config = ConfigParser.RawConfigParser()
 try:
@@ -47,6 +48,7 @@ try:
     ONECONF_CACHE_DIR = config.get('TestSuite', 'ONECONF_CACHE_DIR')
     WEBCATALOG_SILO_DIR = config.get('TestSuite', 'WEBCATALOG_SILO_DIR')
     FAKE_WALLPAPER = os.path.join(os.path.dirname(_datadir), config.get('TestSuite', 'FAKE_WALLPAPER'))
+    FAKE_WALLPAPER_MTIME = config.get('TestSuite', 'FAKE_WALLPAPER_MTIME')
 except ConfigParser.NoSectionError:
     pass
 WEBCATALOG_SILO_SOURCE = os.path.join(WEBCATALOG_SILO_DIR, "source")
