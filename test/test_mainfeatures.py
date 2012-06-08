@@ -31,7 +31,6 @@ sys.path.insert(0, os.path.abspath('.'))
 shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.override"), "/tmp/oneconf.override")
 from oneconf import paths
 import oneconf.hosts
-from oneconf.hosts import HostError
 from oneconf import directconnect
 from oneconf.directconnect import DirectConnect
 
@@ -117,7 +116,7 @@ class IntegrationTests(unittest.TestCase):
     def test_diff_with_no_valid_host(self):
         '''Test with no valid host'''
         from oneconf.packagesethandler import PackageSetHandler
-        self.assertRaises(HostError, PackageSetHandler().diff, 'A')
+        self.assertRaises(oneconf.hosts.HostError, PackageSetHandler().diff, 'A')
         
     def test_with_only_localhost(self):
         '''List machine with only localhost'''
@@ -137,7 +136,7 @@ class IntegrationTests(unittest.TestCase):
     def test_list_invalid_machine(self):
         '''List packages for an invalid machine'''
         from oneconf.packagesethandler import PackageSetHandler
-        self.assertRaises(HostError, PackageSetHandler().get_packages, 'A')
+        self.assertRaises(oneconf.hosts.HostError, PackageSetHandler().get_packages, 'A')
         
     def test_list_machine_by_hostname(self):
         '''List packages for machine using hostname'''
