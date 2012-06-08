@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.abspath('.'))
 
 shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.override"), "/tmp/oneconf.override")
 from oneconf import paths
+import oneconf.hosts
 from oneconf.hosts import HostError
 from oneconf import directconnect
 from oneconf.directconnect import DirectConnect
@@ -45,6 +46,10 @@ class IntegrationTests(unittest.TestCase):
         self.hostdir = os.path.join(paths.ONECONF_CACHE_DIR, self.hostid)
         shutil.copytree(os.path.join(os.path.dirname(__file__), "data", "hostdata"), self.hostdir)
         self.src_hostdir = None
+        # TODO: reload path because some tests have other oneconf override files. Should be real mock objects later on.
+        shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.override"), "/tmp/oneconf.override")
+        reload(paths)
+        reload(oneconf.hosts)
             
     def tearDown(self):
         shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
@@ -226,6 +231,14 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(packageset._get_packagelist_from_store(self.hostid), {'foo': {'auto': False}, 'pool': {'auto': True}})
         self.assertEqual(packageset.hosts.current_host['packages_checksum'], '60f28c520e53c65cc37e9b68fe61911fb9f73ef910e08e988cb8ad52')        
         
+    def test_no_valid_wallpaper(self):
+        '''Test that no crash occurs with an invalid wallpaper URL'''
+        shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.invalidwallpaper.override"), "/tmp/oneconf.override")
+        reload(paths)
+        reload(oneconf.hosts)
+        host = oneconf.hosts.Hosts()
+        self.assertEqual(host._get_current_wallpaper_data(), (None, None))
+
     # TODO: ensure a logo is updated
     
 #

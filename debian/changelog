@@ -1,3 +1,10 @@
+oneconf (0.2.9.1) UNRELEASED; urgency=low
+
+  * handle a regression when the wallpaper isn't reachable + test case
+    (LP: #1010239)
+
+ -- Didier Roche <didrocks@ubuntu.com>  Fri, 08 Jun 2012 14:52:45 +0200
+
 oneconf (0.2.9) quantal; urgency=low
 
   * New release:

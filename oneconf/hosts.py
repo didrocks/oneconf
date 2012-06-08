@@ -109,9 +109,9 @@ class Hosts(object):
         if not file_path:
             return ('', '')
         file_path = file_path.replace("file://", "")
-        if not file_mtime:
-            file_mtime = str(os.stat(file_path).st_mtime)
         try:
+            if not file_mtime:
+                file_mtime = str(os.stat(file_path).st_mtime)
             logo_checksum = "%s%s" % (hashlib.sha224(file_path).hexdigest(), file_mtime)
         except OSError:
             logo_checksum = None
