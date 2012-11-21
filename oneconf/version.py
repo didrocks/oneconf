@@ -1,5 +1,5 @@
 
-VERSION='0.2.4'
-CODENAME='oneiric'
+VERSION='0.2.9'
+CODENAME='quantal'
 DISTRO='Ubuntu'
-RELEASE='11.10'
+RELEASE='13.04'

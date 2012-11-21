@@ -19,10 +19,7 @@
 
 import ConfigParser
 import logging
-import os
 import subprocess
-
-from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
@@ -34,7 +31,7 @@ class UnimplementedError(Exception):
 
 class Distro(object):
     """ abstract base class for a distribution """
-        
+
     def compute_local_packagelist(self):
         '''Introspect what's installed on this hostid
 
@@ -49,7 +46,7 @@ def _get_distro():
         config.read(ONECONF_OVERRIDE_FILE)
         distro_id = config.get('TestSuite', 'distro')
     except ConfigParser.NoSectionError:
-        distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
+        distro_id = subprocess.Popen(["lsb_release","-i","-s"],
                                      stdout=subprocess.PIPE).communicate()[0].strip()
     LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
@@ -72,5 +69,4 @@ distro_instance=_get_distro()
 
 
 if __name__ == "__main__":
-    print get_distro()
-
+    print(get_distro())

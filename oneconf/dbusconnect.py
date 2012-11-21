@@ -22,7 +22,6 @@ from gi.repository import GObject
 import logging
 import sys
 
-import gettext
 from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
@@ -52,14 +51,14 @@ class DbusHostsService(dbus.service.Object):
                                         bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name, HOSTS_OBJECT_NAME)
         # Only import oneconf module now for only getting it on server side
-        from oneconf.hosts import Hosts, HostError
+        from oneconf.hosts import Hosts
 
         self.hosts = Hosts()
         self._packageSetHandler = None
         self.activity = False
         self.synchandler = None
         self.loop = loop
-        
+
     # TODO: can be a decorator, handling null case and change the API so that if it returns
     # the None value -> no result
     def get_packageSetHandler(self):
@@ -68,8 +67,8 @@ class DbusHostsService(dbus.service.Object):
             from oneconf.packagesethandler import PackageSetHandler, PackageSetInitError
             try:
                 self._packageSetHandler = PackageSetHandler(self.hosts)
-            except PackageSetInitError, e:
-                LOG.error (e) 
+            except PackageSetInitError as e:
+                LOG.error (e)
                 self._packageSetHandler = None
         return self._packageSetHandler
 
@@ -112,7 +111,7 @@ class DbusHostsService(dbus.service.Object):
         self.activity = True
         if self.get_packageSetHandler():
             GObject.timeout_add_seconds(1, self.get_packageSetHandler().update)
-        
+
     @dbus.service.signal(HOSTS_INTERFACE)
     def hostlist_changed(self):
         LOG.debug("Send host list changed dbus signal")
@@ -176,7 +175,7 @@ class DbusConnect(object):
         try:
             return self._get_package_handler_dbusobject().get_packages(hostid,
                                                            hostname, only_manual)
-        except dbus.exceptions.DBusException,e:
+        except dbus.exceptions.DBusException as e:
             print(e)
             sys.exit(1)
 
@@ -187,7 +186,7 @@ class DbusConnect(object):
             return self._get_package_handler_dbusobject().diff(hostid,
                                                             hostname,
                                                             timeout=ONECONF_DBUS_TIMEOUT)
-        except dbus.exceptions.DBusException,e:
+        except dbus.exceptions.DBusException as e:
             print(e)
             sys.exit(1)
 
@@ -198,15 +197,15 @@ class DbusConnect(object):
     def async_update(self):
         '''trigger update handling'''
         self._get_package_handler_dbusobject().async_update()
-    
+
     def get_last_sync_date(self):
         '''just send a kindly ping to retrieve the last sync date'''
         return self._get_hosts_dbusobject().get_last_sync_date(timeout=ONECONF_DBUS_TIMEOUT)
-        
+
     def stop_service(self):
         '''kindly ask the oneconf service to stop'''
         try:
             self._get_hosts_dbusobject().stop_service()
-        except dbus.exceptions.DBusException, e:
-            print _("Wasn't able to request stopping the service: %s" % e)
+        except dbus.exceptions.DBusException as e:
+            print(_("Wasn't able to request stopping the service: %s" % e))
             sys.exit(1)

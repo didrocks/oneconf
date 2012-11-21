@@ -52,7 +52,7 @@ class SyncHandler(GObject.GObject):
         self.hosts = hosts
         self.infraclient = infraclient
         self.package_handler = package_handler
-        
+
         if dbusemitter:
             self.emit_new_hostlist = dbusemitter.hostlist_changed
             self.emit_new_packagelist = dbusemitter.packagelist_changed
@@ -61,7 +61,7 @@ class SyncHandler(GObject.GObject):
 
         self._netstate.connect("changed", self._network_state_changed)
         self._sso_login.connect("login-result", self._sso_login_result)
-        
+
 
     def _refresh_can_sync(self):
         '''compute current syncable state before asking for refresh the value'''
@@ -137,7 +137,7 @@ class SyncHandler(GObject.GObject):
     def emit_new_hostlist(self):
         '''this signal will be bound at init time'''
         LOG.warning("emit_new_hostlist not bound to anything")
-        
+
     def emit_new_packagelist(self, hostid):
         '''this signal will be bound at init time'''
         LOG.warning("emit_new_packagelist(%s) not bound to anything" % hostid)
@@ -145,16 +145,16 @@ class SyncHandler(GObject.GObject):
     def emit_new_logo(self, hostid):
         '''this signal will be bound at init time'''
         LOG.warning("emit_new_logo(%s) not bound to anything" % hostid)
-        
+
     def emit_new_latestsync(self, timestamp):
         '''this signal will be bound at init time'''
         LOG.warning("emit_new_lastestsync(%s) not bound to anything" % timestamp)
 
     def process_sync(self):
         '''start syncing what's needed if can sync
-        
+
         process sync can be either started directly, or when can_sync changed'''
-        
+
         # we can't no more sync, removing the timeout
         if not self._can_sync:
             return False
@@ -165,7 +165,8 @@ class SyncHandler(GObject.GObject):
             if self.infraclient.server_status() != 'ok':
                 LOG.error("WebClient server answering but not available")
                 return True
-        except (APIError, socket.error, ValueError, ServerNotFoundError, BadStatusLine, RedirectLimit), e:
+        except (APIError, socket.error, ValueError, ServerNotFoundError,
+                BadStatusLine, RedirectLimit) as e:
             LOG.error ("WebClient server answer error: %s", e)
             return True
 
@@ -183,7 +184,7 @@ class SyncHandler(GObject.GObject):
                         if not pending_changes[hostid].pop('share_inventory'):
                             LOG.debug("Removing machine %s requested as a pending change" % hostid)
                             self.infraclient.delete_machine(machine_uuid=hostid)
-                    except APIError, e:
+                    except APIError as e:
                         LOG.error("WebClient server doesn't want to remove hostid (%s): %s" % (hostid, e))
                         pending_changes[hostid]['share_inventory'] = False # append it again to be done
                 except KeyError:
@@ -212,7 +213,7 @@ class SyncHandler(GObject.GObject):
         # Get all machines
         try:
             full_hosts_list = self.infraclient.list_machines()
-        except APIError, e:
+        except APIError as e:
             LOG.error ("Invalid machine list from server, stopping sync: %s" % e)
             return True
         other_hosts = {}
@@ -226,7 +227,7 @@ class SyncHandler(GObject.GObject):
 
         # now refresh packages list for every hosts
         for hostid in other_hosts:
-            # init the list as the infra can not send it            
+            # init the list as the infra can not send it
             if not "packages_checksum" in other_hosts[hostid]:
                 other_hosts[hostid]["packages_checksum"] = None
             packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, hostid))
@@ -241,7 +242,7 @@ class SyncHandler(GObject.GObject):
                         except KeyError:
                             pass
                     packagelist_changed.append(hostid)
-                except APIError, e:
+                except APIError as e:
                     LOG.error ("Invalid package data from server: %s", e)
                     try:
                         old_checksum = old_hosts[hostid]['packages_checksum']
@@ -281,7 +282,7 @@ class SyncHandler(GObject.GObject):
             LOG.debug("Ensure that current host is not shared")
             try:
                 self.infraclient.delete_machine(machine_uuid=current_hostid)
-            except APIError, e:
+            except APIError as e:
                 # just a debug message as it can be already not shared
                 LOG.debug ("Can't delete current host from infra: %s" % e)
         else:
@@ -292,25 +293,25 @@ class SyncHandler(GObject.GObject):
                     try:
                         self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
                         LOG.debug ("Host data refreshed")
-                    except APIError, e:
+                    except APIError as e:
                         LOG.error ("Can't update machine: %s", e)
             except KeyError:
                 try:
                     self.infraclient.update_machine(machine_uuid=current_hostid, hostname=self.hosts.current_host['hostname'])
                     LOG.debug ("New host registered done")
                     distant_current_host = {'packages_checksum': None, 'logo_checksum': None}
-                except APIError, e:
+                except APIError as e:
                     LOG.error ("Can't register new host: %s", e)
-            
+
             # local package list
             if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'packages'):
                 local_packagelist_filename = os.path.join(self.hosts.get_currenthost_dir(), '%s_%s' % (PACKAGE_LIST_PREFIX, current_hostid))
                 try:
                     with open(local_packagelist_filename, 'r') as f:
                         self.infraclient.update_packages(machine_uuid=current_hostid, packages_checksum=self.hosts.current_host['packages_checksum'], package_list=json.load(f))
-                except (APIError, IOError), e:
+                except (APIError, IOError) as e:
                         LOG.error ("Can't push current package list: %s", e)
-                        
+
             # local logo
             # WORKING but not wanted on the isd side for now
             #if self.check_if_push_needed(self.hosts.current_host, distant_current_host, 'logo'):
@@ -337,13 +338,13 @@ class SyncHandler(GObject.GObject):
 
         # continue syncing in the main loop
         return True
-        
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     from dbus.mainloop.glib import DBusGMainLoop
     DBusGMainLoop(set_as_default=True)
-    
+
     from hosts import Hosts
     import sys
     from infraclient_fake import WebCatalogAPI
@@ -355,7 +356,7 @@ if __name__ == '__main__':
         infraclient = WebCatalogAPI(WEBCATALOG_SILO_SOURCE)
 
     sync_handler = SyncHandler(Hosts(), infraclient=infraclient)
-    loop = GObject.MainLoop() 
+    loop = GObject.MainLoop()
     GObject.timeout_add_seconds(15, loop.quit)
 
     loop.run()

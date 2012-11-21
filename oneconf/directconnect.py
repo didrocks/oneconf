@@ -16,7 +16,6 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import gettext
 from gettext import gettext as _
 
 from oneconf.hosts import Hosts, HostError
@@ -28,7 +27,7 @@ class DirectConnect(object):
     """
     Dummy backend handling exit and exception directly
     """
-    
+
     def _ensurePackageSetHandler(self):
         '''Ensure we import the package set handler at the right time'''
         from oneconf.packagesethandler import PackageSetHandler
@@ -42,7 +41,7 @@ class DirectConnect(object):
         '''update if we share the chosen host inventory on the server'''
         try:
             Hosts().set_share_inventory(share_inventory, hostid, hostname)
-        except HostError, e:
+        except HostError as e:
             print(e)
             sys.exit(1)
 
@@ -52,7 +51,7 @@ class DirectConnect(object):
         try:
             self._ensurePackageSetHandler()
             return self.PackageSetHandler().get_packages(hostid, hostname, only_manual)
-        except HostError, e:
+        except HostError as e:
             print(e)
             sys.exit(1)
 
@@ -62,7 +61,7 @@ class DirectConnect(object):
         try:
             self._ensurePackageSetHandler()
             return self.PackageSetHandler().diff(hostid, hostname)
-        except HostError, e:
+        except HostError as e:
             print(e)
             sys.exit(1)
 
@@ -71,19 +70,19 @@ class DirectConnect(object):
         try:
             self._ensurePackageSetHandler()
             self.PackageSetHandler().update()
-        except HostError, e:
+        except HostError as e:
             print(e)
             sys.exit(1)
 
     def async_update(self):
         '''only used in fallback mode: no async notion for direct connexion'''
         self.update()
-            
+
     def get_last_sync_date(self):
         '''get last time the store was successfully synced'''
         return Hosts().get_last_sync_date()
-    
+
     def stop_service(self):
         '''kindly ask the oneconf service to stop (not relevant for a direct mode)'''
-        print _("Nothing done: in direct mode, there is no communication with the service")
+        print(_("Nothing done: in direct mode, there is no communication with the service"))
         sys.exit(1)

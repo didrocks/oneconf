@@ -16,7 +16,6 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import datetime
 import hashlib
 import json
 import logging
@@ -24,7 +23,6 @@ import os
 import platform
 from gi.repository import Gio
 
-import gettext
 from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
@@ -61,7 +59,7 @@ class Hosts(object):
             os.makedirs(ONECONF_CACHE_DIR)
 
         (logo_checksum, logo_path) = self._get_current_wallpaper_data()
-        
+
         try:
             # faking this id for testing purpose. Format is hostid:hostname
             hostid, hostname = os.environ["ONECONF_HOST"].split(':')
@@ -120,7 +118,7 @@ class Hosts(object):
 
     def _create_logo(self, wallpaper_path):
         '''create a logo from a wallpaper
-        
+
         return True if succeeded'''
         if not wallpaper_path:
             return False
@@ -132,7 +130,7 @@ class Hosts(object):
             im.paste(im3, (3,3))
             im.save(os.path.join(self._host_file_dir, "%s_%s.png" % (LOGO_PREFIX, self.current_host['hostid'])))
             return True
-        except IOError, e:
+        except IOError as e:
             LOG.warning ("Cant create logo for %s: %s" % (wallpaper_path, e))
             return False
 
@@ -159,13 +157,13 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
                 return json.load(f)
-        except (IOError, TypeError, ValueError), e:
+        except (IOError, TypeError, ValueError) as e:
             LOG.warning("Error in loading %s file: %s" % (OTHER_HOST_FILENAME, e))
             return {}
 
     def save_current_host(self, arg=None):
         '''Save current host on disk'''
-        
+
         LOG.debug("Save current host to disk")
         utils.save_json_file_update(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), self.current_host)
 
@@ -173,7 +171,7 @@ class Hosts(object):
         '''Pend a scheduled change for another host on disk
 
         change has a {hostid: {key: value, key2: value2}} format'''
-        
+
         LOG.debug("Pend a change for another host on disk")
         try:
             with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
@@ -198,7 +196,7 @@ class Hosts(object):
                 return json.load(f)[hostid][attribute]
         except (IOError, KeyError, ValueError) as e:
             return None
-    
+
     def gethost_by_id(self, hostid):
         '''Get host dictionnary by id
 
@@ -206,14 +204,14 @@ class Hosts(object):
 
         can trigger HostError exception if no hostname found for this id
         '''
-        
+
         if hostid == self.current_host['hostid']:
             return self.current_host
         try:
             return self.other_hosts[hostid]
         except KeyError:
             raise HostError(_("No hostname registered for this id"))
-        
+
 
     def _gethostid_by_name(self, hostname):
         '''Get hostid by hostname
@@ -223,7 +221,7 @@ class Hosts(object):
         can trigger HostError exception unexisting hostname
         or multiple hostid for this hostname
         '''
-        
+
         LOG.debug("Get a hostid for %s", hostname)
 
         result_hostid = None
@@ -257,7 +255,7 @@ class Hosts(object):
             self.gethost_by_id(hostid)
             hostid = hostid
         else:
-            hostid = self._gethostid_by_name(hostname) 
+            hostid = self._gethostid_by_name(hostname)
         return hostid
 
     def get_currenthost_dir(self):
@@ -302,7 +300,7 @@ class Hosts(object):
 
     def get_last_sync_date(self):
         '''Get last sync date, if already synced, with remote server'''
-        
+
         LOG.debug("Getting last sync date with remote server")
         try:
             with open(os.path.join(self._host_file_dir, LAST_SYNC_DATE_FILENAME), 'r') as f:
@@ -315,4 +313,3 @@ class Hosts(object):
         except ValueError:
             last_sync = _("Was never synced")
         return last_sync
-        
