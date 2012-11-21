@@ -1,17 +1,17 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- Mode: Python; coding: utf-8; indent-tabs-mode: nil; tab-width: 4 -*-
 ### BEGIN LICENSE
 # Copyright (C) 2011 Didier Roche <didrocks@ubuntu.com>
-# This program is free software: you can redistribute it and/or modify it 
-# under the terms of the GNU General Public License version 3, as published 
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 3, as published
 # by the Free Software Foundation.
-# 
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranties of 
-# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR 
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranties of
+# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
 # PURPOSE.  See the GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License along 
+#
+# You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 ### END LICENSE
 
@@ -57,7 +57,7 @@ class OneConfSyncing(unittest.TestCase):
         output = []
         while True:
             additional_output = process.stderr.readline()
-            print additional_output
+            print(additional_output)
             if not additional_output:
                 break
             output.append(additional_output)
@@ -71,7 +71,7 @@ class OneConfSyncing(unittest.TestCase):
 
     def get_daemon_output(self):
         '''Return the daemon output and ensure it's stopped'''
-        p = subprocess.Popen(self.cmd_line, stderr=subprocess.PIPE)      
+        p = subprocess.Popen(self.cmd_line, stderr=subprocess.PIPE)
         output = self.collect_debug_output(p)
         p.wait()
         p = None
@@ -192,7 +192,7 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Ensure that current host is not shared"))
         self.assertFalse(self.check_msg_in_output("Can't delete current host from infra: Host Not Found"))
         self.compare_silo_results({}, {})
-        
+
     def test_unshare_other_host(self):
         '''Unshare a host which is not the current one'''
         self.copy_state('unshare_other_host')
@@ -227,7 +227,7 @@ class OneConfSyncing(unittest.TestCase):
                                   {u'0000': {u'bar': {u'auto': True},
                                              u'baz': {u'auto': False},
                                              u'foo': {u'auto': False}}})
-        
+
 
     def test_update_host_with_hostname_change(self):
         '''Update a host only changing the hostname'''
@@ -261,7 +261,7 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Refresh new host"))
         self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
         self.assertFalse(self.check_msg_in_output("Refresh new packages"))
-        self.assertFalse(self.check_msg_in_output("Refresh new logo"))        
+        self.assertFalse(self.check_msg_in_output("Refresh new logo"))
         self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
         self.compare_dirs(self.result_hostdir, self.hostdir)
 
@@ -274,9 +274,9 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
         self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
         self.assertTrue(self.check_msg_in_output("emit_new_packagelist(AAAA) not bound to anything"))
-        self.compare_dirs(self.result_hostdir, self.hostdir)        
-        
-    def test_sync_other_host_with_updated_packages(self):    
+        self.compare_dirs(self.result_hostdir, self.hostdir)
+
+    def test_sync_other_host_with_updated_packages(self):
         '''Sync another host with updated packages'''
         self.copy_state('sync_other_host_with_updated_packages')
         self.assertTrue(self.check_msg_in_output("Refresh new packages"))
@@ -295,7 +295,7 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
         self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
         self.compare_dirs(self.result_hostdir, self.hostdir)
-    
+
     def test_sync_a_newhost_with_already_other_hosts(self):
         '''Add an additional host with some already there'''
         self.copy_state('sync_a_newhost_with_already_other_hosts')
@@ -306,7 +306,7 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Saving updated /tmp/oneconf-test/cache/0000/other_hosts to disk"))
         self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
         self.compare_dirs(self.result_hostdir, self.hostdir)
-        
+
     def test_sync_remove_other_host(self):
         '''Remove a host after a sync'''
         self.copy_state('sync_remove_other_host')
@@ -315,7 +315,7 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("emit_new_hostlist not bound to anything"))
         self.assertFalse(self.check_msg_in_output("emit_new_packagelist"))
         self.compare_dirs(self.result_hostdir, self.hostdir)
-        
+
     def test_server_error(self):
         '''Test server not responsing at all'''
         self.copy_state('fake_server_errors')
@@ -352,17 +352,17 @@ class OneConfSyncing(unittest.TestCase):
     def test_get_packages_error(self):
         '''Test when getting all packages errors'''
         self.copy_state('fake_server_errors')
-        os.environ["ONECONF_list_packages_error"] = "True"      
+        os.environ["ONECONF_list_packages_error"] = "True"
         self.assertTrue(self.check_msg_in_output("Invalid package data from server: Fake WebCatalogAPI raising fake exception", check_errors=False))
         self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
-        
+
     def test_delete_current_host_error(self):
         '''Try to delete the current host and there is an error'''
         self.copy_state('delete_current_host_error')
         os.environ["ONECONF_delete_machine_error"] = "True"
         self.assertTrue(self.check_msg_in_output("Can't delete current host from infra: Fake WebCatalogAPI raising fake exception", check_errors=False))
         self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
-        
+
     def test_update_current_host_error(self):
         '''Update an already registered current host and there is an error'''
         self.copy_state('fake_server_errors')
@@ -370,7 +370,7 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Can't update machine: Fake WebCatalogAPI raising fake exception", check_errors=False))
         self.assertFalse(self.check_msg_in_output("Host data refreshed", check_errors=False))
         self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
-        
+
     def test_create_current_host_error(self):
         '''Try to create the current host and there is an error'''
         self.copy_state('nosilo_nopackage_onlyhost')
@@ -378,19 +378,19 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Can't register new host: Fake WebCatalogAPI raising fake exception", check_errors=False))
         self.assertFalse(self.check_msg_in_output("New host registered done", check_errors=False))
         self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
-        
+
     def test_update_package_list_error(self):
         '''Try to update the remove package list and get an error'''
         self.copy_state('fake_server_errors')
         os.environ["ONECONF_update_packages_error"] = "True"
         self.assertTrue(self.check_msg_in_output("Can't push current package list: Fake WebCatalogAPI raising fake exception", check_errors=False))
         self.assertTrue(self.check_msg_in_output("Saving updated", check_errors=False))
-        
+
     def test_sync_with_broken_pending_file(self):
         '''Try to update with a broken pending file, should just ignore it'''
         self.copy_state('broken_pending_file')
         self.check_msg_in_output("The pending file is broken, ignoring", check_errors=False)
-        
+
     def test_no_sync_with_invalid_setup(self):
         '''Test that no sync and no traceback is happening if we have an invalid setup'''
         self.cmd_line = ["python", "oneconf/networksync/__init__.py", "--no-infra-client"]
@@ -401,10 +401,10 @@ class OneConfSyncing(unittest.TestCase):
 # main
 #
 if __name__ == '__main__':
-    print '''
+    print('''
     #########################################
     #         Test OneConf syncing          #
     #########################################
-    '''
+    ''')
     unittest.main(exit=False)
     os.remove("/tmp/oneconf.override")

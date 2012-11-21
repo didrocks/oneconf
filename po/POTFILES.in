@@ -10,11 +10,9 @@
 ./oneconf/hosts.py
 ./oneconf/networksync/__init__.py
 ./oneconf/networksync/fake_webcatalog_silo.py
-./oneconf/networksync/hosts.py
 ./oneconf/networksync/infraclient_fake.py
 ./oneconf/networksync/infraclient_pristine.py
 ./oneconf/networksync/netstatus.py
-./oneconf/networksync/paths.py
 ./oneconf/networksync/ssohandler.py
 ./oneconf/packagesethandler.py
 ./oneconf/paths.py

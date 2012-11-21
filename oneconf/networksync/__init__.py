@@ -26,15 +26,16 @@ import os
 import time
 
 from oneconf.enums import MIN_TIME_WITHOUT_ACTIVITY
-import utils
-from netstatus import NetworkStatusWatcher
-from ssohandler import LoginBackendDbusSSO
+from oneconf import utils
+from .netstatus import NetworkStatusWatcher
+from .ssohandler import LoginBackendDbusSSO
 
-from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
-                  PACKAGE_LIST_PREFIX, LOGO_PREFIX, LAST_SYNC_DATE_FILENAME, WEBCATALOG_SILO_SOURCE)
+from oneconf.paths import (
+    LAST_SYNC_DATE_FILENAME, ONECONF_CACHE_DIR, OTHER_HOST_FILENAME,
+    PACKAGE_LIST_PREFIX, PENDING_UPLOAD_FILENAME, WEBCATALOG_SILO_SOURCE)
 
 from piston_mini_client.failhandlers import APIError
-from httplib import BadStatusLine
+from http.client import BadStatusLine
 from httplib2 import socket, ServerNotFoundError, RedirectLimit
 
 LOG = logging.getLogger(__name__)
@@ -42,7 +43,8 @@ LOG = logging.getLogger(__name__)
 class SyncHandler(GObject.GObject):
     '''Handle sync request with the server from the dbus service'''
 
-    def __init__(self, hosts, package_handler=None, infraclient=None, dbusemitter=None):
+    def __init__(self, hosts,
+                 package_handler=None, infraclient=None, dbusemitter=None):
         GObject.GObject.__init__(self)
 
         self._netstate = NetworkStatusWatcher()

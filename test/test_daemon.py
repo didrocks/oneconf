@@ -1,17 +1,17 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- Mode: Python; coding: utf-8; indent-tabs-mode: nil; tab-width: 4 -*-
 ### BEGIN LICENSE
 # Copyright (C) 2011 Didier Roche <didrocks@ubuntu.com>
-# This program is free software: you can redistribute it and/or modify it 
-# under the terms of the GNU General Public License version 3, as published 
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 3, as published
 # by the Free Software Foundation.
-# 
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranties of 
-# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR 
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranties of
+# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
 # PURPOSE.  See the GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License along 
+#
+# You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 ### END LICENSE
 
@@ -38,10 +38,10 @@ class DaemonTests(unittest.TestCase):
         self.dbus_service_process = subprocess.Popen(["./oneconf-service", '--debug', '--mock'])
         self.time_start = time.time()
         time.sleep(1) # let the main daemon starting
-            
+
     def tearDown(self):
         '''Kill the dbus service if there, and clean things'''
-        
+
         if self.dbus_service_process:
             self.dbus_service_process.terminate()
             self.dbus_service_process.wait()
@@ -49,7 +49,7 @@ class DaemonTests(unittest.TestCase):
             shutil.rmtree(os.path.dirname(paths.ONECONF_CACHE_DIR))
         except OSError:
             pass
-            
+
     def daemon_still_there(self, pid=None):
         '''Return True if the daemon is still running'''
         if not pid and self.dbus_service_process:
@@ -72,7 +72,7 @@ class DaemonTests(unittest.TestCase):
         self.dbus_service_process = None
 
     def test_unique_daemon(self):
-        '''Try to spaw a second daemon and check it can't be there'''    
+        '''Try to spaw a second daemon and check it can't be there'''
         daemon2 = subprocess.Popen(["./oneconf-service"], stdout=file('/dev/null'), stderr=file('/dev/null'))
         daemon2.wait() # let it proceeding quitting
         time_stop = time.time()
@@ -119,15 +119,15 @@ class DaemonTests(unittest.TestCase):
           oneconf.get_all_hosts()
           time.sleep(MIN_TIME_WITHOUT_ACTIVITY)
         subprocess.Popen(["./oneconf-query", "--stop"])
-    
+
 #
 # main
 #
 if __name__ == '__main__':
-    print '''
+    print('''
     #########################################
     #       Use the OneConf service         #
     #########################################
-    '''
+    ''')
     unittest.main(exit=False)
     os.remove("/tmp/oneconf.override")

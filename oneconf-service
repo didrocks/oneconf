@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (C) 2010 Canonical
 #
@@ -38,21 +38,21 @@ def quit(loop, myservice):
         LOG.debug('Some recent activity, still alive for %ss'
                       % MIN_TIME_WITHOUT_ACTIVITY)
         # TODO: check if server has new sync info and send a dbus signal there
-        
+
         myservice.activity = False
         return True
     LOG.debug('No more activity, go to sleep')
     loop.quit()
-    
-def createcheckforquit(loop, myservice):
-    # This function add 10 secondes more than in the software-center oneconf plugins
-    # after starting up to keep the service up when USC is running
-    # (there is a ping every MIN_TIME_WITHOUT_ACTIVITY - 10)
-    GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, quit, loop, myservice)
-    return False
-    
-def createsynchandler(myservice, use_mock):
 
+def createcheckforquit(loop, myservice):
+    # This function add 10 seconds more than in the software-center oneconf
+    # plugins after starting up to keep the service up when USC is running
+    # (there is a ping every MIN_TIME_WITHOUT_ACTIVITY - 10)
+    GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY,
+                                quit, loop, myservice)
+    return False
+
+def createsynchandler(myservice, use_mock):
     # create only on demand to avoid first sync/upload to delay first request
     # this sync automatically as soon as network/sso is available
     LOG.debug('Create a sync handler with infra')
@@ -60,9 +60,12 @@ def createsynchandler(myservice, use_mock):
     if use_mock:
         from oneconf.networksync.infraclient_fake import WebCatalogAPI
         infra = WebCatalogAPI()
-    myservice.synchandler = SyncHandler(myservice.hosts, package_handler=myservice.get_packageSetHandler(), infraclient=infra, dbusemitter=myservice)
+    myservice.synchandler = SyncHandler(
+        myservice.hosts, package_handler=myservice.get_packageSetHandler(),
+        infraclient=infra, dbusemitter=myservice)
     return False
-    
+
+
 if __name__ == '__main__':
     usage = _("Usage: %prog [options]")
     parser = OptionParser(version= "%prog " + VERSION, usage=usage)
@@ -74,7 +77,7 @@ if __name__ == '__main__':
 
     # don't run as root:
     if os.getuid() == 0:
-        print "oneconf-service can't run as root. Exiting"
+        print("oneconf-service can't run as root. Exiting")
         sys.exit(1)
 
     # set verbosity
@@ -91,15 +94,16 @@ if __name__ == '__main__':
 
     DBusGMainLoop(set_as_default=True)
     loop = GObject.MainLoop()
-    
+
     # only OneConf service at a time
     error_message = None
     try:
         if ONECONF_SERVICE_NAME in dbus.SessionBus().list_names():
-            error_message =_("An OneConf service is already running, shut it down with oneconf-query --stop")
+            error_message =_("An OneConf service is already running, "
+                             "shut it down with oneconf-query --stop")
         else:
             myservice = DbusHostsService(loop)
-    except dbus.DBusException, e:
+    except dbus.DBusException as e:
         error_message = e
     if error_message:
         LOG.critical(error_message)
@@ -109,4 +113,3 @@ if __name__ == '__main__':
     GObject.timeout_add_seconds(20, createsynchandler, myservice, options.mock)
     LOG.debug("daemon up and running")
     loop.run()
-

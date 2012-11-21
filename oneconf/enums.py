@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Copyright (C) 2011 Canonical
 #
@@ -18,14 +18,13 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import ConfigParser
+from configparser import NoSectionError, RawConfigParser
 from oneconf.paths import ONECONF_OVERRIDE_FILE
 
-config = ConfigParser.RawConfigParser()
+config = RawConfigParser()
 try:
     config.read(ONECONF_OVERRIDE_FILE)
     MIN_TIME_WITHOUT_ACTIVITY = config.getint('TestSuite', 'MIN_TIME_WITHOUT_ACTIVITY')
-except ConfigParser.NoSectionError:
+except NoSectionError:
     MIN_TIME_WITHOUT_ACTIVITY = 60*5
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"
-

@@ -21,21 +21,20 @@ import json
 import logging
 import os
 import platform
+import sys
 from gi.repository import Gio
 
 from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
-from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
-                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME, FAKE_WALLPAPER,
-                   FAKE_WALLPAPER_MTIME)
+from oneconf.paths import (
+    FAKE_WALLPAPER, FAKE_WALLPAPER_MTIME, HOST_DATA_FILENAME,
+    LAST_SYNC_DATE_FILENAME, LOGO_BASE_FILENAME, LOGO_PREFIX,
+    ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, PACKAGE_LIST_PREFIX,
+    PENDING_UPLOAD_FILENAME)
 
-# FIXME: ask about those horrible symlink to barry when I get time for it.
-try:
-    from oneconf import utils
-except ImportError:
-    import utils
+from oneconf import utils
 
 class HostError(Exception):
     def __init__(self, message):
@@ -110,7 +109,9 @@ class Hosts(object):
         if not file_mtime:
             file_mtime = str(os.stat(file_path).st_mtime)
         try:
-            logo_checksum = "%s%s" % (hashlib.sha224(file_path).hexdigest(), file_mtime)
+            file_path_bytes = file_path.encode(sys.getfilesystemencoding())
+            logo_checksum = "%s%s" % (
+                hashlib.sha224(file_path_bytes).hexdigest(), file_mtime)
         except OSError:
             logo_checksum = None
             file_path = None
@@ -122,7 +123,11 @@ class Hosts(object):
         return True if succeeded'''
         if not wallpaper_path:
             return False
-        from PIL import Image
+        try:
+            # 2012-11-21 BAW: There is as yet no PIL for Python 3.
+            from PIL import Image
+        except ImportError:
+            return False
         try:
             im = Image.open(LOGO_BASE_FILENAME)
             im2 = Image.open(wallpaper_path)

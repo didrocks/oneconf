@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-11-21 15:01-0500\n"
+"POT-Creation-Date: 2012-11-21 18:27-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,20 +17,20 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: .././oneconf-service:67
+#: .././oneconf-service:70
 #, c-format
 msgid "Usage: %prog [options]"
 msgstr ""
 
-#: .././oneconf-service:70
+#: .././oneconf-service:73
 msgid "Enable debug mode."
 msgstr ""
 
-#: .././oneconf-service:72
+#: .././oneconf-service:75
 msgid "Use the mock infrastructure."
 msgstr ""
 
-#: .././oneconf-service:99
+#: .././oneconf-service:102
 msgid ""
 "An OneConf service is already running, shut it down with oneconf-query --stop"
 msgstr ""
@@ -55,114 +55,114 @@ msgstr ""
 msgid "Hosts stored for OneConf:"
 msgstr ""
 
-#: .././oneconf-query:75
+#: .././oneconf-query:76
 msgid "You can't define --all-packages, --manual-packages or --hosts together."
 msgstr ""
 
-#: .././oneconf-query:79
+#: .././oneconf-query:80
 msgid ""
 "You can't define --list, --diff, --update, --async-update, --share-"
 "inventory, --stop, --get-last-sync together."
 msgstr ""
 
-#: .././oneconf-query:83
+#: .././oneconf-query:84
 #, c-format
 msgid "%s isn't compatible with %s"
 msgstr ""
 
-#: .././oneconf-query:89
+#: .././oneconf-query:90
 #, c-format
 msgid "usage: %prog [options]"
 msgstr ""
 
-#: .././oneconf-query:93
+#: .././oneconf-query:94
 msgid ""
 "Current diff between this machine and another provided by hostname/hostid"
 msgstr ""
 
-#: .././oneconf-query:97
+#: .././oneconf-query:98
 msgid "List stored package (default for local hostid) or host lists"
 msgstr ""
 
-#: .././oneconf-query:100
+#: .././oneconf-query:101
 msgid "Get last sync date"
 msgstr ""
 
-#: .././oneconf-query:102
+#: .././oneconf-query:103
 msgid "Update the package list in store"
 msgstr ""
 
-#: .././oneconf-query:105
+#: .././oneconf-query:106
 msgid "Perform async update of the package list in store"
 msgstr ""
 
-#: .././oneconf-query:107
+#: .././oneconf-query:108
 msgid "Stop oneconf service"
 msgstr ""
 
-#: .././oneconf-query:109
+#: .././oneconf-query:110
 msgid "Enable debug mode (use --direct)"
 msgstr ""
 
-#: .././oneconf-query:111
+#: .././oneconf-query:112
 msgid "Don't use dbus for the request"
 msgstr ""
 
-#: .././oneconf-query:116
+#: .././oneconf-query:117
 msgid "Get all installed packages from storage"
 msgstr ""
 
-#: .././oneconf-query:119
+#: .././oneconf-query:120
 msgid "Get only manual installed packages from storage"
 msgstr ""
 
-#: .././oneconf-query:122
+#: .././oneconf-query:123
 msgid "All available hosts from storage (only with list)"
 msgstr ""
 
-#: .././oneconf-query:125
+#: .././oneconf-query:126
 msgid "This host (only with list)"
 msgstr ""
 
-#: .././oneconf-query:131
+#: .././oneconf-query:132
 msgid "Specify target hostname"
 msgstr ""
 
-#: .././oneconf-query:133
+#: .././oneconf-query:134
 msgid "Specify target hostid"
 msgstr ""
 
-#: .././oneconf-query:139
+#: .././oneconf-query:140
 msgid "Share this inventory on the web"
 msgstr ""
 
-#: .././oneconf-query:143
+#: .././oneconf-query:144
 msgid "Hide this inventory on the web"
 msgstr ""
 
-#: .././oneconf-query:225
+#: .././oneconf-query:226
 msgid "hostid and hostname can't be provided together."
 msgstr ""
 
-#: .././oneconf-query:230 .././oneconf-query:240
+#: .././oneconf-query:231 .././oneconf-query:241
 msgid "You can't use hostid or hostname when updating."
 msgstr ""
 
-#: .././oneconf-query:233 .././oneconf-query:243
+#: .././oneconf-query:234 .././oneconf-query:244
 msgid "You can't define --package, --host or --hosts when updating."
 msgstr ""
 
-#: .././oneconf-query:264
+#: .././oneconf-query:265
 msgid "You have to provide either hostid or hostname for getting a diff."
 msgstr ""
 
-#: .././oneconf-query:282 .././oneconf-query:291
+#: .././oneconf-query:283 .././oneconf-query:292
 msgid ""
 "You can't define --package, --host or --hosts when changing show inventory "
 "status."
 msgstr ""
 
-#: .././oneconf-query:288
+#: .././oneconf-query:289
 msgid "You can't use hostid or hostname when changing show inventory status."
 msgstr ""
 
@@ -176,21 +176,20 @@ msgid ""
 "Nothing done: in direct mode, there is no communication with the service"
 msgstr ""
 
-#: .././oneconf/hosts.py:213 .././oneconf/networksync/hosts.py:213
+#: .././oneconf/hosts.py:218
 msgid "No hostname registered for this id"
 msgstr ""
 
-#: .././oneconf/hosts.py:235 .././oneconf/networksync/hosts.py:235
+#: .././oneconf/hosts.py:240
 msgid ""
 "Multiple hostid registered for this hostname. Use --list --host to get the "
 "hostid and use the --hostid option."
 msgstr ""
 
-#: .././oneconf/hosts.py:239 .././oneconf/networksync/hosts.py:239
+#: .././oneconf/hosts.py:244
 msgid "No hostid registered for this hostname"
 msgstr ""
 
-#: .././oneconf/hosts.py:311 .././oneconf/hosts.py:314
-#: .././oneconf/networksync/hosts.py:311 .././oneconf/networksync/hosts.py:314
+#: .././oneconf/hosts.py:316 .././oneconf/hosts.py:319
 msgid "Was never synced"
 msgstr ""

@@ -17,9 +17,9 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import ConfigParser
 import logging
 import subprocess
+from configparser import NoSectionError, RawConfigParser
 
 LOG = logging.getLogger(__name__)
 
@@ -41,13 +41,15 @@ class Distro(object):
 
 
 def _get_distro():
-    config = ConfigParser.RawConfigParser()
+    config = RawConfigParser()
     try:
         config.read(ONECONF_OVERRIDE_FILE)
         distro_id = config.get('TestSuite', 'distro')
-    except ConfigParser.NoSectionError:
-        distro_id = subprocess.Popen(["lsb_release","-i","-s"],
-                                     stdout=subprocess.PIPE).communicate()[0].strip()
+    except NoSectionError:
+        distro_id = subprocess.Popen(
+            ["lsb_release","-i","-s"],
+            stdout=subprocess.PIPE,
+            universal_newlines=True).communicate()[0].strip()
     LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
     try:

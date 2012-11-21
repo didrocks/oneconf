@@ -4,10 +4,9 @@ ratings and reviews API, plus a few helper classes.
 
 from piston_mini_client import (
     PistonAPI,
-    returns,
     returns_json,
     )
-from piston_mini_client.validators import validate_pattern, validate
+from piston_mini_client.validators import validate_pattern
 from piston_mini_client.failhandlers import APIError
 
 # These are factored out as constants for if you need to work against a
@@ -15,11 +14,11 @@ from piston_mini_client.failhandlers import APIError
 PUBLIC_API_SCHEME = 'http'
 AUTHENTICATED_API_SCHEME = 'https'
 
-from fake_webcatalog_silo import FakeWebCatalogSilo, network_delay
+from .fake_webcatalog_silo import FakeWebCatalogSilo, network_delay
 import os
 import simplejson
 
-from paths import WEBCATALOG_SILO_RESULT, WEBCATALOG_SILO_DIR
+from oneconf.paths import WEBCATALOG_SILO_RESULT, WEBCATALOG_SILO_DIR
 
 class WebCatalogAPI(PistonAPI):
     """A fake client pretending to be WebCatalogAPI from infraclient_pristine.
@@ -30,7 +29,7 @@ class WebCatalogAPI(PistonAPI):
        To use this, instead of importing from infraclient_pristine, you can import
        from infraclient_fake instead.
     """
-    
+
     default_service_root = 'http://localhost:8000/cat/api/1.0'
     default_content_type = 'application/x-www-form-urlencoded'
 
@@ -105,7 +104,7 @@ class WebCatalogAPI(PistonAPI):
         del(hosts[machine_uuid])
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
         return simplejson.dumps('Success')
-            
+
     @validate_pattern('machine_uuid', r'[-\w+]+')
     def get_machine_logo(self, machine_uuid):
         if self.silo.get_setting('get_machine_logo_error'):
@@ -132,7 +131,7 @@ class WebCatalogAPI(PistonAPI):
         hosts[machine_uuid]['logo_checksum'] = logo_checksum
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
         return simplejson.dumps('Success')
-        
+
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
     def list_packages(self, machine_uuid):
@@ -163,4 +162,3 @@ class WebCatalogAPI(PistonAPI):
         hosts[machine_uuid]['packages_checksum'] = packages_checksum
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
         return simplejson.dumps('Success')
-
