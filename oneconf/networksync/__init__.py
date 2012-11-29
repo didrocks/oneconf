@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Copyright (C) 2011 Canonical
@@ -32,7 +31,7 @@ from .ssohandler import LoginBackendDbusSSO
 
 from oneconf.paths import (
     LAST_SYNC_DATE_FILENAME, ONECONF_CACHE_DIR, OTHER_HOST_FILENAME,
-    PACKAGE_LIST_PREFIX, PENDING_UPLOAD_FILENAME, WEBCATALOG_SILO_SOURCE)
+    PACKAGE_LIST_PREFIX, PENDING_UPLOAD_FILENAME)
 
 from piston_mini_client.failhandlers import APIError
 from http.client import BadStatusLine
@@ -88,7 +87,7 @@ class SyncHandler(GObject.GObject):
         # Prepare the authenticated infraclient
         if self.credential and not self.infraclient:
             from piston_mini_client.auth import OAuthAuthorizer
-            from infraclient_pristine import WebCatalogAPI
+            from .infraclient_pristine import WebCatalogAPI
             from oneconf.distributor import get_distro
             distro = get_distro()
             # No update if not supported distribution
@@ -340,25 +339,3 @@ class SyncHandler(GObject.GObject):
 
         # continue syncing in the main loop
         return True
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    from dbus.mainloop.glib import DBusGMainLoop
-    DBusGMainLoop(set_as_default=True)
-
-    from hosts import Hosts
-    import sys
-    from infraclient_fake import WebCatalogAPI
-
-    os.environ["ONECONF_SINGLE_SYNC"] = "True"
-
-    infraclient = None
-    if not "--no-infra-client" in sys.argv:
-        infraclient = WebCatalogAPI(WEBCATALOG_SILO_SOURCE)
-
-    sync_handler = SyncHandler(Hosts(), infraclient=infraclient)
-    loop = GObject.MainLoop()
-    GObject.timeout_add_seconds(15, loop.quit)
-
-    loop.run()

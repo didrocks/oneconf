@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 from DistUtilsExtra.command import *
 
 import re
@@ -57,5 +57,9 @@ setup(name="oneconf", version=VERSION,
       cmdclass = { "build" : build_extra.build_extra,
                    "build_i18n" :  build_i18n.build_i18n,
                    "build_help" : build_help.build_help,
-                   "build_icons" : build_icons.build_icons}
+                   "build_icons" : build_icons.build_icons},
+      test_suite = 'nose.collector',
+      test_requires = [
+          'piston_mini_client',
+          ],
       )

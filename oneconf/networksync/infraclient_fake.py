@@ -16,7 +16,7 @@ AUTHENTICATED_API_SCHEME = 'https'
 
 from .fake_webcatalog_silo import FakeWebCatalogSilo, network_delay
 import os
-import simplejson
+import json
 
 from oneconf.paths import WEBCATALOG_SILO_RESULT, WEBCATALOG_SILO_DIR
 
@@ -49,7 +49,7 @@ class WebCatalogAPI(PistonAPI):
     def server_status(self):
         if self.silo.get_setting('server_response_error'):
             raise APIError(self._exception_msg)
-        return simplejson.dumps('ok')
+        return json.dumps('ok')
 
     @network_delay
     def list_machines(self):
@@ -79,7 +79,7 @@ class WebCatalogAPI(PistonAPI):
         else:
             hosts[machine_uuid] = {'hostname': hostname, 'logo_checksum': None, 'packages_checksum': None}
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
+        return json.dumps('Success')
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
@@ -103,7 +103,7 @@ class WebCatalogAPI(PistonAPI):
             raise APIError('Host Not Found')
         del(hosts[machine_uuid])
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
+        return json.dumps('Success')
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     def get_machine_logo(self, machine_uuid):
@@ -130,7 +130,7 @@ class WebCatalogAPI(PistonAPI):
         hosts = self.silo.get_host_silo()
         hosts[machine_uuid]['logo_checksum'] = logo_checksum
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
+        return json.dumps('Success')
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
@@ -144,7 +144,7 @@ class WebCatalogAPI(PistonAPI):
         package_list = packages[machine_uuid]
         if not package_list:
             raise APIError('Package list empty')
-        return simplejson.dumps(package_list)
+        return json.dumps(package_list)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('packages_checksum', r'[-\w+]+')
@@ -161,4 +161,4 @@ class WebCatalogAPI(PistonAPI):
         hosts = self.silo.get_host_silo()
         hosts[machine_uuid]['packages_checksum'] = packages_checksum
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
+        return json.dumps('Success')

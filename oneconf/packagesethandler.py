@@ -32,8 +32,6 @@ from oneconf import utils
 class PackageSetInitError(Exception):
     """An error occurred, preventing the package set to initialize."""
 
-    def __init__(self, message, *args, **kwargs):
-        super(PackageSetInitError, self).__init__(message, *args, **kwargs)
 
 class PackageSetHandler(object):
     """
@@ -64,7 +62,14 @@ class PackageSetHandler(object):
         newpkg_list = self.distro.compute_local_packagelist()
 
         LOG.debug("Creating the checksum")
-        checksum = hashlib.sha224(str(newpkg_list)).hexdigest()
+        # We need to get a reliable checksum for the dictionary in
+        # newpkg_list.  Dictionary order is unpredictable, so to get a
+        # reproducible checksum, we get the items of the dict, sort on the
+        # keys, then get the json representation of this sorted list, encode
+        # this to bytes assuming utf-8, and hash the resulting bytes.
+        items = sorted(newpkg_list.items())
+        hash_input = json.dumps(items).encode('utf-8')
+        checksum = hashlib.sha224(hash_input).hexdigest()
 
         LOG.debug("Package list need refresh")
         self.package_list[hostid] = {'valid': True, 'package_list': newpkg_list}

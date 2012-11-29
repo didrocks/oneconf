@@ -32,10 +32,8 @@ class Test(Distro):
 
         Return: installed_packages list
         '''
-        
+
         LOG.debug ('Compute package list for current host')
         return {'foo': {"auto": False},
                 'pool': {"auto": True},
                }
-
-

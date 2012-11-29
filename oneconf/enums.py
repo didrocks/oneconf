@@ -24,7 +24,9 @@ from oneconf.paths import ONECONF_OVERRIDE_FILE
 config = RawConfigParser()
 try:
     config.read(ONECONF_OVERRIDE_FILE)
-    MIN_TIME_WITHOUT_ACTIVITY = config.getint('TestSuite', 'MIN_TIME_WITHOUT_ACTIVITY')
+    MIN_TIME_WITHOUT_ACTIVITY = config.getint(
+        'TestSuite', 'MIN_TIME_WITHOUT_ACTIVITY')
 except NoSectionError:
-    MIN_TIME_WITHOUT_ACTIVITY = 60*5
+    MIN_TIME_WITHOUT_ACTIVITY = 60 * 5
+
 ONECONF_SERVICE_NAME = "com.ubuntu.OneConf"

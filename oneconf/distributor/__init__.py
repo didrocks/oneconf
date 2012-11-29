@@ -19,14 +19,12 @@
 
 import logging
 import subprocess
+
 from configparser import NoSectionError, RawConfigParser
-
-LOG = logging.getLogger(__name__)
-
+from importlib import import_module
 from oneconf.paths import ONECONF_OVERRIDE_FILE
 
-class UnimplementedError(Exception):
-    pass
+LOG = logging.getLogger(__name__)
 
 
 class Distro(object):
@@ -37,7 +35,7 @@ class Distro(object):
 
         Return: installed_packages list
         '''
-        raise UnimplementedError
+        raise NotImplementedError
 
 
 def _get_distro():
@@ -53,7 +51,7 @@ def _get_distro():
     LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
     try:
-        module =  __import__(distro_id, globals(), locals(), [], -1)
+        module =  import_module('.' + distro_id, 'oneconf.distributor')
         # get the right class and instanciate it
         distro_class = getattr(module, distro_id)
         instance = distro_class()

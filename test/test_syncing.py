@@ -25,7 +25,10 @@ import unittest
 
 sys.path.insert(0, os.path.abspath('.'))
 
-shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.override"), "/tmp/oneconf.override")
+src = os.path.join(os.path.dirname(__file__), "data", "oneconf.override")
+dst = "/tmp/oneconf.override"
+shutil.copy(src, dst)
+
 from oneconf import paths
 from oneconf.networksync.fake_webcatalog_silo import FakeWebCatalogSilo
 
@@ -33,7 +36,7 @@ class OneConfSyncing(unittest.TestCase):
 
     def setUp(self):
         os.environ['PYTHONPATH'] = '.:' + os.environ.get('PYTHONPATH', '')
-        self.cmd_line = ["python", "oneconf/networksync/__init__.py"]
+        self.cmd_line = [sys.executable, '-m', 'oneconf.networksync']
         self.hostid = "0000"
         self.hostname = "foomachine"
         self.output = None
@@ -44,7 +47,7 @@ class OneConfSyncing(unittest.TestCase):
         self.src_hostdir = None
 
     def tearDown(self):
-        for key in os.environ.keys():
+        for key in list(os.environ.keys()):
             if "ONECONF_" in key:
                 os.environ.pop(key)
         try:
@@ -64,14 +67,15 @@ class OneConfSyncing(unittest.TestCase):
         return output
 
     def msg_in_output(self, output, msg):
-        found = False
         for line in output:
-            found = found or msg in line
-        return found
+            if msg in line:
+                return True
+        return False
 
     def get_daemon_output(self):
         '''Return the daemon output and ensure it's stopped'''
-        p = subprocess.Popen(self.cmd_line, stderr=subprocess.PIPE)
+        p = subprocess.Popen(self.cmd_line, stderr=subprocess.PIPE,
+                             universal_newlines=True)
         output = self.collect_debug_output(p)
         p.wait()
         p = None
@@ -85,18 +89,21 @@ class OneConfSyncing(unittest.TestCase):
         self.assertFalse(self.msg_in_output(self.output, 'Traceback'))
         if check_errors:
             self.assertFalse(self.msg_in_output(self.output, 'ERROR:'))
-        return (self.msg_in_output(self.output, msg))
+        return self.msg_in_output(self.output, msg)
 
     def copy_state(self, test_ident):
         '''Set state from the test identifier.'''
-        datadir = os.path.join(os.path.dirname(__file__), "data", "syncdatatests")
+        datadir = os.path.join(
+            os.path.dirname(__file__), "data", "syncdatatests")
         self.src_hostdir = os.path.join(datadir, 'host_%s' % test_ident)
-        self.result_hostdir = os.path.join(datadir, 'resulthost_%s' % test_ident)
+        self.result_hostdir = os.path.join(
+            datadir, 'resulthost_%s' % test_ident)
         shutil.copytree(self.src_hostdir, self.hostdir)
         if not os.path.isdir(paths.WEBCATALOG_SILO_DIR):
             os.makedirs(paths.WEBCATALOG_SILO_DIR)
         try:
-            shutil.copy(os.path.join(datadir, 'silo_%s' % test_ident), paths.WEBCATALOG_SILO_SOURCE)
+            shutil.copy(os.path.join(datadir, 'silo_%s' % test_ident),
+                        paths.WEBCATALOG_SILO_SOURCE)
         except IOError:
             pass # some tests have no silo source file
 
@@ -155,7 +162,8 @@ class OneConfSyncing(unittest.TestCase):
         self.assertTrue(self.check_msg_in_output("Saving updated %s to disk" % sync_file))
         self.assertTrue(self.check_msg_in_output("emit_new_lastestsync"))
         with open(sync_file, 'r') as f:
-            current_host = self.assertTrue(json.load(f)["last_sync"] > now)
+            contents = json.load(f)
+        self.assertGreater(float(contents['last_sync']), now)
 
     def test_host_not_shared(self):
         '''Test a non shared host is really not shared'''
@@ -393,7 +401,7 @@ class OneConfSyncing(unittest.TestCase):
 
     def test_no_sync_with_invalid_setup(self):
         '''Test that no sync and no traceback is happening if we have an invalid setup'''
-        self.cmd_line = ["python", "oneconf/networksync/__init__.py", "--no-infra-client"]
+        self.cmd_line.append('--no-infra-client')
         shutil.copy(os.path.join(os.path.dirname(__file__), "data", "oneconf.invaliddistro.override"), "/tmp/oneconf.override")
         self.assertFalse(self.check_msg_in_output("Start processing sync"))
 

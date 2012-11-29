@@ -73,7 +73,9 @@ class DaemonTests(unittest.TestCase):
 
     def test_unique_daemon(self):
         '''Try to spaw a second daemon and check it can't be there'''
-        daemon2 = subprocess.Popen(["./oneconf-service"], stdout=file('/dev/null'), stderr=file('/dev/null'))
+        daemon2 = subprocess.Popen(["./oneconf-service"],
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL)
         daemon2.wait() # let it proceeding quitting
         time_stop = time.time()
         self.assertFalse(self.daemon_still_there(daemon2.pid))

@@ -1,3 +1,4 @@
 oneconf/networksync/mocklocalinfra/
 __pycache__
 build
+oneconf.egg-info
