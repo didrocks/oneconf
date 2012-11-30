@@ -50,7 +50,8 @@ class DirectConnect(object):
 
         try:
             self._ensurePackageSetHandler()
-            return self.PackageSetHandler().get_packages(hostid, hostname, only_manual)
+            return self.PackageSetHandler().get_packages(
+                hostid, hostname, only_manual)
         except HostError as e:
             print(e)
             sys.exit(1)

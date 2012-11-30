@@ -21,6 +21,7 @@ import hashlib
 import json
 import logging
 import os
+from pprint import pformat
 
 LOG = logging.getLogger(__name__)
 
@@ -64,11 +65,11 @@ class PackageSetHandler(object):
         LOG.debug("Creating the checksum")
         # We need to get a reliable checksum for the dictionary in
         # newpkg_list.  Dictionary order is unpredictable, so to get a
-        # reproducible checksum, we get the items of the dict, sort on the
-        # keys, then get the json representation of this sorted list, encode
-        # this to bytes assuming utf-8, and hash the resulting bytes.
-        items = sorted(newpkg_list.items())
-        hash_input = json.dumps(items).encode('utf-8')
+        # reproducible checksum, we need a predictable string representation
+        # of the dictionary.  pprint.pformat() seems to give us the best
+        # option here since it guarantees that dictionary keys are sorted.
+        # hashlib works on bytes only though, so assume utf-8.
+        hash_input = pformat(newpkg_list).encode('utf-8')
         checksum = hashlib.sha224(hash_input).hexdigest()
 
         LOG.debug("Package list need refresh")
@@ -87,9 +88,10 @@ class PackageSetHandler(object):
         LOG.debug ("Request for package list for %s with only manual packages reduced scope to: %s", hostid, only_manual)
         package_list = self._get_installed_packages(hostid)
         if only_manual:
-            package_list = [package_elem for package_elem in package_list if package_list[package_elem]["auto"] == False]
+            package_list = [
+                package_elem for package_elem in package_list
+                if not package_list[package_elem]["auto"]]
         return package_list
-
 
     def _get_installed_packages(self, hostid):
         '''get installed packages from the storage or cache
@@ -107,30 +109,40 @@ class PackageSetHandler(object):
             need_reload = True
 
         if need_reload:
-            self.package_list[hostid] = {'valid': True, 'package_list': self._get_packagelist_from_store(hostid)}
+            self.package_list[hostid] = {
+                'valid': True,
+                'package_list': self._get_packagelist_from_store(hostid),
+                }
         return self.package_list[hostid]['package_list']
 
 
     def diff(self, distant_hostid=None, distant_hostname=None):
-        '''get a diff from current package state from another host
+        """get a diff from current package state from another host
 
-        This function can be use to make a diff between all packages installed on both computer
-, use_cache
+        This function can be use to make a diff between all packages installed
+        on both computer, use_cache
+
         Return: (packages_to_install (packages in distant_hostid not in local_hostid),
                  packages_to_remove (packages in local hostid not in distant_hostid))
-        '''
+        """
 
-        distant_hostid = self.hosts.get_hostid_from_context(distant_hostid, distant_hostname)
+        distant_hostid = self.hosts.get_hostid_from_context(
+            distant_hostid, distant_hostname)
 
         LOG.debug("Collecting all installed packages on this system")
-        local_package_list = set(self.get_packages(self.hosts.current_host['hostid'], False))
+        local_package_list = set(
+            self.get_packages(self.hosts.current_host['hostid'], False))
 
         LOG.debug("Collecting all installed packages on the other system")
         distant_package_list = set(self.get_packages(distant_hostid, False))
 
         LOG.debug("Comparing")
-        packages_to_install = [x for x in distant_package_list if x not in local_package_list]
-        packages_to_remove = [x for x in local_package_list if x not in distant_package_list]
+        packages_to_install = [
+            x for x in sorted(distant_package_list)
+            if x not in local_package_list]
+        packages_to_remove = [
+            x for x in sorted(local_package_list)
+            if x not in distant_package_list]
 
         # for Dbus which doesn't like empty list
         if not packages_to_install:
@@ -138,7 +150,7 @@ class PackageSetHandler(object):
         if not packages_to_remove:
             packages_to_remove = ''
 
-        return(packages_to_install, packages_to_remove)
+        return packages_to_install, packages_to_remove
 
 
     def _get_packagelist_from_store(self, hostid):

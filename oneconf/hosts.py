@@ -62,14 +62,17 @@ class Hosts(object):
         try:
             # faking this id for testing purpose. Format is hostid:hostname
             hostid, hostname = os.environ["ONECONF_HOST"].split(':')
-            LOG.debug ("Fake current hostid to %s and hostname to %s" % (hostid, hostname))
+            LOG.debug("Fake current hostid to %s and hostname to %s" %
+                      (hostid, hostname))
         except KeyError:
-            hostid = open('/var/lib/dbus/machine-id').read()[:-1]
+            with open('/var/lib/dbus/machine-id') as fp:
+                hostid = fp.read()[:-1]
             hostname = platform.node()
 
         self._host_file_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
         try:
-            with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'r') as f:
+            file_path = os.path.join(self._host_file_dir, HOST_DATA_FILENAME)
+            with open(file_path, 'r') as f:
                 self.current_host = json.load(f)
                 has_changed = False
                 if hostname != self.current_host['hostname']:
@@ -79,17 +82,22 @@ class Hosts(object):
                     self.current_host['hostid'] = hostid
                     has_changed = True
                 if logo_checksum != self.current_host['logo_checksum']:
-                    if (self._create_logo(logo_path)):
+                    if self._create_logo(logo_path):
                         self.current_host['logo_checksum'] = logo_checksum
                     has_changed = True
             if has_changed:
                 self.save_current_host()
         except (IOError, ValueError):
-            self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False,
-                                 'logo_checksum': logo_checksum, 'packages_checksum': None}
+            self.current_host = {
+                'hostid': hostid,
+                'hostname': hostname,
+                'share_inventory': False,
+                'logo_checksum': logo_checksum,
+                'packages_checksum': None,
+                }
             if not os.path.isdir(self._host_file_dir):
                 os.mkdir(self._host_file_dir)
-            if not (self._create_logo(logo_path)):
+            if not self._create_logo(logo_path):
                 self.current_host['logo_checksum'] = None
             self.save_current_host()
         self.other_hosts = None
@@ -97,7 +105,8 @@ class Hosts(object):
 
     def _get_current_wallpaper_data(self):
         '''Get current wallpaper metadatas from store'''
-        # TODO: add fake objects instead of introducing logic into the code for testing
+        # TODO: add fake objects instead of introducing logic into the code
+        # for testing.
         file_path = FAKE_WALLPAPER
         file_mtime = FAKE_WALLPAPER_MTIME
         if not file_path:
@@ -273,9 +282,14 @@ class Hosts(object):
         put in them as dict -> tuple for dbus connection'''
 
         LOG.debug("Request to compute an list of all hosts")
-        result = {self.current_host['hostid']: (True, self.current_host['hostname'], self.current_host['share_inventory'])}
+        result = {
+            self.current_host['hostid']: (
+                True, self.current_host['hostname'],
+                self.current_host['share_inventory']),
+            }
         for hostid in self.other_hosts:
-            result[hostid] = (False, self.other_hosts[hostid]['hostname'], True)
+            result[hostid] = (
+                False, self.other_hosts[hostid]['hostname'], True)
         return result
 
     def set_share_inventory(self, share_inventory, hostid=None, hostname=None):
