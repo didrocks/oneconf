@@ -18,7 +18,7 @@
 
 import dbus
 import dbus.service
-from gi.repository import GObject
+from gi.repository import GObject, GLib
 import logging
 import sys
 
@@ -110,7 +110,7 @@ class DbusHostsService(dbus.service.Object):
     def async_update(self):
         self.activity = True
         if self.get_packageSetHandler():
-            GObject.timeout_add_seconds(1, self.get_packageSetHandler().update)
+            GLib.timeout_add_seconds(1, self.get_packageSetHandler().update)
 
     @dbus.service.signal(HOSTS_INTERFACE)
     def hostlist_changed(self):

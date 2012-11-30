@@ -27,7 +27,7 @@ import os
 import sys
 import logging
 
-from gi.repository import GObject
+from gi.repository import GLib
 
 from oneconf.paths import WEBCATALOG_SILO_SOURCE
 from . import SyncHandler
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         infraclient = WebCatalogAPI(WEBCATALOG_SILO_SOURCE)
 
     sync_handler = SyncHandler(Hosts(), infraclient=infraclient)
-    loop = GObject.MainLoop()
-    GObject.timeout_add_seconds(15, loop.quit)
+    loop = GLib.MainLoop()
+    GLib.timeout_add_seconds(15, loop.quit)
 
     loop.run()

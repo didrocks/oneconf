@@ -48,8 +48,7 @@ def createcheckforquit(loop, myservice):
     # This function add 10 seconds more than in the software-center oneconf
     # plugins after starting up to keep the service up when USC is running
     # (there is a ping every MIN_TIME_WITHOUT_ACTIVITY - 10)
-    GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY,
-                                quit, loop, myservice)
+    GLib.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, quit, loop, myservice)
     return False
 
 def createsynchandler(myservice, use_mock):
@@ -87,13 +86,13 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     # do import only now (otherwise, the import of dbus change level of debug)
-    from gi.repository import GObject
+    from gi.repository import GObject, GLib
     from dbus.mainloop.glib import DBusGMainLoop
     from oneconf.dbusconnect import DbusHostsService
     from oneconf.networksync import SyncHandler
 
     DBusGMainLoop(set_as_default=True)
-    loop = GObject.MainLoop()
+    loop = GLib.MainLoop()
 
     # only OneConf service at a time
     error_message = None
@@ -109,7 +108,7 @@ if __name__ == '__main__':
         LOG.critical(error_message)
         sys.exit(1)
 
-    GObject.timeout_add_seconds(10, createcheckforquit, loop, myservice)
-    GObject.timeout_add_seconds(20, createsynchandler, myservice, options.mock)
+    GLib.timeout_add_seconds(10, createcheckforquit, loop, myservice)
+    GLib.timeout_add_seconds(20, createsynchandler, myservice, options.mock)
     LOG.debug("daemon up and running")
     loop.run()

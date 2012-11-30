@@ -18,7 +18,7 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from gi.repository import GObject
+from gi.repository import GObject, GLib
 import json
 import logging
 import os
@@ -76,8 +76,9 @@ class SyncHandler(GObject.GObject):
         if self._can_sync:
             self.process_sync()
             # adding the timeout only if we are not on a single sync
-            if not "ONECONF_SINGLE_SYNC" in os.environ or not os.environ["ONECONF_SINGLE_SYNC"]:
-                GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, self.process_sync)
+            if not os.environ.get('ONECONF_SINGLE_SYNC'):
+                GLib.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY,
+                                         self.process_sync)
 
     def _sso_login_result(self, sso_login, credential):
         if credential == self.credential:

@@ -23,7 +23,7 @@
 
 
 import dbus
-from gi.repository import GObject
+from gi.repository import GObject, GLib
 import logging
 import os
 
@@ -81,10 +81,12 @@ class NetworkStatusWatcher(GObject.GObject):
         # if so force the network status to be connected or disconnected
         if "ONECONF_NET_CONNECTED" in os.environ:
             if os.environ["ONECONF_NET_CONNECTED"].lower() == 'true':
-                GObject.idle_add(self._on_connection_state_changed, self.NM_STATE_CONNECTED_LOCAL)
+                GLib.idle_add(self._on_connection_state_changed,
+                              self.NM_STATE_CONNECTED_LOCAL)
                 LOG.warn('forced netstate into connected mode...')
             else:
-                GObject.idle_add(self._on_connection_state_changed, self.NM_STATE_DISCONNECTED)
+                GLib.idle_add(self._on_connection_state_changed,
+                              self.NM_STATE_DISCONNECTED)
                 LOG.warn('forced netstate into disconnected mode...')
             return
         try:
@@ -103,8 +105,10 @@ class NetworkStatusWatcher(GObject.GObject):
     def _on_connection_state_changed(self, state):
         LOG.debug("network status changed to %i", state)
 
-        # this is to avoid transient state when we turn wifi on and nm tell "is connected" by default until checking
-        GObject.timeout_add_seconds(1, self._ensure_new_connected_state, self._does_state_mean_connected(state))
+        # this is to avoid transient state when we turn wifi on and nm tell
+        # "is connected" by default until checking
+        GLib.timeout_add_seconds(1, self._ensure_new_connected_state,
+                                 self._does_state_mean_connected(state))
 
     def _ensure_new_connected_state(self, connected):
         '''check if the connectivity state changed since last check

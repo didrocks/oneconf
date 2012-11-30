@@ -22,7 +22,7 @@
 
 import dbus
 import gettext
-from gi.repository import GObject
+from gi.repository import GObject, GLib
 import logging
 import os
 
@@ -55,10 +55,10 @@ class LoginBackendDbusSSO(GObject.GObject):
         if "ONECONF_SSO_CRED" in os.environ:
             if os.environ["ONECONF_SSO_CRED"].lower() == 'true':
                 LOG.warn('forced fake sso cred...')
-                GObject.idle_add(self._on_credentials_found, self.appname, "foo")
+                GLib.idle_add(self._on_credentials_found, self.appname, "foo")
             else:
                 LOG.warn('forced not having any sso cred...')
-                GObject.idle_add(self._on_credentials_not_found, self.appname)
+                GLib.idle_add(self._on_credentials_not_found, self.appname)
             return
 
         self.bus = dbus.SessionBus()
@@ -66,7 +66,8 @@ class LoginBackendDbusSSO(GObject.GObject):
         self.proxy = None
         self._get_sso_proxy()
         # try it in a spawn/retry process to avoid ubuntu sso login issues
-        GObject.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY, self._get_sso_proxy)
+        GLib.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY,
+                                 self._get_sso_proxy)
 
     def _get_sso_proxy(self):
         '''avoid crashing if ubuntu sso doesn't answer, which seems common'''
@@ -116,7 +117,7 @@ if __name__ == "__main__":
 
     login = LoginBackendDbusSSO()
 
-    loop = GObject.MainLoop()
+    loop = GLib.MainLoop()
 
     def print_result(obj, foo):
         print(foo)
