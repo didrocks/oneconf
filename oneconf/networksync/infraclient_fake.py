@@ -77,8 +77,8 @@ class WebCatalogAPI(PistonAPI):
         if self.machineuuid_exist(machine_uuid):
             hosts[machine_uuid]['hostname'] = hostname
         else:
-            hosts[machine_uuid] = {'hostname': hostname, 
-                                   'logo_checksum': None, 
+            hosts[machine_uuid] = {'hostname': hostname,
+                                   'logo_checksum': None,
                                    'packages_checksum': None,
                                    }
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
