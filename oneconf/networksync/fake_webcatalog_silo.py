@@ -136,7 +136,7 @@ class FakeWebCatalogSilo(object):
         '''Loads existing settings from cache file into _FAKE_SETTINGS dict'''
         if os.path.exists(filepath):
             try:
-                with open(filepath) as fp:
+                with open(filepath, 'b') as fp:
                     self._FAKE_SETTINGS = pickle.load(fp)
             except:
                 LOG.warning("Settings file %s can't be loaded. "
@@ -151,7 +151,8 @@ class FakeWebCatalogSilo(object):
         try:
             if not os.path.exists(os.path.dirname(filepath)):
                 os.makedirs(os.path.dirname(filepath))
-            with open(filepath, 'w') as fp:
+            # File must be open in binary mode since pickle will write bytes.
+            with open(filepath, 'wb') as fp:
                 pickle.dump(self._FAKE_SETTINGS, fp)
             return True
         except:

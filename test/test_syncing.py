@@ -104,23 +104,25 @@ class OneConfSyncing(unittest.TestCase):
         try:
             shutil.copy(os.path.join(datadir, 'silo_%s' % test_ident),
                         paths.WEBCATALOG_SILO_SOURCE)
-        except IOError:
+        # Python 3.3 only.
+        except FileNotFoundError:
             pass # some tests have no silo source file
 
-    def compare_silo_results(self, hosts_medata, packages_metadata):
+    def compare_silo_results(self, hosts_metadata, packages_metadata):
         """Return True if start and result silos contains identical hosts
         and pkg"""
         fakecatalog = FakeWebCatalogSilo(paths.WEBCATALOG_SILO_RESULT)
         self.assertEqual(fakecatalog._FAKE_SETTINGS['hosts_metadata'],
-                         hosts_medata)
+                         hosts_metadata)
         self.assertEqual(fakecatalog._FAKE_SETTINGS['packages_metadata'],
                          packages_metadata)
 
     def compare_files(self, file1, file2):
         '''Compare file content'''
-        src_content = open(file1).read().splitlines()
-        dest_content = open(file2).read().splitlines()
-        self.assertEqual(src_content, dest_content)
+        with open(file1) as fp1, open(file2) as fp2:
+            src_content = fp1.read().splitlines()
+            dst_content = fp2.read().splitlines()
+        self.assertMultiLineEqual(src_content, dst_content)
 
     def compare_dirs(self, source, dest):
         '''Compare directory files, ignoring the last_sync file on purpose'''
@@ -147,7 +149,8 @@ class OneConfSyncing(unittest.TestCase):
     def test_first_sync(self):
         '''Test a first synchronisation without any data on the webcatalog'''
         self.copy_state('nosilo_nopackage_onlyhost')
-        self.assertTrue(self.check_msg_in_output("Push current host to infra now"))
+        self.assertTrue(
+            self.check_msg_in_output("Push current host to infra now"))
         self.assertTrue(self.check_msg_in_output("New host registered done"))
         self.assertFalse(self.check_msg_in_output("emit_new_hostlist"))
         self.assertFalse(self.check_msg_in_output("emit_new_packagelist"))
