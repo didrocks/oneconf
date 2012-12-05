@@ -45,6 +45,7 @@ def quit(loop, myservice):
     loop.quit()
 
 def createcheckforquit(loop, myservice):
+    LOG.debug('Setting loop quit ping: %ss' % MIN_TIME_WITHOUT_ACTIVITY)
     # This function add 10 seconds more than in the software-center oneconf
     # plugins after starting up to keep the service up when USC is running
     # (there is a ping every MIN_TIME_WITHOUT_ACTIVITY - 10)

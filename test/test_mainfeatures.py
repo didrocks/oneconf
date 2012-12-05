@@ -15,6 +15,7 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 ### END LICENSE
 
+import atexit
 import json
 import os
 import shutil
@@ -26,8 +27,15 @@ from gettext import gettext as _
 
 sys.path.insert(0, os.path.abspath('.'))
 
-# XXX This seriously makes me cry, but because of the way paths.py does its
-# thing, and the order dependencies, it's hard to fix without a big rewrite.
+# Create the override file, but ensure that it gets cleaned up when this test
+# exits.  Because of the way oneconf.paths operates, this file must exist
+# before the import.
+def cleanup():
+    try:
+        os.remove('/tmp/oneconf.override')
+    except FileNotFoundError:
+        pass
+atexit.register(cleanup)
 shutil.copy(
     os.path.join(os.path.dirname(__file__), "data", "oneconf.override"),
     "/tmp/oneconf.override")

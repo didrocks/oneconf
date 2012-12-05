@@ -18,7 +18,7 @@
 
 import dbus
 import dbus.service
-from gi.repository import GObject, GLib
+from gi.repository import GLib
 import logging
 import sys
 

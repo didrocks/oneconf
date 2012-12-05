@@ -15,6 +15,7 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 ### END LICENSE
 
+import atexit
 import json
 import os
 import shutil
@@ -25,9 +26,18 @@ import unittest
 
 sys.path.insert(0, os.path.abspath('.'))
 
-src = os.path.join(os.path.dirname(__file__), "data", "oneconf.override")
-dst = "/tmp/oneconf.override"
-shutil.copy(src, dst)
+# Create the override file, but ensure that it gets cleaned up when this test
+# exits.  Because of the way oneconf.paths operates, this file must exist
+# before the import.
+def cleanup():
+    try:
+        os.remove('/tmp/oneconf.override')
+    except FileNotFoundError:
+        pass
+atexit.register(cleanup)
+shutil.copy(
+    os.path.join(os.path.dirname(__file__), "data", "oneconf.override"),
+    '/tmp/oneconf.override')
 
 from oneconf import paths
 from oneconf.networksync.fake_webcatalog_silo import FakeWebCatalogSilo
