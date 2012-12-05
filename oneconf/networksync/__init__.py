@@ -175,20 +175,28 @@ class SyncHandler(GObject.GObject):
         # Try to do every other hosts pending changes first (we will get fresh
         # data then)
         try:
-            pending_upload_filename = os.path.join(self.hosts.get_currenthost_dir(), PENDING_UPLOAD_FILENAME)
+            pending_upload_filename = os.path.join(
+                self.hosts.get_currenthost_dir(), PENDING_UPLOAD_FILENAME)
             with open(pending_upload_filename, 'r') as f:
                 pending_changes = json.load(f)
-            for hostid in pending_changes.keys():
+            # We're going to mutate the dictionary inside the loop, so we need
+            # to make a copy of the keys dictionary view.
+            for hostid in list(pending_changes.keys()):
                 # now do action depending on what needs to be refreshed
                 try:
-                    # we can only remove distant machines for now, not register new ones
+                    # we can only remove distant machines for now, not
+                    # register new ones
                     try:
                         if not pending_changes[hostid].pop('share_inventory'):
-                            LOG.debug("Removing machine %s requested as a pending change" % hostid)
-                            self.infraclient.delete_machine(machine_uuid=hostid)
+                            LOG.debug('Removing machine %s requested as a '
+                                      'pending change' % hostid)
+                            self.infraclient.delete_machine(
+                                machine_uuid=hostid)
                     except APIError as e:
-                        LOG.error("WebClient server doesn't want to remove hostid (%s): %s" % (hostid, e))
-                        pending_changes[hostid]['share_inventory'] = False # append it again to be done
+                        LOG.error("WebClient server doesn't want to remove "
+                                  "hostid (%s): %s" % (hostid, e))
+                        # append it again to be done
+                        pending_changes[hostid]['share_inventory'] = False
                 except KeyError:
                     pass
                 # after all changes, is hostid still relevant?
@@ -196,11 +204,13 @@ class SyncHandler(GObject.GObject):
                     pending_changes.pop(hostid)
             # no more change, remove the file
             if not pending_changes:
-                LOG.debug("No more pending changes remaining, removing the file")
+                LOG.debug(
+                    "No more pending changes remaining, removing the file")
                 os.remove(pending_upload_filename)
             # update the remaining tasks
             else:
-                utils.save_json_file_update(pending_upload_filename, pending_changes)
+                utils.save_json_file_update(
+                    pending_upload_filename, pending_changes)
         except IOError:
             pass
         except ValueError:

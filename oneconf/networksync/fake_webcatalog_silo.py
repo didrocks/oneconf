@@ -135,12 +135,8 @@ class FakeWebCatalogSilo(object):
     def _update_from_file(self, filepath):
         '''Loads existing settings from cache file into _FAKE_SETTINGS dict'''
         if os.path.exists(filepath):
-            try:
-                with open(filepath, 'b') as fp:
-                    self._FAKE_SETTINGS = pickle.load(fp)
-            except:
-                LOG.warning("Settings file %s can't be loaded. "
-                            'Will run with the default' % filepath)
+            with open(filepath, 'rb') as fp:
+                self._FAKE_SETTINGS = pickle.load(fp)
         else:
             LOG.warning("Settings file %s doesn't exist. "
                         'Will run with the default' % filepath)

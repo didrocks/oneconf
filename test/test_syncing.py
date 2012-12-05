@@ -122,7 +122,7 @@ class OneConfSyncing(unittest.TestCase):
         with open(file1) as fp1, open(file2) as fp2:
             src_content = fp1.read().splitlines()
             dst_content = fp2.read().splitlines()
-        self.assertMultiLineEqual(src_content, dst_content)
+        self.assertEqual(src_content, dst_content)
 
     def compare_dirs(self, source, dest):
         '''Compare directory files, ignoring the last_sync file on purpose'''
