@@ -119,10 +119,35 @@ class OneConfSyncing(unittest.TestCase):
 
     def compare_files(self, file1, file2):
         '''Compare file content'''
-        with open(file1) as fp1, open(file2) as fp2:
-            src_content = fp1.read().splitlines()
-            dst_content = fp2.read().splitlines()
-        self.assertEqual(src_content, dst_content)
+        # We have to be moderately intellegent in comparing these files.  Some
+        # of them are json serialized dictionaries, so straight textual
+        # comparisons won't work (dictionary order is not predictable).
+        # Unfortunately, there's no way to know whether we're looking at json
+        # or something else.  So, first try to deserialize the content and if
+        # that fails, use the string representations.
+        #
+        # Yes, we have to use a backslash here. :\
+        try:
+            with open(file1, 'r', encoding='utf-8') as fp1, \
+                 open(file2, 'r', encoding='utf-8') as fp2:
+                src_string = fp1.read()
+                dst_string = fp2.read()
+        except UnicodeDecodeError:
+            # If it wasn't even utf-8, then it isn't json, so re-open the
+            # files as binary and compare the byte strings.
+            with open(file1, 'rb') as fp1, open(file2, 'rb') as fp2:
+                src_content = fp1.read()
+                dst_content = fp2.read()
+            self.assertEqual(src_content, dst_content)
+            return
+        try:
+            src_content = json.loads(src_string)
+            dst_content = json.loads(dst_string)
+        except TypeError:
+            # Again, it's not json.
+            self.assertMultiLineEqual(src_string, dst_string)
+        else:
+            self.assertEqual(src_content, dst_content)
 
     def compare_dirs(self, source, dest):
         '''Compare directory files, ignoring the last_sync file on purpose'''

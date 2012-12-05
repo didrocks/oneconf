@@ -116,7 +116,8 @@ class WebCatalogAPI(PistonAPI):
         logo_path = os.path.join(WEBCATALOG_SILO_DIR, "%s.png" % machine_uuid)
         if not os.path.exists(logo_path):
             raise APIError("No logo found")
-        return open(logo_path).read()
+        with open(logo_path) as fp:
+            return fp.read()
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('logo_checksum', r'[-\w+]+\.[-\w+]+')
@@ -127,9 +128,9 @@ class WebCatalogAPI(PistonAPI):
 
         if not self.machineuuid_exist(machine_uuid):
             raise APIError('Host Not Found')
-        image_on_disk = open(os.path.join(WEBCATALOG_SILO_DIR,'%s.png' % machine_uuid), 'wb+')
-        image_on_disk.write(logo_content)
-        image_on_disk.close()
+        image_path = os.path.join(WEBCATALOG_SILO_DIR,'%s.png' % machine_uuid)
+        with open(image_path, 'wb+') as image_on_disk:
+            image_on_disk.write(logo_content)
         hosts = self.silo.get_host_silo()
         hosts[machine_uuid]['logo_checksum'] = logo_checksum
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
