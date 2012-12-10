@@ -1,4 +1,6 @@
 The override file is used to parametize where the data are stored
 
 hostdata are is used for the static data tests
-syncdatatests are the data for both the silo and local current host state for the sync tests
+
+syncdatatests are the data for both the silo and local current host state for
+the sync tests

@@ -4,10 +4,9 @@ ratings and reviews API, plus a few helper classes.
 
 from piston_mini_client import (
     PistonAPI,
-    returns,
     returns_json,
     )
-from piston_mini_client.validators import validate_pattern, validate
+from piston_mini_client.validators import validate_pattern
 from piston_mini_client.failhandlers import APIError
 
 # These are factored out as constants for if you need to work against a
@@ -15,11 +14,11 @@ from piston_mini_client.failhandlers import APIError
 PUBLIC_API_SCHEME = 'http'
 AUTHENTICATED_API_SCHEME = 'https'
 
-from fake_webcatalog_silo import FakeWebCatalogSilo, network_delay
+from .fake_webcatalog_silo import FakeWebCatalogSilo, network_delay
 import os
-import simplejson
+import json
 
-from paths import WEBCATALOG_SILO_RESULT, WEBCATALOG_SILO_DIR
+from oneconf.paths import WEBCATALOG_SILO_RESULT, WEBCATALOG_SILO_DIR
 
 class WebCatalogAPI(PistonAPI):
     """A fake client pretending to be WebCatalogAPI from infraclient_pristine.
@@ -30,7 +29,7 @@ class WebCatalogAPI(PistonAPI):
        To use this, instead of importing from infraclient_pristine, you can import
        from infraclient_fake instead.
     """
-    
+
     default_service_root = 'http://localhost:8000/cat/api/1.0'
     default_content_type = 'application/x-www-form-urlencoded'
 
@@ -50,7 +49,7 @@ class WebCatalogAPI(PistonAPI):
     def server_status(self):
         if self.silo.get_setting('server_response_error'):
             raise APIError(self._exception_msg)
-        return simplejson.dumps('ok')
+        return json.dumps('ok')
 
     @network_delay
     def list_machines(self):
@@ -78,9 +77,12 @@ class WebCatalogAPI(PistonAPI):
         if self.machineuuid_exist(machine_uuid):
             hosts[machine_uuid]['hostname'] = hostname
         else:
-            hosts[machine_uuid] = {'hostname': hostname, 'logo_checksum': None, 'packages_checksum': None}
+            hosts[machine_uuid] = {'hostname': hostname,
+                                   'logo_checksum': None,
+                                   'packages_checksum': None,
+                                   }
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
+        return json.dumps('Success')
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
@@ -102,10 +104,10 @@ class WebCatalogAPI(PistonAPI):
             pass # there was no logo
         if not self.machineuuid_exist(machine_uuid):
             raise APIError('Host Not Found')
-        del(hosts[machine_uuid])
+        del hosts[machine_uuid]
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
-            
+        return json.dumps('Success')
+
     @validate_pattern('machine_uuid', r'[-\w+]+')
     def get_machine_logo(self, machine_uuid):
         if self.silo.get_setting('get_machine_logo_error'):
@@ -114,7 +116,8 @@ class WebCatalogAPI(PistonAPI):
         logo_path = os.path.join(WEBCATALOG_SILO_DIR, "%s.png" % machine_uuid)
         if not os.path.exists(logo_path):
             raise APIError("No logo found")
-        return open(logo_path).read()
+        with open(logo_path) as fp:
+            return fp.read()
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('logo_checksum', r'[-\w+]+\.[-\w+]+')
@@ -125,14 +128,14 @@ class WebCatalogAPI(PistonAPI):
 
         if not self.machineuuid_exist(machine_uuid):
             raise APIError('Host Not Found')
-        image_on_disk = open(os.path.join(WEBCATALOG_SILO_DIR,'%s.png' % machine_uuid), 'wb+')
-        image_on_disk.write(logo_content)
-        image_on_disk.close()
+        image_path = os.path.join(WEBCATALOG_SILO_DIR,'%s.png' % machine_uuid)
+        with open(image_path, 'wb+') as image_on_disk:
+            image_on_disk.write(logo_content)
         hosts = self.silo.get_host_silo()
         hosts[machine_uuid]['logo_checksum'] = logo_checksum
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
-        
+        return json.dumps('Success')
+
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @returns_json
     def list_packages(self, machine_uuid):
@@ -145,7 +148,7 @@ class WebCatalogAPI(PistonAPI):
         package_list = packages[machine_uuid]
         if not package_list:
             raise APIError('Package list empty')
-        return simplejson.dumps(package_list)
+        return json.dumps(package_list)
 
     @validate_pattern('machine_uuid', r'[-\w+]+')
     @validate_pattern('packages_checksum', r'[-\w+]+')
@@ -162,5 +165,4 @@ class WebCatalogAPI(PistonAPI):
         hosts = self.silo.get_host_silo()
         hosts[machine_uuid]['packages_checksum'] = packages_checksum
         self.silo.save_settings(WEBCATALOG_SILO_RESULT)
-        return simplejson.dumps('Success')
-
+        return json.dumps('Success')

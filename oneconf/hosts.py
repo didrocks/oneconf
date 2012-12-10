@@ -16,28 +16,25 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import datetime
 import hashlib
 import json
 import logging
 import os
 import platform
+import sys
 from gi.repository import Gio
 
-import gettext
 from gettext import gettext as _
 
 LOG = logging.getLogger(__name__)
 
-from paths import (ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, HOST_DATA_FILENAME, PENDING_UPLOAD_FILENAME,
-                   PACKAGE_LIST_PREFIX, LOGO_PREFIX, LOGO_BASE_FILENAME, LAST_SYNC_DATE_FILENAME, FAKE_WALLPAPER,
-                   FAKE_WALLPAPER_MTIME)
+from oneconf.paths import (
+    FAKE_WALLPAPER, FAKE_WALLPAPER_MTIME, HOST_DATA_FILENAME,
+    LAST_SYNC_DATE_FILENAME, LOGO_BASE_FILENAME, LOGO_PREFIX,
+    ONECONF_CACHE_DIR, OTHER_HOST_FILENAME, PACKAGE_LIST_PREFIX,
+    PENDING_UPLOAD_FILENAME)
 
-# FIXME: ask about those horrible symlink to barry when I get time for it.
-try:
-    from oneconf import utils
-except ImportError:
-    import utils
+from oneconf import utils
 
 class HostError(Exception):
     def __init__(self, message):
@@ -61,18 +58,21 @@ class Hosts(object):
             os.makedirs(ONECONF_CACHE_DIR)
 
         (logo_checksum, logo_path) = self._get_current_wallpaper_data()
-        
+
         try:
             # faking this id for testing purpose. Format is hostid:hostname
             hostid, hostname = os.environ["ONECONF_HOST"].split(':')
-            LOG.debug ("Fake current hostid to %s and hostname to %s" % (hostid, hostname))
+            LOG.debug("Fake current hostid to %s and hostname to %s" %
+                      (hostid, hostname))
         except KeyError:
-            hostid = open('/var/lib/dbus/machine-id').read()[:-1]
+            with open('/var/lib/dbus/machine-id') as fp:
+                hostid = fp.read()[:-1]
             hostname = platform.node()
 
         self._host_file_dir = os.path.join(ONECONF_CACHE_DIR, hostid)
         try:
-            with open(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), 'r') as f:
+            file_path = os.path.join(self._host_file_dir, HOST_DATA_FILENAME)
+            with open(file_path, 'r') as f:
                 self.current_host = json.load(f)
                 has_changed = False
                 if hostname != self.current_host['hostname']:
@@ -82,17 +82,22 @@ class Hosts(object):
                     self.current_host['hostid'] = hostid
                     has_changed = True
                 if logo_checksum != self.current_host['logo_checksum']:
-                    if (self._create_logo(logo_path)):
+                    if self._create_logo(logo_path):
                         self.current_host['logo_checksum'] = logo_checksum
                     has_changed = True
             if has_changed:
                 self.save_current_host()
         except (IOError, ValueError):
-            self.current_host = {'hostid': hostid, 'hostname': hostname, 'share_inventory': False,
-                                 'logo_checksum': logo_checksum, 'packages_checksum': None}
+            self.current_host = {
+                'hostid': hostid,
+                'hostname': hostname,
+                'share_inventory': False,
+                'logo_checksum': logo_checksum,
+                'packages_checksum': None,
+                }
             if not os.path.isdir(self._host_file_dir):
                 os.mkdir(self._host_file_dir)
-            if not (self._create_logo(logo_path)):
+            if not self._create_logo(logo_path):
                 self.current_host['logo_checksum'] = None
             self.save_current_host()
         self.other_hosts = None
@@ -100,7 +105,8 @@ class Hosts(object):
 
     def _get_current_wallpaper_data(self):
         '''Get current wallpaper metadatas from store'''
-        # TODO: add fake objects instead of introducing logic into the code for testing
+        # TODO: add fake objects instead of introducing logic into the code
+        # for testing.
         file_path = FAKE_WALLPAPER
         file_mtime = FAKE_WALLPAPER_MTIME
         if not file_path:
@@ -112,7 +118,9 @@ class Hosts(object):
         try:
             if not file_mtime:
                 file_mtime = str(os.stat(file_path).st_mtime)
-            logo_checksum = "%s%s" % (hashlib.sha224(file_path).hexdigest(), file_mtime)
+            file_path_bytes = file_path.encode(sys.getfilesystemencoding())
+            logo_checksum = "%s%s" % (
+                hashlib.sha224(file_path_bytes).hexdigest(), file_mtime)
         except OSError:
             logo_checksum = None
             file_path = None
@@ -120,11 +128,15 @@ class Hosts(object):
 
     def _create_logo(self, wallpaper_path):
         '''create a logo from a wallpaper
-        
+
         return True if succeeded'''
         if not wallpaper_path:
             return False
-        from PIL import Image
+        try:
+            # 2012-11-21 BAW: There is as yet no PIL for Python 3.
+            from PIL import Image
+        except ImportError:
+            return False
         try:
             im = Image.open(LOGO_BASE_FILENAME)
             im2 = Image.open(wallpaper_path)
@@ -132,7 +144,7 @@ class Hosts(object):
             im.paste(im3, (3,3))
             im.save(os.path.join(self._host_file_dir, "%s_%s.png" % (LOGO_PREFIX, self.current_host['hostid'])))
             return True
-        except IOError, e:
+        except IOError as e:
             LOG.warning ("Cant create logo for %s: %s" % (wallpaper_path, e))
             return False
 
@@ -159,13 +171,13 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, OTHER_HOST_FILENAME), 'r') as f:
                 return json.load(f)
-        except (IOError, TypeError, ValueError), e:
+        except (IOError, TypeError, ValueError) as e:
             LOG.warning("Error in loading %s file: %s" % (OTHER_HOST_FILENAME, e))
             return {}
 
     def save_current_host(self, arg=None):
         '''Save current host on disk'''
-        
+
         LOG.debug("Save current host to disk")
         utils.save_json_file_update(os.path.join(self._host_file_dir, HOST_DATA_FILENAME), self.current_host)
 
@@ -173,7 +185,7 @@ class Hosts(object):
         '''Pend a scheduled change for another host on disk
 
         change has a {hostid: {key: value, key2: value2}} format'''
-        
+
         LOG.debug("Pend a change for another host on disk")
         try:
             with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
@@ -198,7 +210,7 @@ class Hosts(object):
                 return json.load(f)[hostid][attribute]
         except (IOError, KeyError, ValueError) as e:
             return None
-    
+
     def gethost_by_id(self, hostid):
         '''Get host dictionnary by id
 
@@ -206,14 +218,14 @@ class Hosts(object):
 
         can trigger HostError exception if no hostname found for this id
         '''
-        
+
         if hostid == self.current_host['hostid']:
             return self.current_host
         try:
             return self.other_hosts[hostid]
         except KeyError:
             raise HostError(_("No hostname registered for this id"))
-        
+
 
     def _gethostid_by_name(self, hostname):
         '''Get hostid by hostname
@@ -223,7 +235,7 @@ class Hosts(object):
         can trigger HostError exception unexisting hostname
         or multiple hostid for this hostname
         '''
-        
+
         LOG.debug("Get a hostid for %s", hostname)
 
         result_hostid = None
@@ -257,7 +269,7 @@ class Hosts(object):
             self.gethost_by_id(hostid)
             hostid = hostid
         else:
-            hostid = self._gethostid_by_name(hostname) 
+            hostid = self._gethostid_by_name(hostname)
         return hostid
 
     def get_currenthost_dir(self):
@@ -270,9 +282,14 @@ class Hosts(object):
         put in them as dict -> tuple for dbus connection'''
 
         LOG.debug("Request to compute an list of all hosts")
-        result = {self.current_host['hostid']: (True, self.current_host['hostname'], self.current_host['share_inventory'])}
+        result = {
+            self.current_host['hostid']: (
+                True, self.current_host['hostname'],
+                self.current_host['share_inventory']),
+            }
         for hostid in self.other_hosts:
-            result[hostid] = (False, self.other_hosts[hostid]['hostname'], True)
+            result[hostid] = (
+                False, self.other_hosts[hostid]['hostname'], True)
         return result
 
     def set_share_inventory(self, share_inventory, hostid=None, hostname=None):
@@ -302,7 +319,7 @@ class Hosts(object):
 
     def get_last_sync_date(self):
         '''Get last sync date, if already synced, with remote server'''
-        
+
         LOG.debug("Getting last sync date with remote server")
         try:
             with open(os.path.join(self._host_file_dir, LAST_SYNC_DATE_FILENAME), 'r') as f:
@@ -315,4 +332,3 @@ class Hosts(object):
         except ValueError:
             last_sync = _("Was never synced")
         return last_sync
-        

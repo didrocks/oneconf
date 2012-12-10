@@ -17,44 +17,41 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import ConfigParser
 import logging
-import os
 import subprocess
 
-from gettext import gettext as _
-
-LOG = logging.getLogger(__name__)
-
+from configparser import NoSectionError, RawConfigParser
+from importlib import import_module
 from oneconf.paths import ONECONF_OVERRIDE_FILE
 
-class UnimplementedError(Exception):
-    pass
+LOG = logging.getLogger(__name__)
 
 
 class Distro(object):
     """ abstract base class for a distribution """
-        
+
     def compute_local_packagelist(self):
         '''Introspect what's installed on this hostid
 
         Return: installed_packages list
         '''
-        raise UnimplementedError
+        raise NotImplementedError
 
 
 def _get_distro():
-    config = ConfigParser.RawConfigParser()
+    config = RawConfigParser()
     try:
         config.read(ONECONF_OVERRIDE_FILE)
         distro_id = config.get('TestSuite', 'distro')
-    except ConfigParser.NoSectionError:
-        distro_id = subprocess.Popen(["lsb_release","-i","-s"], 
-                                     stdout=subprocess.PIPE).communicate()[0].strip()
+    except NoSectionError:
+        distro_id = subprocess.Popen(
+            ["lsb_release","-i","-s"],
+            stdout=subprocess.PIPE,
+            universal_newlines=True).communicate()[0].strip()
     LOG.debug("get_distro: '%s'" % distro_id)
     # start with a import, this gives us only a oneconf module
     try:
-        module =  __import__(distro_id, globals(), locals(), [], -1)
+        module =  import_module('.' + distro_id, 'oneconf.distributor')
         # get the right class and instanciate it
         distro_class = getattr(module, distro_id)
         instance = distro_class()
@@ -72,5 +69,4 @@ distro_instance=_get_distro()
 
 
 if __name__ == "__main__":
-    print get_distro()
-
+    print(get_distro())

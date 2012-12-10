@@ -4,17 +4,12 @@ webcatalog API, plus a few helper classes.
 
 import ast
 import json
-from urllib import quote_plus
 from piston_mini_client import (
     PistonAPI,
-    PistonResponseObject,
-    PistonSerializable,
-    returns,
     returns_json
     )
 from piston_mini_client.validators import (
     oauth_protected,
-    validate,
     validate_pattern,
     )
 from piston_mini_client.failhandlers import APIError
@@ -89,7 +84,7 @@ class WebCatalogAPI(PistonAPI):
         # FIXME: need to do this hack to transform the http request to a json format content
         try:
             package_list = json.loads(package_list[1:-1].replace("'", '"').replace("True", "true").replace("False", 'false'))
-        except ValueError, e:
+        except ValueError as e:
             raise APIError('Package list invalid: %s' % e)
         return package_list
 
@@ -99,7 +94,6 @@ class WebCatalogAPI(PistonAPI):
     @oauth_protected
     def update_packages(self, machine_uuid, packages_checksum, package_list):
         """update the package list for a machine."""
-        
+
         data_content = {"package_list": package_list, "packages_checksum": packages_checksum}
         return self._post('packages/%s/' % machine_uuid, data=data_content, content_type='application/json', scheme=AUTHENTICATED_API_SCHEME)
-

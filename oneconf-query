@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (C) 2010 Canonical
 #
@@ -43,25 +43,25 @@ ACTION_SHARE_INVENTORY, ACTION_GET_LAST_SYNC, ACTION_STOP_SERVICE) = range(8)
 
 def print_packages(installed_pkg):
 
-    print _("Installed package:")
+    print(_("Installed package:"))
     for pkg_name in installed_pkg:
-        print pkg_name
+        print(pkg_name)
 
 
 def print_packages_diff(packages_to_install, packages_to_remove):
 
-    print _("Additional packages: (package to install)")
+    print(_("Additional packages: (package to install)"))
     for pkg_name in packages_to_install:
-        print " %s" % pkg_name
-    print _("Missing packages: (package to remove)")
+        print(" %s" % pkg_name)
+    print(_("Missing packages: (package to remove)"))
     for pkg_name in packages_to_remove:
-        print " %s" % pkg_name
+        print(" %s" % pkg_name)
 
 def print_hosts(hosts, only_current=False):
     if len(hosts) == 1 or only_current:
-        print _("Listing this host stored in OneConf:")
+        print(_("Listing this host stored in OneConf:"))
     else:
-        print _("Hosts stored for OneConf:")
+        print(_("Hosts stored for OneConf:"))
 
     for hostid in hosts:
         current, name, share_inventory = hosts[hostid]
@@ -69,22 +69,23 @@ def print_hosts(hosts, only_current=False):
         if current:
             additional_text = "[Current]"
         if (only_current and current) or not only_current:
-            print "ID: %s %s\n name: %s\n share inventory: %s" % (hostid, additional_text, name, share_inventory)
+            print("ID: %s %s\n name: %s\n share inventory: %s" %
+                  (hostid, additional_text, name, share_inventory))
 
 def err_scope():
-    print _("You can't define --all-packages, --manual-packages or --hosts together.")
+    print(_("You can't define --all-packages, --manual-packages or --hosts together."))
     sys.exit(1)
 
 def err_action():
-    print _("You can't define --list, --diff, --update, --async-update, --share-inventory, --stop, --get-last-sync together.")
+    print(_("You can't define --list, --diff, --update, --async-update, --share-inventory, --stop, --get-last-sync together."))
     sys.exit(1)
 
 def option_not_compatible(options, action):
-    print _("%s isn't compatible with %s" % (options, action))
+    print(_("%s isn't compatible with %s" % (options, action)))
     sys.exit(1)
 
 if __name__ == '__main__':
-    
+
     # TODO: choose the future, choose argparse!
     usage = _("usage: %prog [options]")
     parser = OptionParser(version= "%prog " + VERSION, usage=usage)
@@ -149,7 +150,7 @@ if __name__ == '__main__':
 
     # don't run as root:
     if os.getuid() == 0:
-        print "oneconf-query can't run as root. Exiting"
+        print("oneconf-query can't run as root. Exiting")
         sys.exit(1)
 
     # set verbosity
@@ -168,7 +169,7 @@ if __name__ == '__main__':
         try:
             from oneconf.dbusconnect import DbusConnect
             oneconf = DbusConnect()
-        except DBusException, e:
+        except DBusException as e:
             LOG.critical("Can't connect to dbus: %s, fallback to direct connexion as a fallback:" % e)
             from oneconf.directconnect import DirectConnect
             oneconf = DirectConnect()
@@ -222,26 +223,26 @@ if __name__ == '__main__':
         action = ACTION_LIST
 
     if options.hostid and options.hostname:
-        print _("hostid and hostname can't be provided together.")
+        print(_("hostid and hostname can't be provided together."))
         sys.exit(1)
 
     if action == ACTION_UPDATE:
         if options.hostid or options.hostname:
-            print _("You can't use hostid or hostname when updating.")
+            print(_("You can't use hostid or hostname when updating."))
             sys.exit(1)
         if scope != SCOPE_NONE:
-            print _("You can't define --package, --host or --hosts " \
-                    "when updating.")
+            print(_("You can't define --package, --host or --hosts "
+                    "when updating."))
             sys.exit(1)
         oneconf.update()
 
     elif action == ACTION_ASYNC_UPDATE:
         if options.hostid or options.hostname:
-            print _("You can't use hostid or hostname when updating.")
+            print(_("You can't use hostid or hostname when updating."))
             sys.exit(1)
         if scope != SCOPE_NONE:
-            print _("You can't define --package, --host or --hosts " \
-                    "when updating.")
+            print(_("You can't define --package, --host or --hosts "
+                    "when updating."))
             sys.exit(1)
         oneconf.async_update()
 
@@ -253,7 +254,7 @@ if __name__ == '__main__':
         if scope == SCOPE_HOST:
             print_hosts(oneconf.get_all_hosts(), True)
         if scope == SCOPE_MANUAL_PACKAGES:
-            installed_pkg = oneconf.get_packages(hostid=options.hostid, hostname=options.hostname, only_manual=True)            
+            installed_pkg = oneconf.get_packages(hostid=options.hostid, hostname=options.hostname, only_manual=True)
             print_packages(installed_pkg)
         if scope == SCOPE_ALL_PACKAGES:
             installed_pkg = oneconf.get_packages(hostid=options.hostid, hostname=options.hostname, only_manual=False)
@@ -261,8 +262,8 @@ if __name__ == '__main__':
 
     elif action == ACTION_DIFF:
         if not options.hostid and not options.hostname:
-            print _("You have to provide either hostid or hostname for " \
-                    "getting a diff.")
+            print(_("You have to provide either hostid or hostname for "
+                    "getting a diff."))
             sys.exit(1)
         if scope == SCOPE_NONE:
             scope = SCOPE_ALL_PACKAGES
@@ -279,21 +280,20 @@ if __name__ == '__main__':
 
     elif action == ACTION_SHARE_INVENTORY:
         if scope != SCOPE_NONE:
-            print _("You can't define --package, --host or --hosts " \
-                    "when changing show inventory status.")
+            print(_("You can't define --package, --host or --hosts "
+                    "when changing show inventory status."))
         oneconf.set_share_inventory(options.share_inventory, options.hostid, options.hostname)
 
     elif action == ACTION_GET_LAST_SYNC:
         if options.hostid or options.hostname:
-            print _("You can't use hostid or hostname when changing show inventory status.")
+            print(_("You can't use hostid or hostname when changing show inventory status."))
             sys.exit(1)
         if scope != SCOPE_NONE:
-            print _("You can't define --package, --host or --hosts " \
-                    "when changing show inventory status.")
-        print oneconf.get_last_sync_date()
+            print(_("You can't define --package, --host or --hosts "
+                    "when changing show inventory status."))
+        print(oneconf.get_last_sync_date())
 
     elif action == ACTION_STOP_SERVICE:
         oneconf.stop_service()
 
     sys.exit(0)
-

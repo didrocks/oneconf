@@ -17,8 +17,9 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-import ConfigParser
 import os
+
+from configparser import NoSectionError, NoOptionError, RawConfigParser
 from xdg import BaseDirectory as xdg
 
 ONECONF_OVERRIDE_FILE = "/tmp/oneconf.override"
@@ -33,26 +34,29 @@ LOGO_PREFIX = "logo"
 LAST_SYNC_DATE_FILENAME = "last_sync"
 
 _datadir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-if not os.path.exists(_datadir): # take the paths file if loaded from networksync module
-    _datadir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
-if not os.path.exists(_datadir):  
+if not os.path.exists(_datadir):
+    # take the paths file if loaded from networksync module
+    parent = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    _datadir = os.path.join(parent, "data")
+if not os.path.exists(_datadir):
     _datadir = ONECONF_DATADIR
 LOGO_BASE_FILENAME = os.path.join(_datadir, 'images', 'computer.png')
 WEBCATALOG_SILO_DIR = "/tmp"
 FAKE_WALLPAPER = None # Fake wallpaper for tests
 FAKE_WALLPAPER_MTIME = None # Fake wallpaper for tests
 
-config = ConfigParser.RawConfigParser()
+config = RawConfigParser()
 try:
     config.read(ONECONF_OVERRIDE_FILE)
     ONECONF_CACHE_DIR = config.get('TestSuite', 'ONECONF_CACHE_DIR')
     WEBCATALOG_SILO_DIR = config.get('TestSuite', 'WEBCATALOG_SILO_DIR')
-    FAKE_WALLPAPER = os.path.join(os.path.dirname(_datadir), config.get('TestSuite', 'FAKE_WALLPAPER'))
+    FAKE_WALLPAPER = os.path.join(
+        os.path.dirname(_datadir), config.get('TestSuite', 'FAKE_WALLPAPER'))
     try:
         FAKE_WALLPAPER_MTIME = config.get('TestSuite', 'FAKE_WALLPAPER_MTIME')
     except ConfigParser.NoOptionError:
         FAKE_WALLPAPER_MTIME = None
-except ConfigParser.NoSectionError:
+except NoSectionError:
     pass
 WEBCATALOG_SILO_SOURCE = os.path.join(WEBCATALOG_SILO_DIR, "source")
 WEBCATALOG_SILO_RESULT = os.path.join(WEBCATALOG_SILO_DIR, "result")

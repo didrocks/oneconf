@@ -1,22 +1,29 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 from DistUtilsExtra.command import *
 
 import re
 import glob
-import os
-from subprocess import Popen, PIPE, call
-import sys
+from codecs import open
+from subprocess import Popen, PIPE
 
 # update version.py
-line = open("debian/changelog").readline()
+with open('debian/changelog', encoding='utf-8') as fp:
+    line = fp.readline()
+
 m = re.match("^[\w-]+ \(([\w\.~]+)\) ([\w-]+);", line)
 VERSION = m.group(1)
 CODENAME = m.group(2)
-DISTRO = Popen(["lsb_release", "-s", "-i"], stdout=PIPE).communicate()[0].strip()
-RELEASE = Popen(["lsb_release", "-s", "-r"], stdout=PIPE).communicate()[0].strip()
-open("oneconf/version.py","w").write("""
+DISTRO = Popen(["lsb_release", "-s", "-i"],
+               stdout=PIPE,
+               universal_newlines=True).communicate()[0].strip()
+RELEASE = Popen(["lsb_release", "-s", "-r"],
+                stdout=PIPE,
+                universal_newlines=True).communicate()[0].strip()
+
+with open('oneconf/version.py', 'w', encoding='utf-8') as fp:
+    fp.write("""
 VERSION='%s'
 CODENAME='%s'
 DISTRO='%s'
@@ -25,7 +32,9 @@ RELEASE='%s'
 
 #should be replaced by $USR
 oneconf_service_path = "/usr/share/oneconf/oneconf-service"
-open("misc/com.ubuntu.OneConf.service","w").write("""[D-BUS Service]
+
+with open('misc/com.ubuntu.OneConf.service', 'w', encoding='utf-8') as fp:
+    fp.write("""[D-BUS Service]
 Name=com.ubuntu.OneConf
 Exec=%s""" % oneconf_service_path)
 
@@ -48,7 +57,9 @@ setup(name="oneconf", version=VERSION,
       cmdclass = { "build" : build_extra.build_extra,
                    "build_i18n" :  build_i18n.build_i18n,
                    "build_help" : build_help.build_help,
-                   "build_icons" : build_icons.build_icons}
+                   "build_icons" : build_icons.build_icons},
+      test_suite = 'nose.collector',
+      test_requires = [
+          'piston_mini_client',
+          ],
       )
-
-

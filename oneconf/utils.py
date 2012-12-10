@@ -41,4 +41,3 @@ def save_json_file_update(file_uri, content):
     except IOError:
         LOG.error("Can't save update file for %s", file_uri)
         return False
-
