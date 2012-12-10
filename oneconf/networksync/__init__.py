@@ -76,7 +76,7 @@ class SyncHandler(GObject.GObject):
         if self._can_sync:
             self.process_sync()
             # adding the timeout only if we are not on a single sync
-            if not os.environ.get('ONECONF_SINGLE_SYNC'):
+            if os.environ.get('ONECONF_SINGLE_SYNC') is None:
                 GLib.timeout_add_seconds(MIN_TIME_WITHOUT_ACTIVITY,
                                          self.process_sync)
 
@@ -226,7 +226,7 @@ class SyncHandler(GObject.GObject):
         try:
             full_hosts_list = self.infraclient.list_machines()
         except APIError as e:
-            LOG.error ("Invalid machine list from server, stopping sync: %s" % e)
+            LOG.error("Invalid machine list from server, stopping sync: %s" % e)
             return True
         other_hosts = {}
         distant_current_host = {}

@@ -115,13 +115,18 @@ class FakeWebCatalogSilo(object):
 
         Raises a NameError if the setting name doesn't exist
         """
-
-        if "error" in key_name:
-            error_value = os.getenv("ONECONF_%s" % key_name)
-            if error_value is not None: # can be false
-                return error_value
+        if 'error' in key_name:
+            value = os.getenv('ONECONF_' + key_name)
+            # The value should be the string True or False, but it can be None.
+            if value is not None:
+                if value.lower() == 'true':
+                    return True
+                elif value.lower() == 'false':
+                    return False
+                else:
+                    raise RuntimeError('unexpected value %s' % value)
         if not key_name in self._FAKE_SETTINGS:
-            raise NameError ('Setting %s does not exist' % key_name)
+            raise NameError('Setting %s does not exist' % key_name)
         return self._FAKE_SETTINGS[key_name]
 
     def get_host_silo(self):
