@@ -58,6 +58,7 @@ class Hosts(object):
             os.makedirs(ONECONF_CACHE_DIR)
 
         (logo_checksum, logo_path) = self._get_current_wallpaper_data()
+        LOG.debug('LOGO %s: %s' % (logo_checksum, logo_path))
 
         try:
             # faking this id for testing purpose. Format is hostid:hostname
@@ -208,7 +209,7 @@ class Hosts(object):
         try:
             with open(os.path.join(self._host_file_dir, PENDING_UPLOAD_FILENAME), 'r') as f:
                 return json.load(f)[hostid][attribute]
-        except (IOError, KeyError, ValueError) as e:
+        except (IOError, KeyError, ValueError):
             return None
 
     def gethost_by_id(self, hostid):
