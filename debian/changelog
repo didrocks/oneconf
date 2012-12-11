@@ -1,3 +1,9 @@
+oneconf (0.3) raring; urgency=low
+
+  * Port to Python 3.
+
+ -- Barry Warsaw <barry@ubuntu.com>  Tue, 11 Dec 2012 10:52:09 -0500
+
 oneconf (0.2.9.1) quantal; urgency=low
 
   * handle a regression when the wallpaper isn't reachable + test case

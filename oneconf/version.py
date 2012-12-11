@@ -1,5 +1,5 @@
 
-VERSION='0.2.9'
-CODENAME='quantal'
+VERSION='0.3'
+CODENAME='raring'
 DISTRO='Ubuntu'
 RELEASE='13.04'

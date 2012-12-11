@@ -5,23 +5,23 @@ Build-Depends: debhelper (>= 7.0.50),
                lsb-release,
                gettext,
                intltool,
-               python,
-               python-distutils-extra,
-               python-nose,
+               python3,
+               python3-distutils-extra,
+               python3-nose,
 Maintainer: Didier Roche <didrocks@ubuntu.com>
 Standards-Version: 3.9.3
 
 Package: oneconf
 Architecture: all
 Depends: ${misc:Depends},
-         ${python:Depends},
-         python-dbus,
-         python-oauth,
-         python-gi,
-         python-apt,
+         ${python3:Depends},
+         python3-dbus,
+         python3-oauth,
+         python3-gi,
+         python3-apt,
          ubuntu-sso-client,
-         python-piston-mini-client (>= 0.3+bzr32-0ubuntu1),
-         python-imaging,
+         python3-piston-mini-client,
+         #python-imaging,
 Recommends: software-center (>= 4.1.21),
             update-notifier (>= 0.103),
 Description: synchronize your configuration data over the network

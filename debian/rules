@@ -2,7 +2,7 @@
 share:=usr/share/oneconf
 
 %:
-	dh --with=python2 $@
+	dh $@ --with python3
 
 # Install the modules in a private directory, as our applications are the
 # only ones using them.
