@@ -1,13 +1,14 @@
 Source: oneconf
 Section: python
 Priority: extra
-Build-Depends: debhelper (>= 7.0.50),
+Build-Depends: debhelper (>= 8),
                lsb-release,
                gettext,
                intltool,
                python3,
+               python3-setuptools,
                python3-distutils-extra,
-               python3-nose,
+               python3-nose
 Maintainer: Didier Roche <didrocks@ubuntu.com>
 Standards-Version: 3.9.3
 
@@ -20,8 +21,7 @@ Depends: ${misc:Depends},
          python3-gi,
          python3-apt,
          ubuntu-sso-client,
-         python3-piston-mini-client,
-         #python-imaging,
+         python3-piston-mini-client
 Recommends: software-center (>= 4.1.21),
             update-notifier (>= 0.103),
 Description: synchronize your configuration data over the network
