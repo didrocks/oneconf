@@ -17,7 +17,7 @@ Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
          python3-dbus,
-         python3-oauth,
+         python3-oauthlib,
          python3-gi,
          python3-apt,
          ubuntu-sso-client,
