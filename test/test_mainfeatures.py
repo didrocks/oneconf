@@ -25,7 +25,11 @@ import subprocess
 import unittest
 
 from gettext import gettext as _
-from unittest.mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    # Python 2
+    from mock import patch
 
 sys.path.insert(0, os.path.abspath('.'))
 

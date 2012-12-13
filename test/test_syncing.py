@@ -121,9 +121,9 @@ class OneConfSyncing(unittest.TestCase):
         try:
             shutil.copy(os.path.join(datadir, 'silo_%s' % test_ident),
                         paths.WEBCATALOG_SILO_SOURCE)
-        # Python 3.3 only.
-        except FileNotFoundError:
-            pass # some tests have no silo source file
+        except OSError as error:
+            if error.errno != errno.ENOENT:
+                pass # some tests have no silo source file
 
     def compare_silo_results(self, hosts_metadata, packages_metadata):
         """Return True if start and result silos contains identical hosts

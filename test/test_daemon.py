@@ -94,13 +94,24 @@ class DaemonTests(unittest.TestCase):
 
     def test_unique_daemon(self):
         '''Try to spaw a second daemon and check it can't be there'''
-        daemon2 = subprocess.Popen(["./oneconf-service"],
-                                   stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.DEVNULL)
-        daemon2.wait() # let it proceeding quitting
-        time_stop = time.time()
-        self.assertFalse(self.daemon_still_there(daemon2.pid))
-        self.assertTrue(time_stop - self.time_start < MIN_TIME_WITHOUT_ACTIVITY)
+        try:
+            close = False
+            try:
+                devnull = subprocess.DEVNULL
+            except AttributeError:
+                # Python 2
+                devnull = open(os.devnull, 'wb')
+                close = True
+            daemon2 = subprocess.Popen(["./oneconf-service"],
+                                       stdout=devnull, stderr=devnull)
+            daemon2.wait() # let it proceeding quitting
+            time_stop = time.time()
+            self.assertFalse(self.daemon_still_there(daemon2.pid))
+            self.assertTrue(
+                time_stop - self.time_start < MIN_TIME_WITHOUT_ACTIVITY)
+        finally:
+            if close:
+                devnull.close()
 
     def test_daemon_stop_after_timeout(self):
         '''Test that the daemon effectively stops after a timeout'''

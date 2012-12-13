@@ -19,7 +19,12 @@
 
 import os
 
-from configparser import NoSectionError, NoOptionError, RawConfigParser
+try:
+    from configparser import NoSectionError, NoOptionError, RawConfigParser
+except ImportError:
+    # Python 2
+    from ConfigParser import NoSectionError, NoOptionError, RawConfigParser
+
 from xdg import BaseDirectory as xdg
 
 ONECONF_OVERRIDE_FILE = "/tmp/oneconf.override"
@@ -54,7 +59,7 @@ try:
         os.path.dirname(_datadir), config.get('TestSuite', 'FAKE_WALLPAPER'))
     try:
         FAKE_WALLPAPER_MTIME = config.get('TestSuite', 'FAKE_WALLPAPER_MTIME')
-    except ConfigParser.NoOptionError:
+    except NoOptionError:
         FAKE_WALLPAPER_MTIME = None
 except NoSectionError:
     pass
