@@ -16,6 +16,7 @@
 ### END LICENSE
 
 import atexit
+import errno
 import json
 import os
 import shutil
@@ -32,8 +33,14 @@ sys.path.insert(0, os.path.abspath('.'))
 def cleanup():
     try:
         os.remove('/tmp/oneconf.override')
-    except FileNotFoundError:
-        pass
+    except OSError as error:
+        if error.errno != errno.ENOENT:
+            raise
+    try:
+        shutil.rmtree('/tmp/oneconf-test')
+    except OSError as error:
+        if error.errno != errno.ENOENT:
+            raise
 atexit.register(cleanup)
 shutil.copy(
     os.path.join(os.path.dirname(__file__), "data", "oneconf.override"),

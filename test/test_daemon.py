@@ -16,6 +16,7 @@
 ### END LICENSE
 
 import atexit
+import errno
 import os
 import shutil
 import sys
@@ -31,8 +32,14 @@ sys.path.insert(0, os.path.abspath('.'))
 def cleanup():
     try:
         os.remove('/tmp/oneconf.override')
-    except FileNotFoundError:
-        pass
+    except OSError as error:
+        if error.errno != errno.ENOENT:
+            raise
+    try:
+        shutil.rmtree('/tmp/oneconf-test')
+    except OSError as error:
+        if error.errno != errno.ENOENT:
+            raise
 atexit.register(cleanup)
 shutil.copy(
     os.path.join(os.path.dirname(__file__), "data", "oneconf.override"),
@@ -48,7 +55,8 @@ class DaemonTests(unittest.TestCase):
         self.hostid = "0000"
         self.hostname = "foomachine"
         os.environ["ONECONF_HOST"] = "%s:%s" % (self.hostid, self.hostname)
-        self.dbus_service_process = subprocess.Popen(["./oneconf-service", '--debug', '--mock'])
+        self.dbus_service_process = subprocess.Popen(
+            ["./oneconf-service", '--debug', '--mock'])
         self.time_start = time.time()
         time.sleep(1) # let the main daemon starting
 
