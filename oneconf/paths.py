@@ -39,6 +39,13 @@ LOGO_PREFIX = "logo"
 LAST_SYNC_DATE_FILENAME = "last_sync"
 
 _datadir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+# In both Python 2 and 3, _datadir will be a relative path, however, in Python
+# 3 it will start with "./" while in Python 2 it will start with just the file
+# name.  Normalize this, since the path string is used in the logo_checksum
+# calculation.
+if not os.path.isabs(_datadir) and not _datadir.startswith('./'):
+    _datadir = os.path.join(os.curdir, _datadir)
+
 if not os.path.exists(_datadir):
     # take the paths file if loaded from networksync module
     parent = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
