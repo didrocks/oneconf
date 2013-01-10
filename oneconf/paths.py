@@ -19,7 +19,12 @@
 
 import os
 
-from configparser import NoSectionError, NoOptionError, RawConfigParser
+try:
+    from configparser import NoSectionError, NoOptionError, RawConfigParser
+except ImportError:
+    # Python 2
+    from ConfigParser import NoSectionError, NoOptionError, RawConfigParser
+
 from xdg import BaseDirectory as xdg
 
 ONECONF_OVERRIDE_FILE = "/tmp/oneconf.override"
@@ -34,6 +39,13 @@ LOGO_PREFIX = "logo"
 LAST_SYNC_DATE_FILENAME = "last_sync"
 
 _datadir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+# In both Python 2 and 3, _datadir will be a relative path, however, in Python
+# 3 it will start with "./" while in Python 2 it will start with just the file
+# name.  Normalize this, since the path string is used in the logo_checksum
+# calculation.
+if not os.path.isabs(_datadir) and not _datadir.startswith('./'):
+    _datadir = os.path.join(os.curdir, _datadir)
+
 if not os.path.exists(_datadir):
     # take the paths file if loaded from networksync module
     parent = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -54,7 +66,7 @@ try:
         os.path.dirname(_datadir), config.get('TestSuite', 'FAKE_WALLPAPER'))
     try:
         FAKE_WALLPAPER_MTIME = config.get('TestSuite', 'FAKE_WALLPAPER_MTIME')
-    except ConfigParser.NoOptionError:
+    except NoOptionError:
         FAKE_WALLPAPER_MTIME = None
 except NoSectionError:
     pass

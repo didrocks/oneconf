@@ -20,7 +20,11 @@
 import logging
 import subprocess
 
-from configparser import NoSectionError, RawConfigParser
+try:
+    from configparser import NoSectionError, RawConfigParser
+except ImportError:
+    # Python 2
+    from ConfigParser import NoSectionError, RawConfigParser
 from importlib import import_module
 from oneconf.paths import ONECONF_OVERRIDE_FILE
 

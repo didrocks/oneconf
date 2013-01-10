@@ -131,23 +131,31 @@ class Hosts(object):
         '''create a logo from a wallpaper
 
         return True if succeeded'''
-        if not wallpaper_path:
-            return False
-        try:
-            # 2012-11-21 BAW: There is as yet no PIL for Python 3.
-            from PIL import Image
-        except ImportError:
-            return False
-        try:
-            im = Image.open(LOGO_BASE_FILENAME)
-            im2 = Image.open(wallpaper_path)
-            im3 = im2.resize((42, 26), Image.BICUBIC)
-            im.paste(im3, (3,3))
-            im.save(os.path.join(self._host_file_dir, "%s_%s.png" % (LOGO_PREFIX, self.current_host['hostid'])))
-            return True
-        except IOError as e:
-            LOG.warning ("Cant create logo for %s: %s" % (wallpaper_path, e))
-            return False
+        # 2012-12-20 BAW: There is as yet no PIL for Python 3.  This means we
+        # actually can't enable PIL for Python 2 either because otherwise, we
+        # can't write a test suite that succeeds for both versions.  Currently
+        # oneconf must be bilingual because Software Center imports oneconf,
+        # and it is Python 2.  (Getting Xapian ported, or switched to some
+        # other Python 3 friendly search engine would solve *that* probably,
+        # so I guess it's a race between Xapian and PIL.)
+        return False
+        ## if not wallpaper_path:
+        ##     return False
+        ## try:
+        ##     # 2012-11-21 BAW: There is as yet no PIL for Python 3.
+        ##     from PIL import Image
+        ## except ImportError:
+        ##     return False
+        ## try:
+        ##     im = Image.open(LOGO_BASE_FILENAME)
+        ##     im2 = Image.open(wallpaper_path)
+        ##     im3 = im2.resize((42, 26), Image.BICUBIC)
+        ##     im.paste(im3, (3,3))
+        ##     im.save(os.path.join(self._host_file_dir, "%s_%s.png" % (LOGO_PREFIX, self.current_host['hostid'])))
+        ##     return True
+        ## except IOError as e:
+        ##     LOG.warning ("Cant create logo for %s: %s" % (wallpaper_path, e))
+        ##     return False
 
     def update_other_hosts(self):
         '''Update all the other hosts from local store'''

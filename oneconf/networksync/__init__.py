@@ -34,7 +34,11 @@ from oneconf.paths import (
     PACKAGE_LIST_PREFIX, PENDING_UPLOAD_FILENAME)
 
 from piston_mini_client.failhandlers import APIError
-from http.client import BadStatusLine
+try:
+    from http.client import BadStatusLine
+except ImportError:
+    # Python 2
+    from httplib import BadStatusLine
 from httplib2 import socket, ServerNotFoundError, RedirectLimit
 
 LOG = logging.getLogger(__name__)

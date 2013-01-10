@@ -16,6 +16,7 @@
 ### END LICENSE
 
 import atexit
+import errno
 import json
 import os
 import shutil
@@ -23,6 +24,9 @@ import sys
 import subprocess
 import time
 import unittest
+
+# For Python 2, because builtin-open has no 'encoding' argument.
+import codecs
 
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -32,8 +36,14 @@ sys.path.insert(0, os.path.abspath('.'))
 def cleanup():
     try:
         os.remove('/tmp/oneconf.override')
-    except FileNotFoundError:
-        pass
+    except OSError as error:
+        if error.errno != errno.ENOENT:
+            raise
+    try:
+        shutil.rmtree('/tmp/oneconf-test')
+    except OSError as error:
+        if error.errno != errno.ENOENT:
+            raise
 atexit.register(cleanup)
 shutil.copy(
     os.path.join(os.path.dirname(__file__), "data", "oneconf.override"),
@@ -114,9 +124,10 @@ class OneConfSyncing(unittest.TestCase):
         try:
             shutil.copy(os.path.join(datadir, 'silo_%s' % test_ident),
                         paths.WEBCATALOG_SILO_SOURCE)
-        # Python 3.3 only.
-        except FileNotFoundError:
-            pass # some tests have no silo source file
+        # For Python 2 - Python 3 could use FileNotFoundError
+        except (IOError, OSError) as error:
+            if error.errno != errno.ENOENT:
+                pass # some tests have no silo source file
 
     def compare_silo_results(self, hosts_metadata, packages_metadata):
         """Return True if start and result silos contains identical hosts
@@ -138,8 +149,8 @@ class OneConfSyncing(unittest.TestCase):
         #
         # Yes, we have to use a backslash here. :\
         try:
-            with open(file1, 'r', encoding='utf-8') as fp1, \
-                 open(file2, 'r', encoding='utf-8') as fp2:
+            with codecs.open(file1, 'r', encoding='utf-8') as fp1, \
+                 codecs.open(file2, 'r', encoding='utf-8') as fp2:
                 src_string = fp1.read()
                 dst_string = fp2.read()
         except UnicodeDecodeError:
@@ -194,7 +205,8 @@ class OneConfSyncing(unittest.TestCase):
                                                  'logo_checksum': None,
                                                  'packages_checksum': None}},
                                   {})
-        self.compare_dirs(self.src_hostdir, self.hostdir) # Ensure nothing changed in the source dir
+        # Ensure nothing changed in the source dir
+        self.compare_dirs(self.src_hostdir, self.hostdir)
 
     def test_date_synchro(self):
         '''Ensure a synchro date is written, older than current time, and right signal emitted'''

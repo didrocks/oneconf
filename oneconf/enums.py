@@ -18,7 +18,11 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from configparser import NoSectionError, RawConfigParser
+try:
+    from configparser import NoSectionError, RawConfigParser
+except ImportError:
+    # Python 2
+    from ConfigParser import NoSectionError, RawConfigParser
 from oneconf.paths import ONECONF_OVERRIDE_FILE
 
 config = RawConfigParser()
