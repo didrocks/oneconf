@@ -5,23 +5,100 @@ Build-Depends: debhelper (>= 8),
                lsb-release,
                gettext,
                intltool,
+               python,
+               python-setuptools,
+               python-distutils-extra,
+               python-nose,
+               python-mock,
+               python-xdg,
+               python-gi,
+               python-piston-mini-client,
+               python-dbus,
                python3,
                python3-setuptools,
                python3-distutils-extra,
-               python3-nose
+               python3-nose,
+               python3-mock,
+               python3-xdg,
+               python3-gi,
+               python3-piston-mini-client,
+               python3-dbus
 Maintainer: Didier Roche <didrocks@ubuntu.com>
-Standards-Version: 3.9.3
+Standards-Version: 3.9.4
+X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.3
 
-Package: oneconf
+Package: oneconf-common
+Architecture: all
+Depends: ${misc:Depends},
+         ${python:Depends},
+         python-dbus,
+         python-oauthlib,
+         python-gi,
+         python-apt,
+         python-piston-mini-client,
+         python-httplib2,
+         python-xdg
+Description: synchronize your configuration data over the network
+ OneConf provides the ability to sync your computer's configuration data over
+ the network.
+ .
+ It integrates nicely with the Ubuntu Software Center to compare sets of
+ installed software between computers. A command line tool also provides for
+ the same functionality.
+ .
+ This is the packaging containing common files.
+
+Package: python-oneconf
+Architecture: all
+Depends: ${misc:Depends},
+         ${python:Depends},
+         oneconf-common,
+         python-dbus,
+         python-oauthlib,
+         python-gi,
+         python-apt,
+         python-piston-mini-client,
+         python-httplib2,
+         python-xdg
+Description: synchronize your configuration data over the network
+ OneConf provides the ability to sync your computer's configuration data over
+ the network.
+ .
+ It integrates nicely with the Ubuntu Software Center to compare sets of
+ installed software between computers. A command line tool also provides for
+ the same functionality.
+ .
+ This is the Python 2 support library.
+
+Package: python3-oneconf
 Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
+         oneconf-common,
          python3-dbus,
          python3-oauthlib,
          python3-gi,
          python3-apt,
-         ubuntu-sso-client,
-         python3-piston-mini-client
+         python3-piston-mini-client,
+         python3-httplib2,
+         python3-xdg
+Description: synchronize your configuration data over the network
+ OneConf provides the ability to sync your computer's configuration data over
+ the network.
+ .
+ It integrates nicely with the Ubuntu Software Center to compare sets of
+ installed software between computers. A command line tool also provides for
+ the same functionality.
+ .
+ This is the Python 3 support library.
+
+Package: oneconf
+Architecture: all
+Depends: ${misc:Depends},
+         oneconf-common,
+         python3-oneconf,
+         ubuntu-sso-client
 Recommends: software-center (>= 4.1.21),
             update-notifier (>= 0.103),
 Description: synchronize your configuration data over the network
