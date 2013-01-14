@@ -1,15 +1,22 @@
 oneconf (0.3) raring; urgency=low
 
-  * Port to Python 3.
+  * Port to Python 3 and split the packaging:
     - debian/compat: Bump to 8.
     - debian/control:
       + debhelper >= 8
-      + Change python-* dependencies to python3-*.
+      + Add python3-* build dependencies.
+      + Add new binary packages: oneconf-common, python-oneconf,
+        python3-oneconf, oneconf (the latter has the executables).
       + Remove python-imaging since PIL is not available for Python 3.
       + Switch to python3-oauthlib.
-    - debian/rules: Install with the default Python 3 version.  We have to
-      be explicit with the setup.py calls since dh doesn't yet handle
-      Python 3 automatically.
+    - debian/*.install: Added for new binary package layout.
+    - debian/*.links: Added.
+    - debian/rules:
+      + Build for both Python 2 and Python 3.
+      + Run the test suite where possible.
+    - oneconf/version.py:
+      + Bump to 0.3
+      + Codename: raring
 
  -- Barry Warsaw <barry@ubuntu.com>  Tue, 11 Dec 2012 10:52:09 -0500
 
