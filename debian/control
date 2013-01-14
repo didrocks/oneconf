@@ -1,7 +1,7 @@
 Source: oneconf
 Section: python
 Priority: extra
-Build-Depends: debhelper (>= 8),
+Build-Depends: debhelper (>= 9),
                lsb-release,
                gettext,
                intltool,
@@ -61,7 +61,7 @@ Depends: ${misc:Depends},
          python-piston-mini-client,
          python-httplib2,
          python-xdg
-Description: synchronize your configuration data over the network
+Description: synchronize your configuration data over the network (Python 2)
  OneConf provides the ability to sync your computer's configuration data over
  the network.
  .
@@ -83,7 +83,7 @@ Depends: ${misc:Depends},
          python3-piston-mini-client,
          python3-httplib2,
          python3-xdg
-Description: synchronize your configuration data over the network
+Description: synchronize your configuration data over the network (Python 3)
  OneConf provides the ability to sync your computer's configuration data over
  the network.
  .
