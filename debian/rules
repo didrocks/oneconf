@@ -46,6 +46,4 @@ override_dh_auto_clean:
 	rm -rf *.egg-info
 
 override_dh_install:
-	dh_link $(share)/oneconf-query usr/bin/oneconf-query \
-		$(share)/oneconf-update usr/share/update-notifier/plugins/cache-changed/oneconf-update
 	dh_install --fail-missing

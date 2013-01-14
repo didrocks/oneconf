@@ -1,0 +1,2 @@
+usr/share/oneconf/oneconf-query usr/bin/oneconf-query
+usr/share/oneconf/oneconf-update usr/share/update-notifier/plugins/cache-changed/oneconf-update
