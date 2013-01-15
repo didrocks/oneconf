@@ -26,19 +26,21 @@ RELEASE = Popen(["lsb_release", "-s", "-r"],
 #should be replaced by $USR
 oneconf_service_path = "/usr/share/oneconf/oneconf-service"
 
-# Don't write files if we're only running the tests.
-if not any(argv for argv in sys.argv if 'test' in argv):
+# Only write the files if we're building.
+if any(argv for argv in sys.argv if 'build' in argv):
     with open('oneconf/version.py', 'w', encoding='utf-8') as fp:
-        fp.write("""
-    VERSION='%s'
-    CODENAME='%s'
-    DISTRO='%s'
-    RELEASE='%s'
-    """ % (VERSION, CODENAME, DISTRO, RELEASE))
+        fp.write("""\
+VERSION='%s'
+CODENAME='%s'
+DISTRO='%s'
+RELEASE='%s'
+""" % (VERSION, CODENAME, DISTRO, RELEASE))
     with open('misc/com.ubuntu.OneConf.service', 'w', encoding='utf-8') as fp:
-        fp.write("""[D-BUS Service]
-    Name=com.ubuntu.OneConf
-    Exec=%s""" % oneconf_service_path)
+        fp.write("""\
+[D-BUS Service]
+Name=com.ubuntu.OneConf
+Exec=%s
+""" % oneconf_service_path)
 
 # real setup
 setup(name="oneconf", version=VERSION,
