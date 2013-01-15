@@ -1,0 +1,2 @@
+Tests: unittests
+Depends: oneconf, python3-nose, python3-mock
