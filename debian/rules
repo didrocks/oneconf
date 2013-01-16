@@ -18,8 +18,10 @@ test-python%:
 	# individually.
 	python$* setup.py nosetests -vv --test test.test_mainfeatures
 	python$* setup.py nosetests -vv --test test.test_syncing
-	# I don't know of a good way to run this test in the schroot.
-	#python$* setup.py nosetests -vv --test test.test_daemon
+	# I don't know of a good way to run this test in the schroot, even
+	# using xvfb to give us an X display.  Rely on DEP 8 tests to cover
+	# these tests.
+	#xvfb-run python$* setup.py nosetests -vv --test test.test_daemon
 
 override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
 endif

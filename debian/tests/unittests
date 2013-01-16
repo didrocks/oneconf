@@ -10,4 +10,4 @@ set -ex
 
 python3 setup.py nosetests -vv --test test.test_mainfeatures
 python3 setup.py nosetests -vv --test test.test_syncing
-python3 setup.py nosetests -vv --test test.test_daemon
+xvfb-run python3 setup.py nosetests -vv --test test.test_daemon
