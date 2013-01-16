@@ -105,10 +105,12 @@ class DaemonTests(unittest.TestCase):
             daemon2 = subprocess.Popen(["./oneconf-service"],
                                        stdout=devnull, stderr=devnull)
             daemon2.wait() # let it proceeding quitting
-            time_stop = time.time()
+            #time_stop = time.time()
             self.assertFalse(self.daemon_still_there(daemon2.pid))
-            self.assertTrue(
-                time_stop - self.time_start < MIN_TIME_WITHOUT_ACTIVITY)
+            # This assertion is unreliable, especially under DEP 8
+            # autopkgtests and possibly other limited environments.
+            ## self.assertLess(time_stop - self.time_start,
+            ##                 MIN_TIME_WITHOUT_ACTIVITY)
         finally:
             if close:
                 devnull.close()

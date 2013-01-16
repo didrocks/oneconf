@@ -1,3 +1,28 @@
+oneconf (0.3) raring; urgency=low
+
+  * Port to Python 3 and split the packaging:
+    - debian/compat: Bump to 9.
+    - debian/control:
+      + debhelper >= 9
+      + Add python3-* build dependencies.
+      + Add new binary packages: oneconf-common, python-oneconf,
+        python3-oneconf, oneconf (the latter has the executables).
+      + Remove python-imaging since PIL is not available for Python 3.
+      + Switch to python3-oauthlib.
+      + Standards-Version: 3.9.4
+      + Add XS-Testsuite for DEP 8.
+    - debian/*.install: Added for new binary package layout.
+    - debian/*.links: Added.
+    - debian/rules:
+      + Build for both Python 2 and Python 3.
+      + Run the test suite where possible.
+    - debian/tests/*: Enable DEP 8 autopkgtests.
+    - oneconf/version.py:
+      + Bump to 0.3
+      + Codename: raring
+
+ -- Barry Warsaw <barry@ubuntu.com>  Tue, 15 Jan 2013 10:52:09 -0500
+
 oneconf (0.2.9.1) quantal; urgency=low
 
   * handle a regression when the wallpaper isn't reachable + test case

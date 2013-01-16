@@ -4,6 +4,7 @@ from setuptools import setup
 from DistUtilsExtra.command import *
 
 import re
+import sys
 import glob
 from codecs import open
 from subprocess import Popen, PIPE
@@ -22,21 +23,24 @@ RELEASE = Popen(["lsb_release", "-s", "-r"],
                 stdout=PIPE,
                 universal_newlines=True).communicate()[0].strip()
 
-with open('oneconf/version.py', 'w', encoding='utf-8') as fp:
-    fp.write("""
+#should be replaced by $USR
+oneconf_service_path = "/usr/share/oneconf/oneconf-service"
+
+# Only write the files if we're building.
+if any(argv for argv in sys.argv if 'build' in argv):
+    with open('oneconf/version.py', 'w', encoding='utf-8') as fp:
+        fp.write("""\
 VERSION='%s'
 CODENAME='%s'
 DISTRO='%s'
 RELEASE='%s'
 """ % (VERSION, CODENAME, DISTRO, RELEASE))
-
-#should be replaced by $USR
-oneconf_service_path = "/usr/share/oneconf/oneconf-service"
-
-with open('misc/com.ubuntu.OneConf.service', 'w', encoding='utf-8') as fp:
-    fp.write("""[D-BUS Service]
+    with open('misc/com.ubuntu.OneConf.service', 'w', encoding='utf-8') as fp:
+        fp.write("""\
+[D-BUS Service]
 Name=com.ubuntu.OneConf
-Exec=%s""" % oneconf_service_path)
+Exec=%s
+""" % oneconf_service_path)
 
 # real setup
 setup(name="oneconf", version=VERSION,

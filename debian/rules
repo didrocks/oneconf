@@ -1,22 +1,51 @@
 #!/usr/bin/make -f
+
+#DH_VERBOSE=1
 share:=usr/share/oneconf
 
+# Prevent setuptools/distribute from accessing the internet.
+export http_proxy = http://127.0.9.1:9
+
+PYTHON2=$(shell pyversions -vr)
+PYTHON3=$(shell py3versions -vr)
+
 %:
-	dh --with=python2 $@
+	dh $@ --with python2,python3
 
-# Install the modules in a private directory, as our applications are the
-# only ones using them.
-override_dh_auto_install:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+test-python%:
+	# The tests don't work well when run as one unit, so run them
+	# individually.
+	python$* setup.py nosetests -vv --test test.test_mainfeatures
+	python$* setup.py nosetests -vv --test test.test_syncing
+	# I don't know of a good way to run this test in the schroot, even
+	# using xvfb to give us an X display.  Rely on DEP 8 tests to cover
+	# these tests.
+	#xvfb-run python$* setup.py nosetests -vv --test test.test_daemon
+
+override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
+endif
+
+build-python%:
+	python$* setup.py build
+
+override_dh_auto_build: $(PYTHON3:%=build-python%)
+	dh_auto_build
+
+install-python%:
+	python$* setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
+
+override_dh_auto_install: $(PYTHON3:%=install-python%)
 	dh_auto_install
-	# Move the scripts to $(SHARE) and relink some again later.
-	mv debian/oneconf/usr/*bin/* debian/oneconf/$(share)
-	rmdir debian/oneconf/usr/*bin
+	# Move the scripts to $(SHARE) and relink some again later.  The
+	# scripts will be included in the "oneconf" binary package
+	mkdir -p debian/oneconf/$(share)
+	mv debian/tmp/usr/*bin/* debian/oneconf/$(share)
 
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf build
+	rm -rf *.egg-info
 
 override_dh_install:
 	dh_install --fail-missing
-
-	dh_link $(share)/oneconf-query usr/bin/oneconf-query \
-		$(share)/oneconf-update usr/share/update-notifier/plugins/cache-changed/oneconf-update
-
-.PHONY: override_dh_auto_install
