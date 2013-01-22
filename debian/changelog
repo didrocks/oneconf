@@ -1,9 +1,9 @@
-oneconf (0.3.1) UNRELEASED; urgency=low
+oneconf (0.3.1) raring; urgency=low
 
   * Add a missing Replaces due to files moving between packages
     (LP: #1102713)
 
- -- Didier Roche <didrocks@ubuntu.com>  Tue, 22 Jan 2013 13:05:09 +0100
+ -- Didier Roche <didrocks@ubuntu.com>  Tue, 22 Jan 2013 13:18:59 +0100
 
 oneconf (0.3) raring; urgency=low
 
