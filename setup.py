@@ -42,12 +42,15 @@ Name=com.ubuntu.OneConf
 Exec=%s
 """ % oneconf_service_path)
 
+# The scripts only work with Python 3.
+if sys.version_info[0] == 3:
+    scripts = ['oneconf-query', 'oneconf-service', 'misc/oneconf-update']
+else:
+    scripts = []
+
 # real setup
 setup(name="oneconf", version=VERSION,
-      scripts=["oneconf-query",
-               "oneconf-service",
-               "misc/oneconf-update",
-               ],
+      scripts=scripts,
       packages = ['oneconf',
                   'oneconf.distributor',
                   'oneconf.networksync',

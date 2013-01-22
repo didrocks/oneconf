@@ -1,3 +1,10 @@
+oneconf (0.3.2) raring; urgency=low
+
+  * setup.py: Only install the command line scripts for Python 3.
+    (LP: #1102715)
+
+ -- Barry Warsaw <barry@ubuntu.com>  Tue, 22 Jan 2013 11:24:38 -0500
+
 oneconf (0.3.1) raring; urgency=low
 
   * Add a missing Replaces due to files moving between packages
