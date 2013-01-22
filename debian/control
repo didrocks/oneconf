@@ -64,6 +64,7 @@ Depends: ${misc:Depends},
          python-piston-mini-client,
          python-httplib2,
          python-xdg
+Replaces: oneconf (<< 0.3)
 Description: synchronize your configuration data over the network (Python 2)
  OneConf provides the ability to sync your computer's configuration data over
  the network.
