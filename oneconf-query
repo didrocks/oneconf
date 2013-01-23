@@ -26,11 +26,9 @@ import sys
 from time import localtime, strftime
 
 import gettext
-try:
-    _ = gettext.translation('oneconf').ugettext
-except IOError:
-    from gettext import gettext as _
-    gettext.textdomain('oneconf')
+# Python 3 does not accept a 'unicode' argument, but _() will always return a
+# string (i.e. a unicode) anyway.
+gettext.install('oneconf')
 
 LOG = logging.getLogger(__name__)
 

@@ -1,3 +1,12 @@
+oneconf (0.3.3) raring; urgency=low
+
+  * d/tests/unittests: Remove -x debugging artifact and run the nose tests
+    under -q instead of -vv to inhibit stderr output.  (LP: #1102875)
+  * oneconf-query: Use gettext.install() to install the _() function.
+    (LP: #1103192)
+
+ -- Barry Warsaw <barry@ubuntu.com>  Wed, 23 Jan 2013 18:30:05 -0500
+
 oneconf (0.3.2) raring; urgency=low
 
   * setup.py: Only install the command line scripts for Python 3.
