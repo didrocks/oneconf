@@ -1,3 +1,11 @@
+oneconf (0.3.4) saucy; urgency=low
+
+  * Drop XS-Testsuite: header. The autopkgtest has never succeeded and needs
+    some nontrivial work, and this is blocking packages like pygobject from
+    propagating.
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Tue, 30 Jul 2013 10:45:53 +0200
+
 oneconf (0.3.3) raring; urgency=low
 
   * d/tests/unittests: Remove -x debugging artifact and run the nose tests

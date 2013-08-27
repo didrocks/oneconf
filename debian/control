@@ -28,7 +28,6 @@ Maintainer: Didier Roche <didrocks@ubuntu.com>
 Standards-Version: 3.9.4
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.3
-XS-Testsuite: autopkgtest
 
 Package: oneconf-common
 Architecture: all
