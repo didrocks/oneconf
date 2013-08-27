@@ -1,3 +1,10 @@
+oneconf (0.3.5) saucy; urgency=low
+
+  * oneconf/distributor/Ubuntu.py: close the apt cache when we are done using
+    it.  Thanks to Jason Conti for the patch. (LP: #1051935)
+
+ -- Brian Murray <brian@ubuntu.com>  Tue, 27 Aug 2013 16:26:54 -0700
+
 oneconf (0.3.4) saucy; urgency=low
 
   * Drop XS-Testsuite: header. The autopkgtest has never succeeded and needs

@@ -35,13 +35,14 @@ class Ubuntu(Distro):
         '''
         
         LOG.debug ('Compute package list for current host')
-        apt_cache = apt.Cache()
 
         # get list of all apps installed
         installed_packages = {}
-        for pkg in apt_cache:
-            if pkg.is_installed:
-                installed_packages[pkg.name] = {"auto": pkg.is_auto_installed}
+
+        with apt.Cache() as apt_cache:
+            for pkg in apt_cache:
+                if pkg.is_installed:
+                    installed_packages[pkg.name] = {"auto": pkg.is_auto_installed}
 
         return installed_packages
         
